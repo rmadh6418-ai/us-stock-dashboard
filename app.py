@@ -47,9 +47,15 @@ def fetch_yfinance_data(tickers):
 
 def get_fear_and_greed():
     url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json", "Referer": "https://edition.cnn.com/"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://edition.cnn.com",
+        "Referer": "https://edition.cnn.com/"
+    }
     try:
-        res = scraper.get(url, headers=headers, timeout=10)
+        # CNN 서버 봇 차단을 우회하기 위해 requests와 브라우저 헤더를 사용합니다.
+        res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
             return {
@@ -82,6 +88,20 @@ def get_silver_don_price():
         if len(si) >= 2 and len(krw) >= 2:
             current = (float(si.iloc[-1]) / 31.1034768) * 3.75 * float(krw.iloc[-1])
             prev = (float(si.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
+            diff = current - prev
+            pct = (diff / prev) * 100 if prev != 0 else 0
+            return {'value': int(current), 'diff': int(diff), 'pct': pct}
+        return {'value': "N/A", 'diff': 0, 'pct': 0}
+    except:
+        return {'value': "N/A", 'diff': 0, 'pct': 0}
+
+def get_gold_don_price():
+    try:
+        gc = yf.Ticker("GC=F").history(period="5d")['Close'].dropna()
+        krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
+        if len(gc) >= 2 and len(krw) >= 2:
+            current = (float(gc.iloc[-1]) / 31.1034768) * 3.75 * float(krw.iloc[-1])
+            prev = (float(gc.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
             return {'value': int(current), 'diff': int(diff), 'pct': pct}
@@ -175,8 +195,11 @@ def get_ai_summary(data):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-3.6-flash')
         
+        fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
+        fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
+        
         prompt = f"""
-        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서, 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 딱 3줄로 명확하게 요약해줘. (한국어로 작성하고 1., 2., 3. 번호 붙여서 작성)
+        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서, 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 딱 4줄로 명확하게 요약해줘. (한국어로 작성하고 1., 2., 3., 4. 번호 붙여서 작성)
         
         [오늘의 데이터]
         - S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -184,7 +207,9 @@ def get_ai_summary(data):
         - 미국채 10년물 금리: {data['macros'].get('미국채 10년물', {}).get('value')}%
         - 원/달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
         - VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
-        - CNN 공포탐욕지수: {data['cnn'].get('score') if data.get('cnn') else 'N/A'}
+        - CNN 공포탐욕지수: {data['cnn'].get('score') if data.get('cnn') else '조회 불가'}
+        - 연준 순유동성(Net Liquidity): {fed_net}
+        - 연준 역레포 잔액(ON RRP): {fed_rrp}
         """
         response = model.generate_content(prompt)
         return response.text.strip()
@@ -204,6 +229,7 @@ def get_dashboard_data():
         'commodities': fetch_yfinance_data({'WTI유': 'CL=F', '브렌트유': 'BZ=F'}),
         'dubai': get_naver_finance("https://finance.naver.com/marketindex/worldDailyQuote.naver?marketindexCd=OIL_DU&fdtc=2"),
         'silver': get_silver_don_price(),
+        'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
         'm7': fetch_yfinance_data({'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA'}),
         'news': get_google_news(),
@@ -325,6 +351,7 @@ HTML_TEMPLATE = """
         {{ render_metric('WTI유 ($/bbl)', data.commodities['WTI유']) }}
         {{ render_metric('브렌트유 ($/bbl)', data.commodities['브렌트유']) }}
         {{ render_metric('두바이유 ($/bbl)', data.dubai) }}
+        {{ render_metric('국내 금시세 (1돈)', data.gold, True, '원') }}
         {{ render_metric('국내 은시세 (1돈)', data.silver, True, '원') }}
     </div>
 
