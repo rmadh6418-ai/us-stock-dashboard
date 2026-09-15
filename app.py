@@ -173,7 +173,7 @@ def get_ai_summary(data):
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         prompt = f"""
         너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서, 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 딱 3줄로 명확하게 요약해줘. (한국어로 작성하고 1., 2., 3. 번호 붙여서 작성)
