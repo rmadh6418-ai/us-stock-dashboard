@@ -1,168 +1,4 @@
-from flask import Flask, render_template_string
-import yfinance as yf
-import pandas as pd
-import requests
-import feedparser
-import pandas_datareader.data as web
-from datetime import datetime, timedelta
-import ssl
-import io
-import time
-import cloudscraper
 
-# --- SSL 우회 및 클라우드스크래퍼(우회 봇) 초기화 ---
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-else:
-    ssl._create_default_https_context = _create_unverified_https_context
-
-scraper = cloudscraper.create_scraper()
-app = Flask(__name__)
-
-# --- [ 데이터 수집 함수 ] ---
-def fetch_yfinance_data(tickers):
-    data = {}
-    for name, ticker in tickers.items():
-        try:
-            hist = yf.Ticker(ticker).history(period="5d")
-            if 'Close' in hist.columns:
-                close_prices = hist['Close'].dropna()
-                if len(close_prices) >= 2:
-                    current = float(close_prices.iloc[-1])
-                    prev = float(close_prices.iloc[-2])
-                    diff = current - prev
-                    pct = (diff / prev) * 100 if prev != 0 else 0
-                    data[name] = {'value': current, 'diff': diff, 'pct': pct}
-                    continue
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0}
-        except Exception:
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0}
-    return data
-
-def get_fear_and_greed():
-    url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept": "application/json",
-        "Referer": "https://edition.cnn.com/"
-    }
-    try:
-        res = scraper.get(url, headers=headers, timeout=10)
-        if res.status_code == 200:
-            data = res.json()
-            score = data['fear_and_greed']['score']
-            rating = data['fear_and_greed']['rating']
-            diff = score - data['fear_and_greed']['previous_close']
-            return {'score': score, 'rating': rating, 'diff': diff}
-        return None
-    except:
-        return None
-
-def get_naver_finance(url, row_idx=0, col_idx=1):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        res = requests.get(url, headers=headers, timeout=5)
-        res.encoding = 'euc-kr'
-        df = pd.read_html(io.StringIO(res.text))[0]
-        current = float(str(df.iloc[row_idx, col_idx]).replace(',', ''))
-        prev = float(str(df.iloc[row_idx+1, col_idx]).replace(',', ''))
-        diff = current - prev
-        pct = (diff / prev) * 100 if prev != 0 else 0
-        return {'value': current, 'diff': diff, 'pct': pct}
-    except:
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
-
-def get_silver_don_price():
-    try:
-        si = yf.Ticker("SI=F").history(period="5d")['Close'].dropna()
-        krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
-        if len(si) >= 2 and len(krw) >= 2:
-            current = (float(si.iloc[-1]) / 31.1034768) * 3.75 * float(krw.iloc[-1])
-            prev = (float(si.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
-            diff = current - prev
-            pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct}
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
-    except:
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
-
-def get_fed_liquidity():
-    end = datetime.today()
-    start = end - timedelta(days=60)
-    try:
-        df = web.DataReader(['WALCL', 'WTREGEN', 'RRPONTSYD', 'WRESBAL'], 'fred', start, end)
-        df = df.ffill().dropna()
-        df.columns = ['Total Assets', 'TGA', 'Reverse Repo', 'Bank Reserves']
-        df['Reverse Repo'] = df['Reverse Repo'] * 1000
-        df['Net Liquidity'] = df['Total Assets'] - df['TGA'] - df['Reverse Repo']
-        
-        current = df.iloc[-1]
-        prev = df.iloc[-2]
-        result = {}
-        for col in df.columns:
-            diff = current[col] - prev[col]
-            pct = (diff / prev[col]) * 100 if prev[col] != 0 else 0
-            result[col] = {'value': current[col], 'diff': diff, 'pct': pct}
-        return result
-    except:
-        return None
-
-def get_google_news():
-    url = "https://news.google.com/rss/search?q=미국+증시+OR+연준+OR+빅테크+OR+환율&hl=ko&gl=KR&ceid=KR:ko"
-    try:
-        feed = feedparser.parse(url)
-        news = []
-        for item in feed.entries[:7]:
-            dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
-            news.append({'title': item.title, 'link': item.link, 'date': dt.strftime('%Y-%m-%d %H:%M')})
-        return news
-    except:
-        return []
-
-def get_economic_calendar():
-    url = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
-    try:
-        res = scraper.get(url, timeout=10)
-        feed = feedparser.parse(res.content)
-        events = [{"title": entry.title} for entry in feed.entries if 'USD' in entry.title.upper()]
-        return events
-    except:
-        return []
-
-# --- 메모리 캐시 (로딩 속도 개선) ---
-CACHE = {}
-
-def get_dashboard_data():
-    if 'data' in CACHE and time.time() - CACHE['time'] < 600:
-        return CACHE['data']
-    
-    indices_dict = {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI'}
-    macros_dict = {'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'}
-    m7_dict = {'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA'}
-    
-    dubai_url = "https://finance.naver.com/marketindex/worldDailyQuote.naver?marketindexCd=OIL_DU&fdtc=2"
-    
-    data = {
-        'indices': fetch_yfinance_data(indices_dict),
-        'macros': fetch_yfinance_data(macros_dict),
-        'cnn': get_fear_and_greed(),
-        'commodities': fetch_yfinance_data({'WTI유': 'CL=F', '브렌트유': 'BZ=F'}),
-        'dubai': get_naver_finance(dubai_url),
-        'silver': get_silver_don_price(),
-        'fed': get_fed_liquidity(),
-        'm7': fetch_yfinance_data(m7_dict),
-        'news': get_google_news(),
-        'calendar': get_economic_calendar()
-    }
-    
-    CACHE['data'] = data
-    CACHE['time'] = time.time()
-    return data
-
-# --- [ 프론트엔드 HTML / CSS (모바일 반응형 적용) ] ---
-HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -219,151 +55,590 @@ HTML_TEMPLATE = """
 </head>
 <body>
 
-{% macro render_metric(label, data_obj, is_int=False, suffix='') %}
-    <div class="card">
-        <div class="card-label">{{ label }}</div>
-        {% if data_obj.value != "N/A" %}
-            <div class="card-value">
-                {% if is_int %}
-                    {{ "{:,}".format(data_obj.value|int) }}{{ suffix }}
-                {% else %}
-                    {{ "{:,.2f}".format(data_obj.value) }}{{ suffix }}
-                {% endif %}
-            </div>
-            
-            {% set diff_val = data_obj.diff|abs %}
-            {% if is_int %}{% set diff_fmt = "{:,}".format(diff_val|int) %}{% else %}{% set diff_fmt = "{:,.2f}".format(diff_val) %}{% endif %}
-            
-            {% if data_obj.diff > 0 %}
-                <div class="card-delta up">▲ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
-            {% elif data_obj.diff < 0 %}
-                <div class="card-delta down">▼ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
-            {% else %}
-                <div class="card-delta flat">- {{ diff_fmt }} (0.00%)</div>
-            {% endif %}
-        {% else %}
-            <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
-        {% endif %}
-    </div>
-{% endmacro %}
+
 
 <div class="container">
     <div class="header-title">📊 실시간 미국 정규장 및 매크로 대시보드</div>
 
     <div class="section-title">📈 1. 미국 주요 지수</div>
     <div class="grid">
-        {{ render_metric('S&P 500', data.indices['S&P 500']) }}
-        {{ render_metric('다우존스', data.indices['다우존스']) }}
-        {{ render_metric('나스닥 100', data.indices['나스닥 100']) }}
-        {{ render_metric('필라델피아 반도체', data.indices['필라델피아 반도체']) }}
-        {{ render_metric('나스닥 생명공학', data.indices['나스닥 생명공학']) }}
+        
+    <div class="card">
+        <div class="card-label">S&amp;P 500</div>
+        
+            <div class="card-value">
+                
+                    7,619.98
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 37.00 (0.48%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">다우존스</div>
+        
+            <div class="card-value">
+                
+                    52,421.20
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 152.09 (0.29%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">나스닥 100</div>
+        
+            <div class="card-value">
+                
+                    29,127.16
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 241.28 (0.82%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">필라델피아 반도체</div>
+        
+            <div class="card-value">
+                
+                    11,131.28
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 692.72 (5.86%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">나스닥 생명공학</div>
+        
+            <div class="card-value">
+                
+                    6,989.76
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 65.07 (0.94%)</div>
+            
+        
+    </div>
+
     </div>
 
     <div class="section-title">🌐 2. 매크로 및 시장 심리 지표</div>
     <div class="grid">
-        {{ render_metric('달러 인덱스', data.macros['달러 인덱스']) }}
-        {{ render_metric('원/달러 환율', data.macros['원/달러 환율'], False, '원') }}
-        {{ render_metric('엔/달러 환율', data.macros['엔/달러 환율'], False, '엔') }}
-        {{ render_metric('미국채 10년물 (%)', data.macros['미국채 10년물'], False, '%') }}
-        {{ render_metric('미국채 30년물 (%)', data.macros['미국채 30년물'], False, '%') }}
-        {{ render_metric('빅스(VIX) 지수', data.macros['빅스(VIX)']) }}
+        
+    <div class="card">
+        <div class="card-label">달러 인덱스</div>
+        
+            <div class="card-value">
+                
+                    99.61
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 0.15 (0.15%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">원/달러 환율</div>
+        
+            <div class="card-value">
+                
+                    1,354.98원
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 10.34 (0.77%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">엔/달러 환율</div>
+        
+            <div class="card-value">
+                
+                    154.70엔
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 1.28 (0.83%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">미국채 10년물 (%)</div>
+        
+            <div class="card-value">
+                
+                    4.96%
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 0.01 (0.28%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">미국채 30년물 (%)</div>
+        
+            <div class="card-value">
+                
+                    5.33%
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 0.03 (0.47%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">빅스(VIX) 지수</div>
+        
+            <div class="card-value">
+                
+                    17.10
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 1.26 (7.95%)</div>
+            
+        
+    </div>
+
         
         <div class="card">
             <div class="card-label">CNN 공포탐욕지수</div>
-            {% if data.cnn %}
-                <div class="card-value">{{ data.cnn.score | int }} ({{ data.cnn.rating }})</div>
-                {% if data.cnn.diff > 0 %}
-                    <div class="card-delta up">▲ {{ data.cnn.diff | abs | int }} (전일대비)</div>
-                {% elif data.cnn.diff < 0 %}
-                    <div class="card-delta down">▼ {{ data.cnn.diff | abs | int }} (전일대비)</div>
-                {% else %}
-                    <div class="card-delta flat">- 0 (전일대비)</div>
-                {% endif %}
-            {% else %}
-                <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
-            {% endif %}
+            
+                <div class="card-value">30 (fear)</div>
+                
+                    <div class="card-delta down">▼ 0 (전일대비)</div>
+                
+            
         </div>
     </div>
 
     <div class="section-title">🛢️ 3. 원자재 및 귀금속 시세</div>
     <div class="grid">
-        {{ render_metric('WTI유 ($/bbl)', data.commodities['WTI유']) }}
-        {{ render_metric('브렌트유 ($/bbl)', data.commodities['브렌트유']) }}
-        {{ render_metric('두바이유 ($/bbl)', data.dubai) }}
-        {{ render_metric('국내 은시세 (1돈)', data.silver, True, '원') }}
+        
+    <div class="card">
+        <div class="card-label">WTI유 ($/bbl)</div>
+        
+            <div class="card-value">
+                
+                    103.11
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 1.72 (1.70%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">브렌트유 ($/bbl)</div>
+        
+            <div class="card-value">
+                
+                    107.29
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 1.61 (1.52%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">두바이유 ($/bbl)</div>
+        
+            <div class="card-value">
+                
+                    116.22
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 1.31 (1.14%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">국내 은시세 (1돈)</div>
+        
+            <div class="card-value">
+                
+                    10,431원
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 135 (1.31%)</div>
+            
+        
+    </div>
+
     </div>
 
     <div class="section-title">🏦 4. 연준(Fed) 유동성 현황 (단위: 백만 $)</div>
-    {% if data.fed %}
+    
     <div class="grid">
-        {{ render_metric('순유동성 (Net Liquidity)', data.fed['Net Liquidity'], True) }}
-        {{ render_metric('역레포 잔액 (ON RRP)', data.fed['Reverse Repo'], True) }}
-        {{ render_metric('은행 지급준비금', data.fed['Bank Reserves'], True) }}
-        {{ render_metric('재무부 일반계정 (TGA)', data.fed['TGA'], True) }}
+        
+    <div class="card">
+        <div class="card-label">순유동성 (Net Liquidity)</div>
+        
+            <div class="card-value">
+                
+                    5,855,864
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 3,835 (0.07%)</div>
+            
+        
     </div>
-    {% else %}
-    <div class="card" style="color: #b91c1c;">연준 데이터 서버에 일시적으로 접속할 수 없습니다.</div>
-    {% endif %}
+
+        
+    <div class="card">
+        <div class="card-label">역레포 잔액 (ON RRP)</div>
+        
+            <div class="card-value">
+                
+                    1,420
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 3,835 (72.98%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">은행 지급준비금</div>
+        
+            <div class="card-value">
+                
+                    2,991,310
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta flat">- 0 (0.00%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">재무부 일반계정 (TGA)</div>
+        
+            <div class="card-value">
+                
+                    883,335
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta flat">- 0 (0.00%)</div>
+            
+        
+    </div>
+
+    </div>
+    
 
     <div class="section-title">💻 5. 빅테크(M7) 동향</div>
     <div class="grid">
-        {{ render_metric('Apple', data.m7['Apple'], False, '$') }}
-        {{ render_metric('Microsoft', data.m7['Microsoft'], False, '$') }}
-        {{ render_metric('Alphabet', data.m7['Alphabet'], False, '$') }}
-        {{ render_metric('Amazon', data.m7['Amazon'], False, '$') }}
-        {{ render_metric('NVIDIA', data.m7['NVIDIA'], False, '$') }}
-        {{ render_metric('Meta', data.m7['Meta'], False, '$') }}
-        {{ render_metric('Tesla', data.m7['Tesla'], False, '$') }}
+        
+    <div class="card">
+        <div class="card-label">Apple</div>
+        
+            <div class="card-value">
+                
+                    333.08$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 0.81 (0.24%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">Microsoft</div>
+        
+            <div class="card-value">
+                
+                    505.41$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 9.78 (1.97%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">Alphabet</div>
+        
+            <div class="card-value">
+                
+                    349.39$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 10.89 (3.22%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">Amazon</div>
+        
+            <div class="card-value">
+                
+                    253.54$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 3.24 (1.26%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">NVIDIA</div>
+        
+            <div class="card-value">
+                
+                    210.96$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 7.33 (3.36%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">Meta</div>
+        
+            <div class="card-value">
+                
+                    665.60$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta up">▲ 17.57 (2.71%)</div>
+            
+        
+    </div>
+
+        
+    <div class="card">
+        <div class="card-label">Tesla</div>
+        
+            <div class="card-value">
+                
+                    358.97$
+                
+            </div>
+            
+            
+            
+            
+            
+                <div class="card-delta down">▼ 6.47 (1.77%)</div>
+            
+        
+    </div>
+
     </div>
 
     <div class="dual-grid">
         <div>
             <div class="section-title" style="margin-top:0;">📰 6. 주요 경제 및 빅테크 뉴스</div>
             <div class="list-box">
-                {% if data.news %}
-                    {% for item in data.news %}
+                
+                    
                         <div class="news-item">
-                            <a href="{{ item.link }}" target="_blank" class="news-link">{{ item.title }}</a><br>
-                            <span class="news-date">({{ item.date }})</span>
+                            <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9pZG5qWmY1UnFMenVSazFveHozZlVCbXNfY0JzSUlqeWF6ZmdTWE00WWNLSkpGaE9pYm5COFI0aFZoMXVhakVFX24zTWw5MzR2Tlg1cGQwYmhlaEnSAWBBVV95cUxPQnZhcGV4NU9lVW1NQVZrZzVtcXJTZ1ZIZlgzN3V1M2Jfa29NUjc0X2xyNU40SVVrMXQ0Q0U0Q3VsRWl2YzZ3Tk9wYkZBQ29ra2dVWU5fN29LdDRDR3duR0E?oc=5" target="_blank" class="news-link">효성중공업, 미국 빅테크와 3천865억원 변압기 공급 계약 - 연합뉴스</a><br>
+                            <span class="news-date">(2026-09-15 00:20)</span>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div style="font-size: 1.1rem; color: #6b7280;">뉴스를 불러오지 못했습니다.</div>
-                {% endif %}
+                    
+                        <div class="news-item">
+                            <a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE1DZzlLU0ltYUNKQ1lKSWZTc1R4N20wQnpfYkVadHlNb0FoeENvamYwQ1gycGx0U1dPcV9lR2pmVzQ3eFVwR1J3Zl9BTGh6bHV6MzUzalhIV2FjWEZfN0l5Qg?oc=5" target="_blank" class="news-link">[환율 전망] 더욱 부담되는 고유가와 장기 금리의 상승 - KB Think</a><br>
+                            <span class="news-date">(2026-09-15 02:25)</span>
+                        </div>
+                    
+                        <div class="news-item">
+                            <a href="https://news.google.com/rss/articles/CBMigwFBVV95cUxPS2dINElnVl9CbHdMZnN0T1NzTlpoLVVYQVN5NHk0VW5Xd19Samtta0pEdWFtWDRNYVRZZm9ETmdWOEs1SGcxb3ZRVkpLczYzN0xtYzhHcHJGajJmZzZ2ZHh5eTBkTmtibVZzVi1PNkYya2diMUFubmN0MlJvM2J6VDdiQQ?oc=5" target="_blank" class="news-link">환율 급락에 서학개미 매수 쇄도…마케팅 자제령에 증권사만 &#39;발 동동&#39; - 인베스트조선</a><br>
+                            <span class="news-date">(2026-09-14 22:01)</span>
+                        </div>
+                    
+                        <div class="news-item">
+                            <a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFB3Q2ozS1dJWkRRMUN3c2tCeWYxTkZQc1puc0owQ3lqRDdObHRsZl9DOGdKVHowN1NIc1d3OWFsWEtjbkh6bzctZUpUNXc3RTZmNEFsTDFTT2V6bktpUnhsN1RfVjNkRDRfUmxLQTFMQUE?oc=5" target="_blank" class="news-link">AI 개발 둔화 우려·연준 회의 앞두고 미국 주가지수 선물 보합 - Investing.com 한국어</a><br>
+                            <span class="news-date">(2026-09-15 00:08)</span>
+                        </div>
+                    
+                        <div class="news-item">
+                            <a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1HYXAyZ19DcHhjSTdERGpQcHlJWGZ0RkdVMThCQld6Ql81U2FMc1ZFaUVCTGt6b1lTU0Z1bnVmMkdWR2lLREtKSVptZWFBVEVEb1BVQnBFY0FkMEVHVm5ySTJKOFYyTlk?oc=5" target="_blank" class="news-link">[3분증시] 뉴욕증시, AI 속도조절론에 약세…반도체주 급락 - 연합뉴스TV</a><br>
+                            <span class="news-date">(2026-09-14 23:00)</span>
+                        </div>
+                    
+                        <div class="news-item">
+                            <a href="https://news.google.com/rss/articles/CBMihAFBVV95cUxNelNXaENodmRuNWI0Rmg2Sm9fUk5rWkhCc2txbTVoTjVzTmhJSTJGWURVQnQwUHJ5QmIzdG5IREdXVzRmWjZTNkdYNDE5anRFejFkMEh6VDdZWTRGX0NrV0lYajNUQldSUF9RdmtyWGlzaVUzUmNMTmpKdzJ0WEV2d0xJU0jSAZgBQVVfeXFMTVlQQVBNMkNaSERHUDVBaHZmXzIzT3ZWdy13aXoxWjQ5X0xpSmJUckM0N2dDRkpoRV9FUEEtWF9YRS1wX0VLYTNwVkdBZVNBT0p6RWZrTFV3QzdGMkxYN0xiR0xOeFZTcC1KS2JzMHYybEYtS0VxZWtCc2V2SVJRMXhsYW5OblF5aTEwVTVPcjBRdm9UYTNWOEk?oc=5" target="_blank" class="news-link">효성중공업, 미국 빅테크와 초고압 변압기 공급계약…3865억 규모 - 조선비즈 - Chosunbiz</a><br>
+                            <span class="news-date">(2026-09-15 00:33)</span>
+                        </div>
+                    
+                        <div class="news-item">
+                            <a href="https://news.google.com/rss/articles/CBMiT0FVX3lxTFA2X1FRZXlfN3FWSXR3S0xuVzRjZjQwaFBRUlEwZ0hwMld2VEs1eEpwdFV4dDN1OFpnNGJZUkFYdlBoamR4ZGhsRWc4cDJCTXM?oc=5" target="_blank" class="news-link">[굿모닝 증시]美, 낙폭 축소 마감…韓 증시도 전일 급락분 만회 전망 - v.daum.net</a><br>
+                            <span class="news-date">(2026-09-14 23:12)</span>
+                        </div>
+                    
+                
             </div>
         </div>
         <div>
             <div class="section-title" style="margin-top:0;">📅 7. 주간 주요 USD 경제 지표</div>
             <div class="list-box">
-                {% if data.calendar %}
-                    {% for event in data.calendar %}
-                        <div class="cal-item">🔹 {{ event.title }}</div>
-                    {% endfor %}
-                {% else %}
+                
                     <div style="font-size: 1.1rem; color: #6b7280;">이번 주 남은 주요 달러(USD) 경제지표 일정이 없습니다.</div>
-                {% endif %}
+                
             </div>
         </div>
     </div>
 </div>
 </body>
 </html>
-"""
-
-@app.route("/")
-def index():
-    dashboard_data = get_dashboard_data()
-    return render_template_string(HTML_TEMPLATE, data=dashboard_data)
-
-def generate_html():
-    with app.app_context():
-        print("미국 증시 데이터를 수집 중입니다. 잠시만 기다려주세요...")
-        dashboard_data = get_dashboard_data()
-        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
-        
-        with open("index.html", "w", encoding="utf-8") as f:
-            f.write(rendered)
-        print("✅ index.html 파일이 성공적으로 생성되었습니다!")
-
-if __name__ == "__main__":
-    generate_html()
