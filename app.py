@@ -54,7 +54,6 @@ def get_fear_and_greed():
         "Referer": "https://edition.cnn.com/"
     }
     try:
-        # CNN 서버 봇 차단을 우회하기 위해 requests와 브라우저 헤더를 사용합니다.
         res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
@@ -199,7 +198,7 @@ def get_ai_summary(data):
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         
         prompt = f"""
-        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서, 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 딱 4줄로 명확하게 요약해줘. (한국어로 작성하고 1., 2., 3., 4. 번호 붙여서 작성)
+        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서, 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 딱 3줄로 명확하게 요약해줘. (한국어로 작성하고 1., 2., 3. 번호 붙여서 작성)
         
         [오늘의 데이터]
         - S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -231,7 +230,12 @@ def get_dashboard_data():
         'silver': get_silver_don_price(),
         'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
-        'm7': fetch_yfinance_data({'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA'}),
+        
+        # 💡 M7에서 주요 빅테크 및 관심 종목 12개로 확장!
+        'bigtech': fetch_yfinance_data({
+            'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA',
+            'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY'
+        }),
         'news': get_google_news(),
         'calendar': get_economic_calendar()
     }
@@ -309,7 +313,6 @@ HTML_TEMPLATE = """
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
 
-    <!-- 🤖 AI 오늘의 증시 3줄 요약 박스 -->
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
         <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">{{ data.ai_summary }}</p>
@@ -365,15 +368,21 @@ HTML_TEMPLATE = """
     </div>
     {% endif %}
 
-    <div class="section-title">💻 5. 빅테크(M7) 동향</div>
+    <!-- 💡 섹션 이름 변경 및 추가된 12개 종목 반영 -->
+    <div class="section-title">💻 5. 주요 빅테크 및 관심 종목 동향</div>
     <div class="grid">
-        {{ render_metric('Apple', data.m7['Apple'], False, '$') }}
-        {{ render_metric('Microsoft', data.m7['Microsoft'], False, '$') }}
-        {{ render_metric('Alphabet', data.m7['Alphabet'], False, '$') }}
-        {{ render_metric('Amazon', data.m7['Amazon'], False, '$') }}
-        {{ render_metric('NVIDIA', data.m7['NVIDIA'], False, '$') }}
-        {{ render_metric('Meta', data.m7['Meta'], False, '$') }}
-        {{ render_metric('Tesla', data.m7['Tesla'], False, '$') }}
+        {{ render_metric('Apple', data.bigtech['Apple'], False, '$') }}
+        {{ render_metric('Microsoft', data.bigtech['Microsoft'], False, '$') }}
+        {{ render_metric('Alphabet', data.bigtech['Alphabet'], False, '$') }}
+        {{ render_metric('Amazon', data.bigtech['Amazon'], False, '$') }}
+        {{ render_metric('NVIDIA', data.bigtech['NVIDIA'], False, '$') }}
+        {{ render_metric('Meta', data.bigtech['Meta'], False, '$') }}
+        {{ render_metric('Tesla', data.bigtech['Tesla'], False, '$') }}
+        {{ render_metric('Micron', data.bigtech['Micron'], False, '$') }}
+        {{ render_metric('TSMC', data.bigtech['TSMC'], False, '$') }}
+        {{ render_metric('Oracle', data.bigtech['Oracle'], False, '$') }}
+        {{ render_metric('Palantir', data.bigtech['Palantir'], False, '$') }}
+        {{ render_metric('Eli Lilly', data.bigtech['Eli Lilly'], False, '$') }}
     </div>
 
     <div class="dual-grid">
