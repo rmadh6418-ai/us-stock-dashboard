@@ -5,6 +5,7 @@ import requests
 import feedparser
 import pandas_datareader.data as web
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import ssl
 import io
 import time
@@ -124,6 +125,36 @@ def get_google_news():
 
 def get_economic_calendar():
     url = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
+    
+    # 💡 자주 나오는 영어 지표를 한글로 예쁘게 바꿔주는 사전
+    def translate_title(text):
+        dic = {
+            "Core": "근원", "Prelim": "잠정", "Advance": "예비", "Final": "확정",
+            "m/m": "(전월대비)", "y/y": "(전년동기대비)", "q/q": "(전분기대비)",
+            "Fed Chair Speaks": "연준 의장 연설",
+            "FOMC Statement": "FOMC 성명서",
+            "Federal Funds Rate": "미국 기준금리 결정",
+            "FOMC Press Conference": "FOMC 기자회견",
+            "Unemployment Claims": "신규 실업수당 청구건수",
+            "Non-Farm Employment Change": "비농업 고용지수",
+            "Unemployment Rate": "실업률",
+            "CPI": "소비자물가지수(CPI)", "PPI": "생산자물가지수(PPI)",
+            "Retail Sales": "소매판매", "Building Permits": "건축허가 건수",
+            "Manufacturing PMI": "제조업 PMI", "Services PMI": "서비스업 PMI",
+            "Consumer Sentiment": "미시간대 소비자심리지수",
+            "JOLTS Job Openings": "JOLTS 구인건수",
+            "CB Consumer Confidence": "CB 소비자신뢰지수",
+            "Crude Oil Inventories": "주간 원유 재고",
+            "Existing Home Sales": "기존 주택판매",
+            "New Home Sales": "신규 주택판매",
+            "Pending Home Sales": "잠정 주택판매",
+            "GDP": "국내총생산(GDP)", "PCE Price Index": "PCE 물가지수",
+            "Average Hourly Earnings": "평균 시간당 임금"
+        }
+        for eng, kor in dic.items():
+            text = text.replace(eng, kor)
+        return text.replace("  ", " ").strip()
+
     try:
         res = scraper.get(url, timeout=10)
         root = ET.fromstring(res.content)
@@ -133,28 +164,43 @@ def get_economic_calendar():
             country = event.find('country')
             impact = event.find('impact')
             
-            # 미국(USD) 지표만 필터링
             if country is not None and country.text is not None and 'USD' in country.text:
                 imp = impact.text.strip() if impact is not None and impact.text else ""
                 
-                # High(상) 와 Medium(중) 중요도 지표 모두 가져오도록 조건 완화
                 if imp in ['High', 'Medium']:
-                    title = event.find('title').text
-                    date = event.find('date').text
-                    time_str = event.find('time').text
+                    title_eng = event.find('title').text
+                    date_str = event.find('date').text  # 예: 09-15-2026
+                    time_str = event.find('time').text  # 예: 8:30am
                     
-                    # 중요도에 따라 이모지 구분 (High는 빨간색, Medium은 노란색)
+                    # 💡 미국 동부 시간(New York)을 한국 시간(Seoul)으로 변환
+                    try:
+                        if 'am' in time_str.lower() or 'pm' in time_str.lower():
+                            et_dt = datetime.strptime(f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p")
+                            et_dt = et_dt.replace(tzinfo=ZoneInfo("America/New_York"))
+                            kst_dt = et_dt.astimezone(ZoneInfo("Asia/Seoul"))
+                            
+                            kst_date = kst_dt.strftime("%m월 %d일")
+                            ampm = "오전" if kst_dt.hour < 12 else "오후"
+                            hour12 = kst_dt.hour % 12 or 12
+                            kst_time = f"{ampm} {hour12}:{kst_dt.minute:02d}"
+                        else:
+                            kst_date = date_str
+                            kst_time = "종일" if "all day" in time_str.lower() else "시간 미정"
+                    except:
+                        kst_date, kst_time = date_str, time_str
+                    
+                    title_kor = translate_title(title_eng)
                     icon = "🔴" if imp == 'High' else "🟡"
-                    events.append({"title": f"{icon} [{date} {time_str}] {title}"})
                     
-        # 만약 이번 주에 High/Medium 지표가 정말 하나도 없다면?
+                    # 출력 형태: 🔴 [09월 15일 오후 09:30] 근원 소비자물가지수(CPI) (전월대비)
+                    events.append({"title": f"{icon} [{kst_date} {kst_time}] {title_kor}"})
+                    
         if not events:
-            return [{"title": "이번 주 남은 주요(High/Medium) 달러(USD) 지표가 없습니다."}]
+            return [{"title": "이번 주 남은 주요 달러(USD) 지표가 없습니다."}]
             
         return events
         
     except Exception as e:
-        # 에러 발생 시 대시보드 화면에 에러 원인을 직접 출력하여 힌트 얻기
         return [{"title": f"⚠️ 데이터를 불러오지 못했습니다. (원인: {str(e)})"}]
 
 # --- 메모리 캐시 (로딩 속도 개선) ---
