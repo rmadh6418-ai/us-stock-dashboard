@@ -9,6 +9,7 @@ import ssl
 import io
 import time
 import cloudscraper
+import xml.etree.ElementTree as ET
 
 # --- SSL 우회 및 클라우드스크래퍼(우회 봇) 초기화 ---
 try:
@@ -125,8 +126,21 @@ def get_economic_calendar():
     url = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
     try:
         res = scraper.get(url, timeout=10)
-        feed = feedparser.parse(res.content)
-        events = [{"title": entry.title} for entry in feed.entries if 'USD' in entry.title.upper()]
+        root = ET.fromstring(res.content)
+        events = []
+        
+        for event in root.findall('event'):
+            country = event.find('country')
+            impact = event.find('impact')
+            
+            # 미국(USD) 지표 중 중요도가 'High'(높음)인 것만 선별
+            if country is not None and country.text == 'USD':
+                if impact is not None and impact.text == 'High':
+                    title = event.find('title').text
+                    date = event.find('date').text
+                    time_str = event.find('time').text
+                    events.append({"title": f"[{date} {time_str}] {title}"})
+                    
         return events
     except:
         return []
