@@ -39,7 +39,47 @@
     </style>
 </head>
 <body>
+<!-- 🔐 비밀번호 잠금 화면 시작 -->
+<div id="lock-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f3f4f6; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: #111827; font-weight: 800;">🔒 대시보드 잠금</h2>
+        <input type="password" id="pw-input" placeholder="비밀번호를 입력하세요" style="width: 100%; box-sizing: border-box; padding: 12px; font-size: 1.1rem; border: 1.5px solid #d1d5db; border-radius: 8px; margin-bottom: 15px; outline: none; text-align: center;">
+        <button onclick="checkPassword()" style="width: 100%; padding: 12px; font-size: 1.1rem; background-color: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">입장하기</button>
+        <p id="pw-error" style="color: #ef4444; margin-top: 15px; font-weight: 600; display: none;">비밀번호가 틀렸습니다.</p>
+    </div>
+</div>
 
+<script>
+    // 💡 여기에 원하는 비밀번호를 설정하세요! (현재는 1234)
+    const SECRET_PASSWORD = "4203";
+
+    function checkPassword() {
+        const input = document.getElementById('pw-input').value;
+        if (input === SECRET_PASSWORD) {
+            // 비밀번호가 맞으면 잠금 화면을 숨김
+            document.getElementById('lock-screen').style.display = 'none';
+            // 창을 닫기 전까지 로그인 상태 유지
+            sessionStorage.setItem('isUnlocked', 'true');
+        } else {
+            // 비밀번호가 틀리면 에러 메시지 표시
+            document.getElementById('pw-error').style.display = 'block';
+        }
+    }
+
+    // 페이지 접속 시 로그인 상태인지 확인
+    window.onload = function() {
+        if (sessionStorage.getItem('isUnlocked') === 'true') {
+            document.getElementById('lock-screen').style.display = 'none';
+        }
+        // 엔터키만 눌러도 확인 버튼이 눌리도록 설정
+        document.getElementById('pw-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    }
+</script>
+<!-- 🔐 비밀번호 잠금 화면 끝 -->
 
 
 <div class="container">
@@ -47,16 +87,11 @@
 
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
-        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">월스트리트 수석 애널리스트 시각에서 분석한 **오늘 아침 글로벌 증시 3대 핵심 포인트**입니다.
+        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">1. **미 국채 10년물 금리의 5% 임박과 시장 심리 위축:** 국채 금리가 4.99%까지 치솟으며 공포탐욕지수가 &#39;공포(28p)&#39; 단계로 하락, 고금리 장기화에 대한 투자자들의 경계감이 극에 달했습니다.
 
-1. **미 국채 10년물 금리 5% 육박(4.99%), 증시 밸류에이션 하방 압력 심화**  
-   10년물 금리가 통곡의 벽인 5% 턱밑까지 치솟으며 고금리 장기화 우려가 시장을 지배하고 있으며, 이는 랠리를 이어가던 주요 지수 및 기술주 프리미엄에 즉각적인 상방 제약을 가하고 있습니다.
+2. **연준의 유동성 완충지대(역레포) 사실상 소진:** 역레포(ON RRP) 잔액이 7억 달러 수준까지 바닥을 드러내며, 그동안 증시 하방을 지지해주던 연준발 유동성 여력이 한계에 도달했습니다.
 
-2. **심리지수 &#39;공포(28.6pt)&#39; 진입 및 연준 역레포(ON RRP) 유동성 버퍼 고갈**  
-   증시 레벨과 달리 CNN 공포·탐욕 지수가 20선(공포)으로 떨어지며 투자 심리가 경직되었고, 연준 역레포 잔액이 7억 달러 수준까지 급감해 향후 시장 충격을 완충해 줄 시중 여유 유동성이 크게 축소되었습니다.
-
-3. **원/달러 환율 1,360원대 고착화에 따른 보수적 리스크 관리 타이밍**  
-   강달러 지속으로 환율 부담이 이어지는 가운데 VIX(17.2) 역시 불안정한 흐름을 보이고 있으므로, 현 시점에서는 공격적인 추격 매수보다 현금 비중 유지 및 단기 변동성 확대에 대비한 리스크 관리가 최우선입니다.</p>
+3. **고환율 지속에 따른 방어적 투자 전략 필요:** 원/달러 환율이 1,363원대의 고환율을 유지하는 등 강달러 압력이 지속되고 있어, 당분간 공격적 매수보다는 변동성에 대비한 방어적 자산 배분이 시급합니다.</p>
     </div>
 
     <div class="section-title">📈 1. 미국 주요 지수</div>
@@ -145,12 +180,12 @@
         <div class="card-label">달러 인덱스</div>
         
             <div class="card-value">
-                99.65
+                99.61
             </div>
             
             
             
-             <div class="card-delta up">▲ 0.19 (0.19%)</div>
+             <div class="card-delta up">▲ 0.15 (0.15%)</div>
             
         
     </div>
@@ -160,12 +195,12 @@
         <div class="card-label">원/달러 환율</div>
         
             <div class="card-value">
-                1,362.68원
+                1,363.46원
             </div>
             
             
             
-             <div class="card-delta up">▲ 17.07 (1.27%)</div>
+             <div class="card-delta up">▲ 17.85 (1.33%)</div>
             
         
     </div>
@@ -175,12 +210,12 @@
         <div class="card-label">엔/달러 환율</div>
         
             <div class="card-value">
-                155.05엔
+                155.31엔
             </div>
             
             
             
-             <div class="card-delta up">▲ 1.62 (1.06%)</div>
+             <div class="card-delta up">▲ 0.92 (0.60%)</div>
             
         
     </div>
@@ -248,12 +283,12 @@
         <div class="card-label">WTI유 ($/bbl)</div>
         
             <div class="card-value">
-                105.48
+                105.46
             </div>
             
             
             
-             <div class="card-delta up">▲ 4.09 (4.03%)</div>
+             <div class="card-delta up">▲ 4.07 (4.01%)</div>
             
         
     </div>
@@ -263,12 +298,12 @@
         <div class="card-label">브렌트유 ($/bbl)</div>
         
             <div class="card-value">
-                108.50
+                108.41
             </div>
             
             
             
-             <div class="card-delta up">▲ 2.82 (2.67%)</div>
+             <div class="card-delta up">▲ 2.73 (2.58%)</div>
             
         
     </div>
@@ -293,13 +328,13 @@
         <div class="card-label">국내 금시세 (1돈)</div>
         
             <div class="card-value">
-                711,942원
+                710,755원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 5,917 (0.84%)</div>
+             <div class="card-delta up">▲ 4,730 (0.67%)</div>
             
         
     </div>
@@ -309,13 +344,13 @@
         <div class="card-label">국내 은시세 (1돈)</div>
         
             <div class="card-value">
-                10,545원
+                10,551원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 241 (2.34%)</div>
+             <div class="card-delta up">▲ 247 (2.40%)</div>
             
         
     </div>
@@ -581,19 +616,19 @@
             <div class="list-box">
                 
                     
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTE9KbGZaYkVBNDdyOFZfMU5EWnBPejdiUF82VVJMWnhxdFBPVU94RldteWk5ajBDODdJRFRoS1ZocEJ5bkhBZUZ1RG02dmViOTI5ckNHbmhXZGVxUnFVajQwM3ZTMjJYNlVlSFoyOC1ibnE?oc=5" target="_blank" class="news-link">[0916개장체크] 美 증시, 저가 매수세 유입에 따른 반도체주 반등 By 인포스탁데일리 - Investing.com 한국어</a><br><span class="news-date">(2026-09-15 23:19)</span></div>
+                    
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiiAFBVV95cUxORG1BX3Q3Qm1tOEE3d195OHozMUxTS1Y2RzZqSDc2V1FoWmJiS1ZMUGk3b3BJN084MjlnMVVEcC1IRk5ENl9aOEh2RE1nbnpGVVBaOEJyWmNmdnBtalhQN1pua0hsV3pmeGxkS0pYZHRJTkRQcUM4OFZvVVpPZmRDbkRYOEFBbDZ1?oc=5" target="_blank" class="news-link">유가 109달러 육박·미국 국채 금리 5%…‘더블 쇼크’에 뉴욕증시 이틀째 하락 - 조선일보</a><br><span class="news-date">(2026-09-15 21:06)</span></div>
+                    
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiaEFVX3lxTFBQTW9ubFhmTEQzQ2JocWZReWEtWFQ3ZjBBc0pJcFhsVWhKRXhFc1cxaDlZNldHclZ3ZUgwcjY5TlVSeTZNemJ3SEhYWHZ6czdMSHhiZWpJR0I0S2t1QzBMLXo3QWdLcDE4?oc=5" target="_blank" class="news-link">[EBN 데이터센터] 미국 증시, 대형 기술주 약세에 일제히 하락 마감...반도체만 선별 강세 - ebn.co.kr</a><br><span class="news-date">(2026-09-15 21:30)</span></div>
+                    
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTE1jZ0Yyc3NmTHU2ZEN0U213ZXVxNmpBMHRORlpZZmJqNzJOYjFwZFl3blBXWk9JV3ZGWUxsRTIzVElScnJ4MS0tWDFIR243T19YN3Bjd1RIUG1YY0xzX2ZZT3RaY3NRejJuZERVZXRFaEJ5UQ?oc=5" target="_blank" class="news-link">연준 3년만 금리 인상 임박…원화, 면역력 보여줄까 - kbthink.com</a><br><span class="news-date">(2026-09-15 23:01)</span></div>
                     
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMifkFVX3lxTE5mUmVkcW9NM0RJdW0zbFJvRHBqQlVzc2NNRU02ak5NTEtIN0cwQzhjRWg5ZTlDY09heFJtQU1Eby05YzloSHdxcWtTZnY1XzRITGFGR2t3dFZhWGVXWkR6R2NlTERlOEN5cG5lc19rNzg3Nkt2Sm9RQ0ZDLXQ2UQ?oc=5" target="_blank" class="news-link">[서울데이터랩]미국 증시, 기술주 약세에 일제 하락 마감…반도체 지수는 소폭 상승 - 서울신문</a><br><span class="news-date">(2026-09-15 21:41)</span></div>
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTE1xVFFFQjBzdUtxSWZoZzA2QWxNaW5USnMxYnJKUEVDNENCSUFPWG56TktlblRvNVNvdkpablpjOGJZLUtNVTdWSm5YSjIySGxucndHN2pHY0ZkeFhaa0RHYnlwU01sMi1KRjk0UTdwTERVUQ?oc=5" target="_blank" class="news-link">[외환] 고유가·강달러에 FOMC 앞두고 1,360원대 - KB Think</a><br><span class="news-date">(2026-09-15 21:33)</span></div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiT0FVX3lxTE1mM01LbmZBWWRFelZob1J4Qm9wcldmYjBVVnNULUpDVXJBT0NGa29RcW1kcExZUkt2RTJrTnMyT3AzWWFtcmtZb1lKSkV1VHc?oc=5" target="_blank" class="news-link">뉴욕증시, 미국 국채금리·유가 동반 급등에 일제히 하락 - v.daum.net</a><br><span class="news-date">(2026-09-15 21:54)</span></div>
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE51RTQ2dGYxQ0piZWhSQVZVWHk1bnJZczVhaW5EMEJGeS1BZnBleUF4TGV4dFpIUzRkZm9HclZ1aXJaMEtnSllLM1Jnd2NaYjZPVjZDRGtXYm1Bd9IBWEFVX3lxTE1UU2tRSVBsbzd5eFZRYjZJRktxRlQzbTlJemw5Z0p0Z1NFV2JvdVJMTTloakxQZGQyblhwR2loNmhUb1NpeFE3N0pLRk5uVGFMU2pVdXJTSTc?oc=5" target="_blank" class="news-link">2022년엔 25% 급락…미국 기준금리 인상 앞둔 K-증시 이번엔 어디로? - 아주경제</a><br><span class="news-date">(2026-09-15 08:42)</span></div>
-                    
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMigwFBVV95cUxOdmRMQlZJd2sySnVSUzdfejlwc2d5ZzlmTVpUYlVwRnIxZ3g1ZGVPVkhKSHNhaWpFb0hjS2FmaHdKRFpPRVJRM2lJZVMxQWRxR1hKOWctNnE4SXUteEFXbldRVU8zREN0bHBPZU1wN0JKajhIRVlNdTdZWFVITGhadUo0Zw?oc=5" target="_blank" class="news-link">&#34;4분기 환율, &#39;재정 부담 대비 금리&#39;가 변수&#34; - 인베스트조선</a><br><span class="news-date">(2026-09-15 07:10)</span></div>
-                    
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9UZzJEY1lTUm9YN0F0Y2ozNVNmMGJrb0Myd19Kd3NmZklFbGZQU1RlLVM0QlJ4a09RbzRmV1E0YkpEcWtxbVUxVFJxSXVCbUt1amFDTkViSzQ3LVHSAWBBVV95cUxNQkRHVmlTQzF1aWltcW5GaDUwSFQxRGk1YmFrRlhyLUxlTzNORGpiMWl6N0dNTnhnWHM0SlhTMFZ0NE5lR0NsZmRDSTNXR1djRDdMQmtlUlZyZ01ZUkN3UmE?oc=5" target="_blank" class="news-link">원/달러 환율 1,360원 터치…유가·美국채금리 상승에 12.1원↑ - 연합뉴스</a><br><span class="news-date">(2026-09-15 07:50)</span></div>
-                    
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiT0FVX3lxTFBrT21LclNYQWpIUDJZVVI2YlJBX1R4REhIZWlacmtXaFZxOVRPaWFPbkNIR3lXOXVrcjRnT2FmNFltZ2dJTmZQNVQwcjJhZUk?oc=5" target="_blank" class="news-link">“美연준 금리인상 확률 92%”… 기업 자금조달-투자위축 우려 - v.daum.net</a><br><span class="news-date">(2026-09-15 19:33)</span></div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTE45YVEyM1ZhTHd3OTQzSzREdlRXSEwyNXJUNi1PcVFKQkhFcGpsX0N1YXJOdnVfc3RJamptY0w3V0FNWXhldW04YXp6T2w4eFMzY0FEaU9EN1diQk44WmNuejdxemh2dWJLNW5VQjNpSXMwdw?oc=5" target="_blank" class="news-link">미국증시 10년물 5%·유가 106달러에 하락…연준 앞두고 엔비디아는 반등 - topstarnews.net</a><br><span class="news-date">(2026-09-15 22:20)</span></div>
                     
                 
             </div>
