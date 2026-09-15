@@ -4,52 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>실시간 미국 정규장 및 매크로 대시보드</title>
+    <title>실시간 미국 증시 대시보드</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; }
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; color: #111827; word-break: keep-all; }
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
-        
-        /* 반응형 그리드 설정 (모바일에선 1~2열, PC에선 자동 확장) */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; }
         .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
         .card-value { font-size: 2.1rem; font-weight: 900; color: #111827; margin-bottom: 5px; word-break: break-all; }
         .card-delta { font-size: 1.1rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        
-        /* 한국식 상승/하락 지정 */
-        .up { color: #dc2626; }    
-        .down { color: #2563eb; }   
-        .flat { color: #6b7280; }   
-        
+        .up { color: #dc2626; } .down { color: #2563eb; } .flat { color: #6b7280; }
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .news-item { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; line-height: 1.4; }
         .news-link { color: #1d4ed8; text-decoration: none; }
-        .news-link:hover { text-decoration: underline; color: #1e3a8a; }
         .news-date { font-size: 0.9rem; color: #6b7280; display: inline-block; margin-top: 3px; }
         .cal-item { font-size: 1.1rem; padding: 10px 0; border-bottom: 1px solid #e5e7eb; line-height: 1.4; }
         .cal-item:last-child { border-bottom: none; }
-
-        /* 하단 뉴스/캘린더 2분할 영역 (모바일에선 1열로 자동 변경) */
         .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
-
-        /* 스마트폰 화면 최적화 (768px 이하) */
+        
         @media (max-width: 768px) {
             body { padding: 5px; }
             .header-title { font-size: 1.6rem; margin: 15px 0 20px 0; }
             .section-title { font-size: 1.25rem; margin: 25px 0 10px 0; }
-            .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } /* 모바일에선 2열 배치 */
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; }
             .card-label { font-size: 0.95rem; }
             .card-value { font-size: 1.5rem; }
             .card-delta { font-size: 0.9rem; }
-            .dual-grid { grid-template-columns: 1fr; gap: 15px; } /* 뉴스/캘린더 세로로 1열 정렬 */
-            .list-box { padding: 15px; }
-            .news-item { font-size: 1rem; }
-            .cal-item { font-size: 1rem; }
+            .dual-grid { grid-template-columns: 1fr; gap: 15px; }
         }
     </style>
 </head>
@@ -58,7 +43,13 @@
 
 
 <div class="container">
-    <div class="header-title">📊 실시간 미국 정규장 및 매크로 대시보드</div>
+    <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+
+    <!-- 🤖 AI 오늘의 증시 3줄 요약 박스 -->
+    <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
+    <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
+        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">⚠️ AI 분석 중 오류가 발생했습니다: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.</p>
+    </div>
 
     <div class="section-title">📈 1. 미국 주요 지수</div>
     <div class="grid">
@@ -67,16 +58,12 @@
         <div class="card-label">S&amp;P 500</div>
         
             <div class="card-value">
-                
-                    7,619.98
-                
+                7,619.98
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 37.00 (0.48%)</div>
+             <div class="card-delta down">▼ 37.00 (0.48%)</div>
             
         
     </div>
@@ -86,16 +73,12 @@
         <div class="card-label">다우존스</div>
         
             <div class="card-value">
-                
-                    52,421.20
-                
+                52,421.20
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 152.09 (0.29%)</div>
+             <div class="card-delta down">▼ 152.09 (0.29%)</div>
             
         
     </div>
@@ -105,16 +88,12 @@
         <div class="card-label">나스닥 100</div>
         
             <div class="card-value">
-                
-                    29,127.16
-                
+                29,127.16
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 241.28 (0.82%)</div>
+             <div class="card-delta down">▼ 241.28 (0.82%)</div>
             
         
     </div>
@@ -124,16 +103,12 @@
         <div class="card-label">필라델피아 반도체</div>
         
             <div class="card-value">
-                
-                    11,131.28
-                
+                11,131.28
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 692.72 (5.86%)</div>
+             <div class="card-delta down">▼ 692.72 (5.86%)</div>
             
         
     </div>
@@ -143,16 +118,12 @@
         <div class="card-label">나스닥 생명공학</div>
         
             <div class="card-value">
-                
-                    6,989.76
-                
+                6,989.76
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 65.07 (0.94%)</div>
+             <div class="card-delta up">▲ 65.07 (0.94%)</div>
             
         
     </div>
@@ -166,16 +137,12 @@
         <div class="card-label">달러 인덱스</div>
         
             <div class="card-value">
-                
-                    99.59
-                
+                99.62
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 0.13 (0.13%)</div>
+             <div class="card-delta up">▲ 0.16 (0.16%)</div>
             
         
     </div>
@@ -185,16 +152,12 @@
         <div class="card-label">원/달러 환율</div>
         
             <div class="card-value">
-                
-                    1,359.38원
-                
+                1,362.26원
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 14.74 (1.10%)</div>
+             <div class="card-delta up">▲ 17.62 (1.31%)</div>
             
         
     </div>
@@ -204,16 +167,12 @@
         <div class="card-label">엔/달러 환율</div>
         
             <div class="card-value">
-                
-                    154.91엔
-                
+                155.14엔
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 1.48 (0.97%)</div>
+             <div class="card-delta up">▲ 1.72 (1.12%)</div>
             
         
     </div>
@@ -223,16 +182,12 @@
         <div class="card-label">미국채 10년물 (%)</div>
         
             <div class="card-value">
-                
-                    4.96%
-                
+                4.96%
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 0.01 (0.28%)</div>
+             <div class="card-delta down">▼ 0.01 (0.28%)</div>
             
         
     </div>
@@ -242,16 +197,12 @@
         <div class="card-label">미국채 30년물 (%)</div>
         
             <div class="card-value">
-                
-                    5.33%
-                
+                5.33%
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 0.03 (0.47%)</div>
+             <div class="card-delta down">▼ 0.03 (0.47%)</div>
             
         
     </div>
@@ -261,16 +212,12 @@
         <div class="card-label">빅스(VIX) 지수</div>
         
             <div class="card-value">
-                
-                    17.69
-                
+                17.70
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 0.59 (3.45%)</div>
+             <div class="card-delta up">▲ 0.60 (3.51%)</div>
             
         
     </div>
@@ -279,10 +226,7 @@
         <div class="card">
             <div class="card-label">CNN 공포탐욕지수</div>
             
-                <div class="card-value">30 (fear)</div>
-                
-                    <div class="card-delta down">▼ 0 (전일대비)</div>
-                
+                <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
             
         </div>
     </div>
@@ -294,16 +238,12 @@
         <div class="card-label">WTI유 ($/bbl)</div>
         
             <div class="card-value">
-                
-                    103.45
-                
+                103.71
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 2.06 (2.03%)</div>
+             <div class="card-delta up">▲ 2.32 (2.29%)</div>
             
         
     </div>
@@ -313,16 +253,12 @@
         <div class="card-label">브렌트유 ($/bbl)</div>
         
             <div class="card-value">
-                
-                    102.64
-                
+                102.83
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 3.04 (2.88%)</div>
+             <div class="card-delta down">▼ 2.85 (2.70%)</div>
             
         
     </div>
@@ -332,16 +268,12 @@
         <div class="card-label">두바이유 ($/bbl)</div>
         
             <div class="card-value">
-                
-                    116.22
-                
+                116.22
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 1.31 (1.14%)</div>
+             <div class="card-delta up">▲ 1.31 (1.14%)</div>
             
         
     </div>
@@ -351,16 +283,13 @@
         <div class="card-label">국내 은시세 (1돈)</div>
         
             <div class="card-value">
-                
-                    10,389원
+                10,358원
                 
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 92 (0.90%)</div>
+             <div class="card-delta up">▲ 62 (0.60%)</div>
             
         
     </div>
@@ -375,16 +304,13 @@
         <div class="card-label">순유동성 (Net Liquidity)</div>
         
             <div class="card-value">
-                
-                    5,855,864
+                5,855,864
                 
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 3,835 (0.07%)</div>
+             <div class="card-delta up">▲ 3,835 (0.07%)</div>
             
         
     </div>
@@ -394,16 +320,13 @@
         <div class="card-label">역레포 잔액 (ON RRP)</div>
         
             <div class="card-value">
-                
-                    1,420
+                1,420
                 
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 3,835 (72.98%)</div>
+             <div class="card-delta down">▼ 3,835 (72.98%)</div>
             
         
     </div>
@@ -413,17 +336,13 @@
         <div class="card-label">은행 지급준비금</div>
         
             <div class="card-value">
-                
-                    2,991,310
+                2,991,310
                 
             </div>
             
             
             
-            
-            
-                <div class="card-delta flat">- 0 (0.00%)</div>
-            
+             <div class="card-delta flat">- 0 (0.00%)</div> 
         
     </div>
 
@@ -432,17 +351,13 @@
         <div class="card-label">재무부 일반계정 (TGA)</div>
         
             <div class="card-value">
-                
-                    883,335
+                883,335
                 
             </div>
             
             
             
-            
-            
-                <div class="card-delta flat">- 0 (0.00%)</div>
-            
+             <div class="card-delta flat">- 0 (0.00%)</div> 
         
     </div>
 
@@ -456,16 +371,12 @@
         <div class="card-label">Apple</div>
         
             <div class="card-value">
-                
-                    333.08$
-                
+                333.08$
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 0.81 (0.24%)</div>
+             <div class="card-delta up">▲ 0.81 (0.24%)</div>
             
         
     </div>
@@ -475,16 +386,12 @@
         <div class="card-label">Microsoft</div>
         
             <div class="card-value">
-                
-                    505.41$
-                
+                505.41$
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 9.78 (1.97%)</div>
+             <div class="card-delta up">▲ 9.78 (1.97%)</div>
             
         
     </div>
@@ -494,16 +401,12 @@
         <div class="card-label">Alphabet</div>
         
             <div class="card-value">
-                
-                    349.39$
-                
+                349.39$
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 10.89 (3.22%)</div>
+             <div class="card-delta up">▲ 10.89 (3.22%)</div>
             
         
     </div>
@@ -513,16 +416,12 @@
         <div class="card-label">Amazon</div>
         
             <div class="card-value">
-                
-                    253.54$
-                
+                253.54$
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 3.24 (1.26%)</div>
+             <div class="card-delta down">▼ 3.24 (1.26%)</div>
             
         
     </div>
@@ -532,16 +431,12 @@
         <div class="card-label">NVIDIA</div>
         
             <div class="card-value">
-                
-                    210.96$
-                
+                210.96$
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 7.33 (3.36%)</div>
+             <div class="card-delta down">▼ 7.33 (3.36%)</div>
             
         
     </div>
@@ -551,16 +446,12 @@
         <div class="card-label">Meta</div>
         
             <div class="card-value">
-                
-                    665.60$
-                
+                665.60$
             </div>
             
             
             
-            
-            
-                <div class="card-delta up">▲ 17.57 (2.71%)</div>
+             <div class="card-delta up">▲ 17.57 (2.71%)</div>
             
         
     </div>
@@ -570,16 +461,12 @@
         <div class="card-label">Tesla</div>
         
             <div class="card-value">
-                
-                    358.97$
-                
+                358.97$
             </div>
             
             
             
-            
-            
-                <div class="card-delta down">▼ 6.47 (1.77%)</div>
+             <div class="card-delta down">▼ 6.47 (1.77%)</div>
             
         
     </div>
@@ -592,64 +479,43 @@
             <div class="list-box">
                 
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE9OalYwZFVTWWdjZGp5bnBMZG5wdWUyVElodDlBRWtkNGdNSGxLX2xqdG1kR3pENWJaMi1UODZMWTdJS3RoanphbXlQbzh4amo5c2MtbGtVZzlqR3E4amRoVdIBYEFVX3lxTE9OalYwZFVTWWdjZGp5bnBMZG5wdWUyVElodDlBRWtkNGdNSGxLX2xqdG1kR3pENWJaMi1UODZMWTdJS3RoanphbXlQbzh4amo5c2MtbGtVZzlqR3E4amRoVQ?oc=5" target="_blank" class="news-link">16일 연준 금리결정…워시-트럼프 충돌? - 연합뉴스</a><br>
-                            <span class="news-date">(2026-09-15 02:03)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE9OalYwZFVTWWdjZGp5bnBMZG5wdWUyVElodDlBRWtkNGdNSGxLX2xqdG1kR3pENWJaMi1UODZMWTdJS3RoanphbXlQbzh4amo5c2MtbGtVZzlqR3E4amRoVdIBYEFVX3lxTE9OalYwZFVTWWdjZGp5bnBMZG5wdWUyVElodDlBRWtkNGdNSGxLX2xqdG1kR3pENWJaMi1UODZMWTdJS3RoanphbXlQbzh4amo5c2MtbGtVZzlqR3E4amRoVQ?oc=5" target="_blank" class="news-link">16일 연준 금리결정…워시-트럼프 충돌? - 연합뉴스</a><br><span class="news-date">(2026-09-15 02:03)</span></div>
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE5ITUZkU1BnWmJCUGhnZ3hPeHcwenhJVHVmd0I3cndFU3g5d1ZGSTNMRGpOVExKUWZsejh5Y3ZnclhuSDZ3dWtVNlVaUXAzMm1NX2dxTFhWMlZMQdIBX0FVX3lxTFBQZFhnNmhqWjh3V0gyVjJhWk5GOUIwZGFNc1dXR19JdTVkTkptLTZRYUJJWjFnalBuelBnaVN4MVdqZkxGLS1HYlNWdWRTbTFzYVd3TEZsMVJsajZPVlpJ?oc=5" target="_blank" class="news-link">효성중공업, 미국 빅테크 업체에 3865억원 규모 초고압변압기 공급 - 경향신문</a><br>
-                            <span class="news-date">(2026-09-15 07:19)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE5ITUZkU1BnWmJCUGhnZ3hPeHcwenhJVHVmd0I3cndFU3g5d1ZGSTNMRGpOVExKUWZsejh5Y3ZnclhuSDZ3dWtVNlVaUXAzMm1NX2dxTFhWMlZMQdIBX0FVX3lxTFBQZFhnNmhqWjh3V0gyVjJhWk5GOUIwZGFNc1dXR19JdTVkTkptLTZRYUJJWjFnalBuelBnaVN4MVdqZkxGLS1HYlNWdWRTbTFzYVd3TEZsMVJsajZPVlpJ?oc=5" target="_blank" class="news-link">효성중공업, 미국 빅테크 업체에 3865억원 규모 초고압변압기 공급 - 경향신문</a><br><span class="news-date">(2026-09-15 07:19)</span></div>
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMigwFBVV95cUxOdmRMQlZJd2sySnVSUzdfejlwc2d5ZzlmTVpUYlVwRnIxZ3g1ZGVPVkhKSHNhaWpFb0hjS2FmaHdKRFpPRVJRM2lJZVMxQWRxR1hKOWctNnE4SXUteEFXbldRVU8zREN0bHBPZU1wN0JKajhIRVlNdTdZWFVITGhadUo0Zw?oc=5" target="_blank" class="news-link">&#34;4분기 환율, &#39;재정 부담 대비 금리&#39;가 변수&#34; - 인베스트조선</a><br>
-                            <span class="news-date">(2026-09-15 07:10)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMigwFBVV95cUxOdmRMQlZJd2sySnVSUzdfejlwc2d5ZzlmTVpUYlVwRnIxZ3g1ZGVPVkhKSHNhaWpFb0hjS2FmaHdKRFpPRVJRM2lJZVMxQWRxR1hKOWctNnE4SXUteEFXbldRVU8zREN0bHBPZU1wN0JKajhIRVlNdTdZWFVITGhadUo0Zw?oc=5" target="_blank" class="news-link">&#34;4분기 환율, &#39;재정 부담 대비 금리&#39;가 변수&#34; - 인베스트조선</a><br><span class="news-date">(2026-09-15 07:10)</span></div>
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMiX0FVX3lxTFBDTFpYUFJqYmNOYVpPWUpZUHluZjR4QVRJR3Z5cW9xOUluM2NKMXZtVlNsYlFWQnM1b1NSM0JQTHVwQk9abHdVSGV1aVR6cjVuZ3JkMXBvRnNNTHZIa0lv?oc=5" target="_blank" class="news-link">효성 조현준 회장, 미국 빅테크 뚫었다… 9월에만 3865억원 수주 - 뉴스와이어</a><br>
-                            <span class="news-date">(2026-09-15 05:07)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiX0FVX3lxTFBDTFpYUFJqYmNOYVpPWUpZUHluZjR4QVRJR3Z5cW9xOUluM2NKMXZtVlNsYlFWQnM1b1NSM0JQTHVwQk9abHdVSGV1aVR6cjVuZ3JkMXBvRnNNTHZIa0lv?oc=5" target="_blank" class="news-link">효성 조현준 회장, 미국 빅테크 뚫었다… 9월에만 3865억원 수주 - newswire.co.kr</a><br><span class="news-date">(2026-09-15 05:07)</span></div>
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE1DZzlLU0ltYUNKQ1lKSWZTc1R4N20wQnpfYkVadHlNb0FoeENvamYwQ1gycGx0U1dPcV9lR2pmVzQ3eFVwR1J3Zl9BTGh6bHV6MzUzalhIV2FjWEZfN0l5Qg?oc=5" target="_blank" class="news-link">[환율 전망] 더욱 부담되는 고유가와 장기 금리의 상승 - KB Think</a><br>
-                            <span class="news-date">(2026-09-15 02:25)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE1DZzlLU0ltYUNKQ1lKSWZTc1R4N20wQnpfYkVadHlNb0FoeENvamYwQ1gycGx0U1dPcV9lR2pmVzQ3eFVwR1J3Zl9BTGh6bHV6MzUzalhIV2FjWEZfN0l5Qg?oc=5" target="_blank" class="news-link">[환율 전망] 더욱 부담되는 고유가와 장기 금리의 상승 - KB Think</a><br><span class="news-date">(2026-09-15 02:25)</span></div>
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9vcGYwT2ZNYzcyTWpxWFpHUHBqVkUyVklheHQzbzVUZnh0al9oZ3E4RGdjMWxvald2UDNVc0dPVk92YWxTdm5TM09vNjBlZFNUOFVOVUpMRXRJZlE?oc=5" target="_blank" class="news-link">유가 100달러 이후의 증시…美·日은 긴축하고 中은 부양하고 [글로벌 레이더] - 에너지경제신문</a><br>
-                            <span class="news-date">(2026-09-15 06:33)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9vcGYwT2ZNYzcyTWpxWFpHUHBqVkUyVklheHQzbzVUZnh0al9oZ3E4RGdjMWxvald2UDNVc0dPVk92YWxTdm5TM09vNjBlZFNUOFVOVUpMRXRJZlE?oc=5" target="_blank" class="news-link">유가 100달러 이후의 증시…美·日은 긴축하고 中은 부양하고 [글로벌 레이더] - ekn.kr</a><br><span class="news-date">(2026-09-15 06:33)</span></div>
                     
-                        <div class="news-item">
-                            <a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFB3Q2ozS1dJWkRRMUN3c2tCeWYxTkZQc1puc0owQ3lqRDdObHRsZl9DOGdKVHowN1NIc1d3OWFsWEtjbkh6bzctZUpUNXc3RTZmNEFsTDFTT2V6bktpUnhsN1RfVjNkRDRfUmxLQTFMQUE?oc=5" target="_blank" class="news-link">AI 개발 둔화 우려·연준 회의 앞두고 미국 주가지수 선물 보합 - Investing.com 한국어</a><br>
-                            <span class="news-date">(2026-09-15 00:08)</span>
-                        </div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFB3Q2ozS1dJWkRRMUN3c2tCeWYxTkZQc1puc0owQ3lqRDdObHRsZl9DOGdKVHowN1NIc1d3OWFsWEtjbkh6bzctZUpUNXc3RTZmNEFsTDFTT2V6bktpUnhsN1RfVjNkRDRfUmxLQTFMQUE?oc=5" target="_blank" class="news-link">AI 개발 둔화 우려·연준 회의 앞두고 미국 주가지수 선물 보합 - Investing.com 한국어</a><br><span class="news-date">(2026-09-15 00:08)</span></div>
                     
                 
             </div>
         </div>
         <div>
-            <div class="section-title" style="margin-top:0;">📅 7. 주간 주요 USD 경제 지표</div>
+            <div class="section-title" style="margin-top:0;">📅 7. 주간 주요 달러(USD) 경제 지표</div>
             <div class="list-box">
                 
                     
-                        <div class="cal-item">🔹 🟡 [09월 17일 오전 1:30] 근원 소매판매 (전월대비)</div>
+                        <div class="cal-item">🟡 [09월 17일 오전 1:30] 근원 소매판매 (전월대비)</div>
                     
-                        <div class="cal-item">🔹 🟡 [09월 17일 오전 1:30] 소매판매 (전월대비)</div>
+                        <div class="cal-item">🟡 [09월 17일 오전 1:30] 소매판매 (전월대비)</div>
                     
-                        <div class="cal-item">🔹 🔴 [09월 17일 오전 7:00] 미국 기준금리 결정</div>
+                        <div class="cal-item">🔴 [09월 17일 오전 7:00] 미국 기준금리 결정</div>
                     
-                        <div class="cal-item">🔹 🔴 [09월 17일 오전 7:00] FOMC Economic Projections</div>
+                        <div class="cal-item">🔴 [09월 17일 오전 7:00] FOMC Economic Projections</div>
                     
-                        <div class="cal-item">🔹 🔴 [09월 17일 오전 7:00] FOMC 성명서</div>
+                        <div class="cal-item">🔴 [09월 17일 오전 7:00] FOMC 성명서</div>
                     
-                        <div class="cal-item">🔹 🔴 [09월 17일 오전 7:30] FOMC 기자회견</div>
+                        <div class="cal-item">🔴 [09월 17일 오전 7:30] FOMC 기자회견</div>
                     
-                        <div class="cal-item">🔹 🟡 [09월 18일 오전 1:30] Philly Fed Manufacturing Index</div>
+                        <div class="cal-item">🟡 [09월 18일 오전 1:30] Philly Fed Manufacturing Index</div>
                     
-                        <div class="cal-item">🔹 🟡 [09월 18일 오전 1:30] 신규 실업수당 청구건수</div>
+                        <div class="cal-item">🟡 [09월 18일 오전 1:30] 신규 실업수당 청구건수</div>
                     
                 
             </div>
