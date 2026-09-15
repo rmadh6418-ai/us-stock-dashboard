@@ -133,17 +133,29 @@ def get_economic_calendar():
             country = event.find('country')
             impact = event.find('impact')
             
-            # 미국(USD) 지표 중 중요도가 'High'(높음)인 것만 선별
-            if country is not None and country.text == 'USD':
-                if impact is not None and impact.text == 'High':
+            # 미국(USD) 지표만 필터링
+            if country is not None and country.text is not None and 'USD' in country.text:
+                imp = impact.text.strip() if impact is not None and impact.text else ""
+                
+                # High(상) 와 Medium(중) 중요도 지표 모두 가져오도록 조건 완화
+                if imp in ['High', 'Medium']:
                     title = event.find('title').text
                     date = event.find('date').text
                     time_str = event.find('time').text
-                    events.append({"title": f"[{date} {time_str}] {title}"})
                     
+                    # 중요도에 따라 이모지 구분 (High는 빨간색, Medium은 노란색)
+                    icon = "🔴" if imp == 'High' else "🟡"
+                    events.append({"title": f"{icon} [{date} {time_str}] {title}"})
+                    
+        # 만약 이번 주에 High/Medium 지표가 정말 하나도 없다면?
+        if not events:
+            return [{"title": "이번 주 남은 주요(High/Medium) 달러(USD) 지표가 없습니다."}]
+            
         return events
-    except:
-        return []
+        
+    except Exception as e:
+        # 에러 발생 시 대시보드 화면에 에러 원인을 직접 출력하여 힌트 얻기
+        return [{"title": f"⚠️ 데이터를 불러오지 못했습니다. (원인: {str(e)})"}]
 
 # --- 메모리 캐시 (로딩 속도 개선) ---
 CACHE = {}
