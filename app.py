@@ -289,7 +289,47 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body>
+<!-- 🔐 비밀번호 잠금 화면 시작 -->
+<div id="lock-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f3f4f6; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: #111827; font-weight: 800;">🔒 대시보드 잠금</h2>
+        <input type="password" id="pw-input" placeholder="비밀번호를 입력하세요" style="width: 100%; box-sizing: border-box; padding: 12px; font-size: 1.1rem; border: 1.5px solid #d1d5db; border-radius: 8px; margin-bottom: 15px; outline: none; text-align: center;">
+        <button onclick="checkPassword()" style="width: 100%; padding: 12px; font-size: 1.1rem; background-color: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">입장하기</button>
+        <p id="pw-error" style="color: #ef4444; margin-top: 15px; font-weight: 600; display: none;">비밀번호가 틀렸습니다.</p>
+    </div>
+</div>
 
+<script>
+    // 💡 여기에 원하는 비밀번호를 설정하세요! (현재는 1234)
+    const SECRET_PASSWORD = "4203";
+
+    function checkPassword() {
+        const input = document.getElementById('pw-input').value;
+        if (input === SECRET_PASSWORD) {
+            // 비밀번호가 맞으면 잠금 화면을 숨김
+            document.getElementById('lock-screen').style.display = 'none';
+            // 창을 닫기 전까지 로그인 상태 유지
+            sessionStorage.setItem('isUnlocked', 'true');
+        } else {
+            // 비밀번호가 틀리면 에러 메시지 표시
+            document.getElementById('pw-error').style.display = 'block';
+        }
+    }
+
+    // 페이지 접속 시 로그인 상태인지 확인
+    window.onload = function() {
+        if (sessionStorage.getItem('isUnlocked') === 'true') {
+            document.getElementById('lock-screen').style.display = 'none';
+        }
+        // 엔터키만 눌러도 확인 버튼이 눌리도록 설정
+        document.getElementById('pw-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    }
+</script>
+<!-- 🔐 비밀번호 잠금 화면 끝 -->
 {% macro render_metric(label, data_obj, is_int=False, suffix='') %}
     <div class="card">
         <div class="card-label">{{ label }}</div>
