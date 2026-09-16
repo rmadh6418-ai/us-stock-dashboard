@@ -39,14 +39,22 @@ def get_briefing_data():
     except:
         data_text += "✔️ 지수/환율: 조회 실패\n"
         
-    try:
-        scraper = cloudscraper.create_scraper()
+try:
         url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-        headers = {"User-Agent": "Mozilla/5.0", "Referer": "https://edition.cnn.com/"}
-        res = scraper.get(url, headers=headers, timeout=10).json()
-        data_text += f"✔️ 공포탐욕지수: {int(res['fear_and_greed']['score'])} ({res['fear_and_greed']['rating']})\n"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://edition.cnn.com",
+            "Referer": "https://edition.cnn.com/"
+        }
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            data_text += f"✔ 공포탐욕지수: {int(data['fear_and_greed']['score'])} ({data['fear_and_greed']['rating']})\n"
+        else:
+            data_text += "✔ 공포탐욕지수: 조회 실패\n"
     except:
-        data_text += "✔️ 공포탐욕지수: 조회 실패\n"
+        data_text += "✔ 공포탐욕지수: 조회 실패\n"
         
     data_text += "\n오늘도 성공적인 투자 되세요!"
     return data_text
