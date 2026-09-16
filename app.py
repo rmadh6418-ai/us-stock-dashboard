@@ -168,8 +168,9 @@ def get_economic_calendar():
                     title_eng, date_str, time_str = event.find('title').text, event.find('date').text, event.find('time').text
                     try:
                         if 'am' in time_str.lower() or 'pm' in time_str.lower():
-                            et_dt = datetime.strptime(f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p").replace(tzinfo=ZoneInfo("America/New_York"))
-                            kst_dt = et_dt.astimezone(ZoneInfo("Asia/Seoul"))
+                            # 💡 America/New_York 을 UTC 로 변경했습니다!
+                            utc_dt = datetime.strptime(f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p").replace(tzinfo=ZoneInfo("UTC"))
+                            kst_dt = utc_dt.astimezone(ZoneInfo("Asia/Seoul"))
                             kst_date = kst_dt.strftime("%m월 %d일")
                             kst_time = f"{'오전' if kst_dt.hour < 12 else '오후'} {kst_dt.hour % 12 or 12}:{kst_dt.minute:02d}"
                         else:
@@ -183,7 +184,7 @@ def get_economic_calendar():
         return events if events else [{"title": "이번 주 남은 주요 달러(USD) 지표가 없습니다."}]
     except Exception as e:
         return [{"title": f"⚠️ 데이터를 불러오지 못했습니다. (원인: {str(e)})"}]
-
+        
 # --- [ AI 요약 분석 함수 ] ---
 def get_ai_summary(data):
     api_key = os.environ.get("GEMINI_API_KEY")
