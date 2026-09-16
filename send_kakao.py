@@ -39,7 +39,7 @@ def get_briefing_data():
     except:
         data_text += "✔️ 지수/환율: 조회 실패\n"
         
-try:
+    try:
         url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
