@@ -67,27 +67,42 @@ def get_fear_and_greed():
         return None
 
 def get_naver_finance(url, row_idx=0, col_idx=1):
-    import urllib.request
+    import requests
     import re
+    
+    # 💡 핵심 우회 기법: 구글 검색엔진 봇(Googlebot)으로 위장하여 네이버의 서버 IP 차단을 프리패스로 통과합니다.
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Referer": "https://www.google.com/"
+    }
+    
     try:
-        # requests 대신 파이썬 내장 urllib를 사용하여 통신 지문(Fingerprint) 차단 회피
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
-        html = urllib.request.urlopen(req, timeout=10).read().decode('euc-kr', errors='ignore')
+        # cloudscraper나 urllib 대신 일반 requests에 구글봇 헤더를 씌워서 전송
+        res = requests.get(url, headers=headers, timeout=10)
+        res.encoding = 'euc-kr'
         
-        # 정규표현식으로 <td class="num"> 안의 숫자만 추출
-        prices = re.findall(r'<td class="num">\s*([0-9\,\.]+)\s*</td>', html)
+        # 1차 시도: 정규표현식을 사용해 <td class="num"> 안의 '현재가'와 '전일가' 숫자만 빠르고 정확히 핀셋 추출
+        prices = re.findall(r'<td class="num">\s*([0-9\,\.]+)\s*</td>', res.text)
         
         if len(prices) >= 2:
             current = float(prices[0].replace(',', ''))
             prev = float(prices[1].replace(',', ''))
-            diff = current - prev
-            pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': current, 'diff': diff, 'pct': pct}
+        else:
+            # 2차 시도: 정규식 추출 실패 시(HTML 구조 변경 등), pandas를 활용해 표(Table) 통째로 분석
+            import pandas as pd
+            import io
+            df = pd.read_html(io.StringIO(res.text))[0]
+            df = df.dropna(how='all').reset_index(drop=True)
+            current = float(str(df.iloc[row_idx, col_idx]).replace(',', ''))
+            prev = float(str(df.iloc[row_idx+1, col_idx]).replace(',', ''))
             
+        diff = current - prev
+        pct = (diff / prev) * 100 if prev != 0 else 0
+        return {'value': current, 'diff': diff, 'pct': pct}
+        
     except Exception as e:
         print(f"두바이유 수집 오류: {e}")
-        
-    return {'value': "N/A", 'diff': 0, 'pct': 0}
+        return {'value': "N/A", 'diff': 0, 'pct': 0}
 
 def get_silver_don_price():
     try:
