@@ -67,24 +67,15 @@ def get_fear_and_greed():
         return None
 
 def get_naver_finance(url, row_idx=0, col_idx=1):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Referer": "https://finance.naver.com/"
-    }
+    import urllib.request
+    import re
     try:
-        import re
+        # requests 대신 파이썬 내장 urllib를 사용하여 통신 지문(Fingerprint) 차단 회피
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        html = urllib.request.urlopen(req, timeout=10).read().decode('euc-kr', errors='ignore')
         
-        # 1. 클라우드스크래퍼 통신 지연 시 일반 requests로 즉시 재시도하여 안정성 확보
-        try:
-            res = scraper.get(url, headers=headers, timeout=10)
-        except:
-            res = requests.get(url, headers=headers, timeout=10)
-            
-        res.encoding = 'euc-kr'
-        
-        # 2. 정규표현식을 사용해 <td class="num"> 안의 '숫자와 소수점'만 완벽하게 추출
-        # (등락률 기호나 화살표 아이콘(img)이 있는 셀은 자동으로 필터링 됨)
-        prices = re.findall(r'<td class="num">\s*([0-9\,\.]+)\s*</td>', res.text)
+        # 정규표현식으로 <td class="num"> 안의 숫자만 추출
+        prices = re.findall(r'<td class="num">\s*([0-9\,\.]+)\s*</td>', html)
         
         if len(prices) >= 2:
             current = float(prices[0].replace(',', ''))
@@ -94,7 +85,7 @@ def get_naver_finance(url, row_idx=0, col_idx=1):
             return {'value': current, 'diff': diff, 'pct': pct}
             
     except Exception as e:
-        print(f"네이버 금융 데이터 수집 오류: {e}") 
+        print(f"두바이유 수집 오류: {e}")
         
     return {'value': "N/A", 'diff': 0, 'pct': 0}
 
