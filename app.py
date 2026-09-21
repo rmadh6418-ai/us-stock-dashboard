@@ -67,39 +67,29 @@ def get_fear_and_greed():
         return None
 
 def get_naver_finance(url, row_idx=0, col_idx=1):
-    import requests
-    import re
-    
-    # 💡 핵심 우회 기법: 구글 검색엔진 봇(Googlebot)으로 위장하여 네이버의 서버 IP 차단을 프리패스로 통과합니다.
-    headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-        "Referer": "https://www.google.com/"
-    }
+    import pandas as pd
+    import io
     
     try:
-        # cloudscraper나 urllib 대신 일반 requests에 구글봇 헤더를 씌워서 전송
-        res = requests.get(url, headers=headers, timeout=10)
+        # 💡 구글봇 위장 대신 cloudscraper로 우회하여 차단 방지
+        res = scraper.get(url, timeout=10)
         res.encoding = 'euc-kr'
         
-        # 1차 시도: 정규표현식을 사용해 <td class="num"> 안의 '현재가'와 '전일가' 숫자만 빠르고 정확히 핀셋 추출
-        prices = re.findall(r'<td class="num">\s*([0-9\,\.]+)\s*</td>', res.text)
-        
-        if len(prices) >= 2:
-            current = float(prices[0].replace(',', ''))
-            prev = float(prices[1].replace(',', ''))
-        else:
-            # 2차 시도: 정규식 추출 실패 시(HTML 구조 변경 등), pandas를 활용해 표(Table) 통째로 분석
-            import pandas as pd
-            import io
-            df = pd.read_html(io.StringIO(res.text))[0]
-            df = df.dropna(how='all').reset_index(drop=True)
+        # HTML 구조를 pandas 데이터프레임으로 직관적으로 변환
+        dfs = pd.read_html(io.StringIO(res.text))
+        if dfs:
+            df = dfs[0].dropna(how='all').reset_index(drop=True)
+            
+            # 현재가와 전일가 추출
             current = float(str(df.iloc[row_idx, col_idx]).replace(',', ''))
             prev = float(str(df.iloc[row_idx+1, col_idx]).replace(',', ''))
             
-        diff = current - prev
-        pct = (diff / prev) * 100 if prev != 0 else 0
-        return {'value': current, 'diff': diff, 'pct': pct}
-        
+            diff = current - prev
+            pct = (diff / prev) * 100 if prev != 0 else 0
+            return {'value': current, 'diff': diff, 'pct': pct}
+        else:
+            return {'value': "N/A", 'diff': 0, 'pct': 0}
+            
     except Exception as e:
         print(f"두바이유 수집 오류: {e}")
         return {'value': "N/A", 'diff': 0, 'pct': 0}
@@ -192,7 +182,6 @@ def get_economic_calendar():
                     title_eng, date_str, time_str = event.find('title').text, event.find('date').text, event.find('time').text
                     try:
                         if 'am' in time_str.lower() or 'pm' in time_str.lower():
-                            # 💡 America/New_York 을 UTC 로 변경했습니다!
                             utc_dt = datetime.strptime(f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p").replace(tzinfo=ZoneInfo("UTC"))
                             kst_dt = utc_dt.astimezone(ZoneInfo("Asia/Seoul"))
                             kst_date = kst_dt.strftime("%m월 %d일")
@@ -217,7 +206,6 @@ def get_ai_summary(data):
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3.6-flash')
         
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
@@ -235,10 +223,24 @@ def get_ai_summary(data):
         - 연준 순유동성(Net Liquidity): {fed_net}
         - 연준 역레포 잔액(ON RRP): {fed_rrp}
         """
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        
+        # 💡 모델 폴백 리스트 설정 (순차적으로 시도)
+        models_to_try = ['gemini-3.6-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-pro']
+        
+        for model_name in models_to_try:
+            try:
+                print(f"🤖 {model_name} 모델로 분석 시도 중...")
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                return response.text.strip()
+            except Exception as e:
+                print(f"⚠️ {model_name} 실패: {e}")
+                continue
+                
+        return "⚠️ AI 분석 중 오류가 발생했습니다. (모든 모델 시도 실패)"
+        
     except Exception as e:
-        return f"⚠️ AI 분석 중 오류가 발생했습니다: {e}"
+        return f"⚠️ AI 설정 중 오류가 발생했습니다: {e}"
 
 # --- 메모리 캐시 ---
 CACHE = {}
@@ -256,7 +258,6 @@ def get_dashboard_data():
         'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
         
-        # 💡 M7에서 주요 빅테크 및 관심 종목 12개로 확장!
         'bigtech': fetch_yfinance_data({
             'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA',
             'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY'
@@ -325,28 +326,23 @@ HTML_TEMPLATE = """
 </div>
 
 <script>
-    // 💡 여기에 원하는 비밀번호를 설정하세요! (현재는 1234)
+    // 💡 여기에 원하는 비밀번호를 설정하세요!
     const SECRET_PASSWORD = "4203";
 
     function checkPassword() {
         const input = document.getElementById('pw-input').value;
         if (input === SECRET_PASSWORD) {
-            // 비밀번호가 맞으면 잠금 화면을 숨김
             document.getElementById('lock-screen').style.display = 'none';
-            // 창을 닫기 전까지 로그인 상태 유지
             sessionStorage.setItem('isUnlocked', 'true');
         } else {
-            // 비밀번호가 틀리면 에러 메시지 표시
             document.getElementById('pw-error').style.display = 'block';
         }
     }
 
-    // 페이지 접속 시 로그인 상태인지 확인
     window.onload = function() {
         if (sessionStorage.getItem('isUnlocked') === 'true') {
             document.getElementById('lock-screen').style.display = 'none';
         }
-        // 엔터키만 눌러도 확인 버튼이 눌리도록 설정
         document.getElementById('pw-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 checkPassword();
@@ -433,7 +429,6 @@ HTML_TEMPLATE = """
     </div>
     {% endif %}
 
-    <!-- 💡 섹션 이름 변경 및 추가된 12개 종목 반영 -->
     <div class="section-title">💻 5. 주요 빅테크 및 관심 종목 동향</div>
     <div class="grid">
         {{ render_metric('Apple', data.bigtech['Apple'], False, '$') }}
