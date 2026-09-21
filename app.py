@@ -13,6 +13,7 @@ import cloudscraper
 import google.generativeai as genai
 import os
 import xml.etree.ElementTree as ET
+import re
 
 # --- SSL 우회 및 클라우드스크래퍼 ---
 try:
@@ -66,24 +67,19 @@ def get_fear_and_greed():
     except:
         return None
 
-def get_naver_finance(url, row_idx=0, col_idx=1):
-    import pandas as pd
-    import io
-    
+def get_naver_finance(url):
+    # 💡 pandas 의존도를 없애고(라이브러리 미설치 오류 방지), 
+    # 네이버 구조에 맞는 정밀한 정규표현식으로 종가 데이터만 추출합니다.
     try:
-        # 💡 구글봇 위장 대신 cloudscraper로 우회하여 차단 방지
         res = scraper.get(url, timeout=10)
         res.encoding = 'euc-kr'
         
-        # HTML 구조를 pandas 데이터프레임으로 직관적으로 변환
-        dfs = pd.read_html(io.StringIO(res.text))
-        if dfs:
-            df = dfs[0].dropna(how='all').reset_index(drop=True)
-            
-            # 현재가와 전일가 추출
-            current = float(str(df.iloc[row_idx, col_idx]).replace(',', ''))
-            prev = float(str(df.iloc[row_idx+1, col_idx]).replace(',', ''))
-            
+        # <td class="date"> 날짜 </td> 다음으로 오는 <td class="num"> 숫자 </td> 를 추출
+        matches = re.findall(r'<td class="date">.*?</td>\s*<td class="num">.*?([0-9\.]+).*?</td>', res.text, re.DOTALL | re.IGNORECASE)
+        
+        if len(matches) >= 2:
+            current = float(matches[0])
+            prev = float(matches[1])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
             return {'value': current, 'diff': diff, 'pct': pct}
@@ -224,8 +220,9 @@ def get_ai_summary(data):
         - 연준 역레포 잔액(ON RRP): {fed_rrp}
         """
         
-        # 💡 모델 폴백 리스트 설정 (순차적으로 시도)
-        models_to_try = ['gemini-3.6-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-pro']
+        # 💡 실제 스튜디오에 있는 모델 목록으로 정확히 매칭 및 속도제한 방지 Sleep 추가
+        models_to_try = ['gemini-3.6-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
+        last_error = ""
         
         for model_name in models_to_try:
             try:
@@ -235,9 +232,12 @@ def get_ai_summary(data):
                 return response.text.strip()
             except Exception as e:
                 print(f"⚠️ {model_name} 실패: {e}")
+                last_error = str(e)
+                time.sleep(2.0) # 💡 연쇄적인 API 속도 제한(429 Error) 방지를 위해 2초간 대기
                 continue
                 
-        return "⚠️ AI 분석 중 오류가 발생했습니다. (모든 모델 시도 실패)"
+        # 모든 모델 실패 시, 실패 사유를 대시보드 화면에 그대로 출력하여 원인을 즉시 파악할 수 있게 개선
+        return f"⚠️ AI 분석 실패 (사유: {last_error})"
         
     except Exception as e:
         return f"⚠️ AI 설정 중 오류가 발생했습니다: {e}"
