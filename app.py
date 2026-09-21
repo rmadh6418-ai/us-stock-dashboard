@@ -366,7 +366,7 @@ HTML_TEMPLATE = """
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
 
-    <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
+    <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 핵심 증시 요약</div>
     <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
         <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">{{ data.ai_summary }}</p>
     </div>
