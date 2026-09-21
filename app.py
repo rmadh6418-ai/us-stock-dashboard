@@ -67,17 +67,31 @@ def get_fear_and_greed():
         return None
 
 def get_naver_finance(url, row_idx=0, col_idx=1):
-    headers = {"User-Agent": "Mozilla/5.0"}
+    # 1. 봇 차단을 피하기 위해 실제 브라우저와 유사한 헤더(User-Agent, Referer) 적용
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Referer": "https://finance.naver.com/"
+    }
     try:
-        res = requests.get(url, headers=headers, timeout=5)
+        # 2. 일반 requests 대신 상단에서 선언한 scraper(cloudscraper)를 사용하여 차단 우회
+        res = scraper.get(url, headers=headers, timeout=10)
         res.encoding = 'euc-kr'
+        
         df = pd.read_html(io.StringIO(res.text))[0]
+        
+        # 3. 네이버 금융 표 내부의 디자인용 빈 줄(<tr class="blank">)이 NaN으로 인식되는 것 제거
+        df = df.dropna(how='all').reset_index(drop=True)
+        
+        # 4. 값 추출
         current = float(str(df.iloc[row_idx, col_idx]).replace(',', ''))
         prev = float(str(df.iloc[row_idx+1, col_idx]).replace(',', ''))
+        
         diff = current - prev
         pct = (diff / prev) * 100 if prev != 0 else 0
         return {'value': current, 'diff': diff, 'pct': pct}
-    except:
+        
+    except Exception as e:
+        print(f"네이버 금융 데이터 수집 오류: {e}") # 깃허브 액션 로그 확인용
         return {'value': "N/A", 'diff': 0, 'pct': 0}
 
 def get_silver_don_price():
