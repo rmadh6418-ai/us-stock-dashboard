@@ -67,53 +67,6 @@ def get_fear_and_greed():
     except:
         return None
 
-def get_naver_finance(url):
-    import requests
-    import re
-    
-    # 💡 cloudscraper 대신 일반 크롬 브라우저와 완벽히 동일한 헤더를 사용하여 차단을 방지합니다.
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Referer": "https://finance.naver.com/"
-    }
-    
-    try:
-        res = requests.get(url, headers=headers, timeout=10)
-        res.encoding = 'euc-kr'
-        
-        # 1. HTML에서 <tr>(표의 행) 단위로 모두 분리합니다.
-        rows = re.findall(r'<tr.*?>(.*?)</tr>', res.text, re.DOTALL | re.IGNORECASE)
-        
-        prices = []
-        for row in rows:
-            # 2. 각 행 안에서 <td class="num"> 데이터 모음을 추출합니다.
-            cols = re.findall(r'<td class="num">(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
-            
-            if cols:
-                # 3. 첫 번째 컬럼이 항상 '종가'입니다. 내부에 섞인 HTML 태그를 깔끔하게 지웁니다.
-                val_str = re.sub(r'<[^>]+>', '', cols[0]).strip()
-                # 4. 숫자와 소수점(.)을 제외한 쉼표(,) 등은 모두 날려버립니다.
-                val_str = re.sub(r'[^0-9\.]', '', val_str)
-                
-                if val_str:
-                    prices.append(float(val_str))
-        
-        # 5. 오늘 종가와 어제 종가가 모두 확보되었다면 계산해서 넘겨줍니다.
-        if len(prices) >= 2:
-            current = prices[0]
-            prev = prices[1]
-            diff = current - prev
-            pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': current, 'diff': diff, 'pct': pct}
-        else:
-            print("두바이유 수집 실패: 가격 데이터를 찾을 수 없습니다.")
-            return {'value': "N/A", 'diff': 0, 'pct': 0}
-            
-    except Exception as e:
-        print(f"두바이유 네트워크 통신 오류: {e}")
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
-
 def get_silver_don_price():
     try:
         si = yf.Ticker("SI=F").history(period="5d")['Close'].dropna()
@@ -135,6 +88,21 @@ def get_gold_don_price():
         if len(gc) >= 2 and len(krw) >= 2:
             current = (float(gc.iloc[-1]) / 31.1034768) * 3.75 * float(krw.iloc[-1])
             prev = (float(gc.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
+            diff = current - prev
+            pct = (diff / prev) * 100 if prev != 0 else 0
+            return {'value': int(current), 'diff': int(diff), 'pct': pct}
+        return {'value': "N/A", 'diff': 0, 'pct': 0}
+    except:
+        return {'value': "N/A", 'diff': 0, 'pct': 0}
+
+def get_copper_krw_price():
+    # COMEX 구리 선물(HG=F)은 파운드(lb) 당 달러로 표기됩니다. 여기에 환율을 곱해 원/lb로 반환합니다.
+    try:
+        hg = yf.Ticker("HG=F").history(period="5d")['Close'].dropna()
+        krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
+        if len(hg) >= 2 and len(krw) >= 2:
+            current = float(hg.iloc[-1]) * float(krw.iloc[-1])
+            prev = float(hg.iloc[-2]) * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
             return {'value': int(current), 'diff': int(diff), 'pct': pct}
@@ -231,7 +199,7 @@ def get_ai_summary(data):
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         
         prompt = f"""
-        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서 코스피,코스닥과 연관지어서 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 명확하게 요약해줘.
+        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서 코스피, 코스닥과 연관지어서 한국 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 명확하게 요약해줘.
         
         [오늘의 데이터]
         - S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -275,14 +243,16 @@ def get_dashboard_data():
         'macros': fetch_yfinance_data({'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'}),
         'cnn': get_fear_and_greed(),
         'commodities': fetch_yfinance_data({'WTI유': 'CL=F', '브렌트유': 'BZ=F'}),
-        'dubai': get_naver_finance("https://finance.naver.com/marketindex/worldDailyQuote.naver?marketindexCd=OIL_DU&fdtc=2"),
+        'copper': get_copper_krw_price(), # 💡 추가된 구리 가격 데이터
         'silver': get_silver_don_price(),
         'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
         
+        # 💡 추가된 6종목 포함 총 18개 관심 종목
         'bigtech': fetch_yfinance_data({
             'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA',
-            'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY'
+            'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY',
+            'AMD': 'AMD', '뉴스케일파워': 'SMR', '엑슨모빌': 'XOM', 'GE버노바': 'GEV', '크라우드스트라이크': 'CRWD', '인텔': 'INTC'
         }),
         'news': get_google_news(),
         'calendar': get_economic_calendar()
@@ -436,7 +406,7 @@ HTML_TEMPLATE = """
     <div class="grid">
         {{ render_metric('WTI유 ($/bbl)', data.commodities['WTI유']) }}
         {{ render_metric('브렌트유 ($/bbl)', data.commodities['브렌트유']) }}
-        {{ render_metric('두바이유 ($/bbl)', data.dubai) }}
+        {{ render_metric('구리 가격 (lb)', data.copper, True, '원') }}
         {{ render_metric('국내 금시세 (1돈)', data.gold, True, '원') }}
         {{ render_metric('국내 은시세 (1돈)', data.silver, True, '원') }}
     </div>
@@ -465,6 +435,12 @@ HTML_TEMPLATE = """
         {{ render_metric('Oracle', data.bigtech['Oracle'], False, '$') }}
         {{ render_metric('Palantir', data.bigtech['Palantir'], False, '$') }}
         {{ render_metric('Eli Lilly', data.bigtech['Eli Lilly'], False, '$') }}
+        {{ render_metric('AMD', data.bigtech['AMD'], False, '$') }}
+        {{ render_metric('뉴스케일파워', data.bigtech['뉴스케일파워'], False, '$') }}
+        {{ render_metric('엑슨모빌', data.bigtech['엑슨모빌'], False, '$') }}
+        {{ render_metric('GE버노바', data.bigtech['GE버노바'], False, '$') }}
+        {{ render_metric('크라우드스트라이크', data.bigtech['크라우드스트라이크'], False, '$') }}
+        {{ render_metric('인텔', data.bigtech['인텔'], False, '$') }}
     </div>
 
     <div class="dual-grid">
