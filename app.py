@@ -68,18 +68,17 @@ def get_fear_and_greed():
         return None
 
 def get_naver_finance(url):
-    # 💡 pandas 의존도를 없애고(라이브러리 미설치 오류 방지), 
-    # 네이버 구조에 맞는 정밀한 정규표현식으로 종가 데이터만 추출합니다.
     try:
         res = scraper.get(url, timeout=10)
         res.encoding = 'euc-kr'
         
-        # <td class="date"> 날짜 </td> 다음으로 오는 <td class="num"> 숫자 </td> 를 추출
-        matches = re.findall(r'<td class="date">.*?</td>\s*<td class="num">.*?([0-9\.]+).*?</td>', res.text, re.DOTALL | re.IGNORECASE)
+        # 💡 수정된 정규식: <td class="num"> 안에 순수하게 '숫자.숫자' 형태만 있는 데이터('종가')만 추출합니다.
+        # 전일대비나 등락률 셀은 내부에 <img> 태그나 % 기호가 있어 자동으로 걸러집니다.
+        matches = re.findall(r'<td class="num">\s*([0-9\,]+\.[0-9]+)\s*</td>', res.text)
         
         if len(matches) >= 2:
-            current = float(matches[0])
-            prev = float(matches[1])
+            current = float(matches[0].replace(',', ''))
+            prev = float(matches[1].replace(',', ''))
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
             return {'value': current, 'diff': diff, 'pct': pct}
@@ -220,7 +219,6 @@ def get_ai_summary(data):
         - 연준 역레포 잔액(ON RRP): {fed_rrp}
         """
         
-        # 💡 실제 스튜디오에 있는 모델 목록으로 정확히 매칭 및 속도제한 방지 Sleep 추가
         models_to_try = ['gemini-3.6-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
         last_error = ""
         
@@ -233,10 +231,9 @@ def get_ai_summary(data):
             except Exception as e:
                 print(f"⚠️ {model_name} 실패: {e}")
                 last_error = str(e)
-                time.sleep(2.0) # 💡 연쇄적인 API 속도 제한(429 Error) 방지를 위해 2초간 대기
+                time.sleep(2.0)
                 continue
                 
-        # 모든 모델 실패 시, 실패 사유를 대시보드 화면에 그대로 출력하여 원인을 즉시 파악할 수 있게 개선
         return f"⚠️ AI 분석 실패 (사유: {last_error})"
         
     except Exception as e:
