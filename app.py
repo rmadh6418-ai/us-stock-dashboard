@@ -96,7 +96,6 @@ def get_gold_don_price():
         return {'value': "N/A", 'diff': 0, 'pct': 0}
 
 def get_copper_krw_price():
-    # COMEX 구리 선물(HG=F)은 파운드(lb) 당 달러로 표기됩니다. 여기에 환율을 곱해 원/lb로 반환합니다.
     try:
         hg = yf.Ticker("HG=F").history(period="5d")['Close'].dropna()
         krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
@@ -199,7 +198,7 @@ def get_ai_summary(data):
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         
         prompt = f"""
-        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서 코스피, 코스닥과 연관지어서 한국 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 명확하게 요약해줘.
+        너는 월스트리트 최고의 금융 애널리스트야. 아래 수집된 오늘 미국 증시 데이터를 분석해서, 투자자들이 오늘 아침 반드시 알아야 할 '핵심 흐름과 포인트'를 딱 3줄로 명확하게 요약해줘. (한국어로 작성하고 1., 2., 3. 번호 붙여서 작성)
         
         [오늘의 데이터]
         - S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -212,7 +211,8 @@ def get_ai_summary(data):
         - 연준 역레포 잔액(ON RRP): {fed_rrp}
         """
         
-        models_to_try = ['gemini-3.6-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
+        # 💡 에러 권고안에 따라 단종된 2.5-flash-lite 제거 및 gemini-3.5-flash-lite 추가
+        models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash', 'gemini-2.5-flash']
         last_error = ""
         
         for model_name in models_to_try:
@@ -243,12 +243,11 @@ def get_dashboard_data():
         'macros': fetch_yfinance_data({'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'}),
         'cnn': get_fear_and_greed(),
         'commodities': fetch_yfinance_data({'WTI유': 'CL=F', '브렌트유': 'BZ=F'}),
-        'copper': get_copper_krw_price(), # 💡 추가된 구리 가격 데이터
+        'copper': get_copper_krw_price(),
         'silver': get_silver_don_price(),
         'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
         
-        # 💡 추가된 6종목 포함 총 18개 관심 종목
         'bigtech': fetch_yfinance_data({
             'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA',
             'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY',
@@ -366,7 +365,7 @@ HTML_TEMPLATE = """
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
 
-    <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 핵심 증시 요약</div>
+    <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
         <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">{{ data.ai_summary }}</p>
     </div>
