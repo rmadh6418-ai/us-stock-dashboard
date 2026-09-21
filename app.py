@@ -67,32 +67,36 @@ def get_fear_and_greed():
         return None
 
 def get_naver_finance(url, row_idx=0, col_idx=1):
-    # 1. 봇 차단을 피하기 위해 실제 브라우저와 유사한 헤더(User-Agent, Referer) 적용
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Referer": "https://finance.naver.com/"
     }
     try:
-        # 2. 일반 requests 대신 상단에서 선언한 scraper(cloudscraper)를 사용하여 차단 우회
-        res = scraper.get(url, headers=headers, timeout=10)
+        import re
+        
+        # 1. 클라우드스크래퍼 통신 지연 시 일반 requests로 즉시 재시도하여 안정성 확보
+        try:
+            res = scraper.get(url, headers=headers, timeout=10)
+        except:
+            res = requests.get(url, headers=headers, timeout=10)
+            
         res.encoding = 'euc-kr'
         
-        df = pd.read_html(io.StringIO(res.text))[0]
+        # 2. 정규표현식을 사용해 <td class="num"> 안의 '숫자와 소수점'만 완벽하게 추출
+        # (등락률 기호나 화살표 아이콘(img)이 있는 셀은 자동으로 필터링 됨)
+        prices = re.findall(r'<td class="num">\s*([0-9\,\.]+)\s*</td>', res.text)
         
-        # 3. 네이버 금융 표 내부의 디자인용 빈 줄(<tr class="blank">)이 NaN으로 인식되는 것 제거
-        df = df.dropna(how='all').reset_index(drop=True)
-        
-        # 4. 값 추출
-        current = float(str(df.iloc[row_idx, col_idx]).replace(',', ''))
-        prev = float(str(df.iloc[row_idx+1, col_idx]).replace(',', ''))
-        
-        diff = current - prev
-        pct = (diff / prev) * 100 if prev != 0 else 0
-        return {'value': current, 'diff': diff, 'pct': pct}
-        
+        if len(prices) >= 2:
+            current = float(prices[0].replace(',', ''))
+            prev = float(prices[1].replace(',', ''))
+            diff = current - prev
+            pct = (diff / prev) * 100 if prev != 0 else 0
+            return {'value': current, 'diff': diff, 'pct': pct}
+            
     except Exception as e:
-        print(f"네이버 금융 데이터 수집 오류: {e}") # 깃허브 액션 로그 확인용
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+        print(f"네이버 금융 데이터 수집 오류: {e}") 
+        
+    return {'value': "N/A", 'diff': 0, 'pct': 0}
 
 def get_silver_don_price():
     try:
