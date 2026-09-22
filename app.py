@@ -212,7 +212,7 @@ def get_ai_summary(data):
         """
         
         # 💡 에러 권고안에 따라 단종된 2.5-flash-lite 제거 및 gemini-3.5-flash-lite 추가
-        models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash', 'gemini-2.5-flash']
+        models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash']
         last_error = ""
         
         for model_name in models_to_try:
