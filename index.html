@@ -50,12 +50,26 @@
 </div>
 
 <script>
-    // 💡 여기에 원하는 비밀번호를 설정하세요!
-    const SECRET_PASSWORD = "4203";
-
     function checkPassword() {
         const input = document.getElementById('pw-input').value;
-        if (input === SECRET_PASSWORD) {
+        
+        // 비트연산(XOR)을 활용한 비밀번호 검증 (원본 비밀번호 노출 방지)
+        // 0x1e, 0x18, 0x1a, 0x19는 각각 인코딩된 숫자 배열입니다.
+        const _hash = [0x1e, 0x18, 0x1a, 0x19]; 
+        const _k = 0x2a; // XOR 연산 키 값
+
+        let isAuth = (input.length === _hash.length);
+        if (isAuth) {
+            for (let i = 0; i < _hash.length; i++) {
+                // 입력받은 문자의 ASCII 코드를 키 값(_k)과 비트 연산(^)하여 검증
+                if ((input.charCodeAt(i) ^ _k) !== _hash[i]) {
+                    isAuth = false;
+                    break;
+                }
+            }
+        }
+
+        if (isAuth) {
             document.getElementById('lock-screen').style.display = 'none';
             sessionStorage.setItem('isUnlocked', 'true');
         } else {
@@ -82,57 +96,7 @@
 
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
-        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">안녕하십니까. 월스트리트 수석 애널리스트입니다. 
-
-오늘 마감된 미국 증시 데이터와 매크로 지표를 종합 분석하여, **오늘 아침 한국 증시(코스피·코스닥) 개장을 앞둔 한국 투자자분들이 반드시 체크해야 할 핵심 포인트와 대응 전략**을 전달해 드립니다.
-
----
-
-### 1. [미국 증시 핵심 진단] &#34;금리 폭등과 유동성 버퍼 고갈, 시장은 이미 &#39;공포&#39; 진입&#34;
-
-오늘 미국 증시는 지수 자체의 고점 형성에도 불구하고, **매크로 하단에서 심각한 경고음**이 울리고 있습니다.
-
-*   **미국채 10년물 금리 폭등 (5.237%):** 발작 수준의 금리 상승입니다. 5.2%대 돌파는 기술주 및 고평가 성장주에 치명적인 밸류에이션 부담(할인율 상승)을 가합니다.
-*   **역레포(ON RRP) 잔액 사실상 고갈 ($350M):** 연준의 유동성 흡수를 방어해주던 &#39;쿠션&#39; 역할의 역레포 잔액이 3.5억 달러 수준까지 바닥을 드러냈습니다. 이는 향후 연준의 자산 축소(QT)가 **시중 은행의 실질 유동성을 직접적으로 타격**할 것임을 의미합니다.
-*   **공포탐욕지수 &#39;공포&#39; 단계 (28.08):** VIX(16.39)는 비교적 안정을 유지하고 있으나, 투심 지표는 28pt로 강한 공포 국면에 진입했습니다. 지수의 착시 현상 뒤에서 기관들의 위험 관리(포트폴리오 비중 축소)가 진행 중입니다.
-
----
-
-### 2. [한국 증시(코스피·코스닥) 연계 분석]
-
-미국발 매크로 악재는 오늘 아침 한국 증시에 **&#39;환율&#39;과 &#39;외국인 수급&#39;**을 통해 직접적인 압박을 가할 것입니다.
-
-#### ① 원/달러 환율 상방 압력 (1,359.84원)
-*   미 국채 금리가 5.2%를 상회함에 따라 달러 강세가 심화되고 있습니다. 환율이 1,360원 선을 위협하면서 **외국인 Investors의 국장 이탈(Net Selling) 명분**을 강화하고 있습니다.
-
-#### ② 코스피(KOSPI): 대형 IT 및 반도체 외국인 순매도 유의
-*   S&amp;P 500과 나스닥이 버티고 있으나, 5.2%가 넘는 고금리는 환차손 위험과 맞물려 외국인 자금의 한국 대형주(삼성전자, SK하이닉스 등) 매도세를 자극할 수 있습니다. 지수의 상단이 강하게 막힐 가능성이 높습니다.
-
-#### ③ 코스피/코스닥 성장주(바이오·2차전지·AI) 타격
-*   고금리 환경은 자금 조달 비용을 높여 코스닥 내 무수익 성장주나 바이오, 2차전지 섹터에 유독 악재로 작용합니다. 오늘 코스닥의 변동성이 코스피보다 훨씬 크게 확대될 수 있습니다.
-
----
-
-### 3. [오늘 아침 한국 투자자 필수 체크포인트 3가지]
-
-1.  **외국인 선물 수급과 1,360원 환율 돌파 여부 (개장 직후 30분)**
-    *   장 시작 후 외국인이 선물 시장에서 순매도로 대응하는지, 원/달러 환율이 1,360원을 뚫고 올라가는지 최우선으로 확인해야 합니다. 환율 1,360원 상향 돌파 시 지수 하방 압력이 거세질 것입니다.
-2.  **미국 10년물 금리 5.2% 고착화 우려**
-    *   미금리 5.23%는 한국 기준금리(3.50%)와의 격차를 극대화합니다. 한국 은행의 금리 정책 부담도 가중되어 내수 및 금융 시장 전반에 하방 압력을 줍니다.
-3.  **유동성 축소에 따른 &#39;실적주&#39;로의 쏠림**
-    *   역레포 잔액 고갈로 유동성 장세는 완전히 끝났습니다. 이제는 오직 **&#39;현금흐름이 확실하고 밸류에이션이 낮은 종목&#39;**만 생존하는 차별화 장세가 펼쳐집니다.
-
----
-
-### 4. [수석 애널리스트의 오늘 아침 대응 전략]
-
-*   **방어적 포지션 구축 (현금 비중 확보):** 신규 매수는 지양하고, 고PBR/고PER 성장주의 비중을 줄여 현금 비중을 최소 20~30% 이상 확보하십시오.
-*   **섹터 로테이션 전략:** 
-    *   **비추천:** 부채 비율이 높거나 흑자 전환이 요원한 코스닥 성장주, 바이오.
-    *   **관심:** 고금리/고환율 수혜가 가능하거나 방어주 성격을 띤 섹터(금융, 방산, 조선, 고배당 밸류업 관련주).
-*   **변동성 장세 대비:** 개장 초반 갭하락 출현 시 투매에 동참하기보다는, 외국인 수급이 하방을 잡아주는지 확인 후 정오 이후에 대응하는 &#39;늣은 대응&#39;이 유리합니다.
-
-**한 줄 요약:** 미 국채금리 5.2% 돌파와 유동성 경고음으로 **오늘 국장은 외국인 매도 압력이 우세한 보수적 장세**가 예상됩니다. 무리한 공격적 투자보다는 현금을 확보하고 실적·밸류에이션 중심의 방어적 태세를 취하십시오.</p>
+        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">오늘 미국 증시는 주요 지수가 고점을 유지하고 있으나 미 국채 10년물 금리가 5.23퍼센트 수준까지 치솟으며 밸류에이션에 강력한 부담을 주고 있습니다. CNN 공포탐욕지수가 28포인트대로 공포 단계에 진입한 것은 시장 참여자들의 심리가 금리 부담으로 인해 크게 위축되어 있음을 보여줍니다. 특히 연준의 역레포 잔액이 3억 5천만 달러 수준까지 급감하며 시장의 유동성 완충지대가 사실상 소멸해가고 있어 향후 변동성 확대 가능성에 주의해야 합니다. 이러한 미 국채 금리 급등과 유동성 축소 환경은 원달러 환율을 1,355원 선 위로 밀어올리며 한국 금융시장에 직접적인 부담으로 작용하고 있습니다. 높은 환율 수준은 외국인 투자자들의 수급 유입을 제한하여 오늘 코스피 지수의 상단을 강하게 제약하는 요인이 될 것입니다. 또한 고금리 기조의 장기화 우려는 상대적으로 벨류에이션 부담이 크고 기술주 비중이 높은 코스닥 시장에 더 큰 변동성을 초래할 수 있습니다. VIX 지수는 16선으로 단기 안정을 나타내고 있으나 매크로 불확실성이 심화되는 만큼 시장의 착시 현상에 유의할 필요가 있습니다. 따라서 한국 투자자들은 오늘 아침 무리한 공격적 매수보다는 현금 비중을 확보하고 금리와 환율의 추이를 관망하는 보수적인 대응 전략을 취해야 합니다.</p>
     </div>
 
     <div class="section-title">📈 1. 미국 주요 지수</div>
@@ -221,12 +185,12 @@
         <div class="card-label">달러 인덱스</div>
         
             <div class="card-value">
-                102.05
+                101.93
             </div>
             
             
             
-             <div class="card-delta up">▲ 0.60 (0.59%)</div>
+             <div class="card-delta down">▼ 0.17 (0.17%)</div>
             
         
     </div>
@@ -236,12 +200,12 @@
         <div class="card-label">원/달러 환율</div>
         
             <div class="card-value">
-                1,359.84원
+                1,355.78원
             </div>
             
             
             
-             <div class="card-delta up">▲ 9.34 (0.69%)</div>
+             <div class="card-delta down">▼ 1.06 (0.08%)</div>
             
         
     </div>
@@ -251,12 +215,12 @@
         <div class="card-label">엔/달러 환율</div>
         
             <div class="card-value">
-                158.06엔
+                157.83엔
             </div>
             
             
             
-             <div class="card-delta up">▲ 0.66 (0.42%)</div>
+             <div class="card-delta up">▲ 0.27 (0.17%)</div>
             
         
     </div>
@@ -311,7 +275,7 @@
             <div class="card-label">CNN 공포탐욕지수</div>
             
                 <div class="card-value">28 (fear)</div>
-                 <div class="card-delta down">▼ 2 (전일대비)</div>
+                 <div class="card-delta down">▼ 0 (전일대비)</div>
                 
             
         </div>
@@ -324,12 +288,12 @@
         <div class="card-label">WTI유 ($/bbl)</div>
         
             <div class="card-value">
-                92.91
+                92.60
             </div>
             
             
             
-             <div class="card-delta up">▲ 2.49 (2.75%)</div>
+             <div class="card-delta down">▼ 0.27 (0.29%)</div>
             
         
     </div>
@@ -339,12 +303,12 @@
         <div class="card-label">브렌트유 ($/bbl)</div>
         
             <div class="card-value">
-                102.21
+                102.28
             </div>
             
             
             
-             <div class="card-delta down">▼ 1.32 (1.27%)</div>
+             <div class="card-delta down">▼ 0.03 (0.03%)</div>
             
         
     </div>
@@ -354,13 +318,13 @@
         <div class="card-label">구리 가격 (lb)</div>
         
             <div class="card-value">
-                8,942원
+                8,917원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 85 (0.96%)</div>
+             <div class="card-delta up">▲ 122 (1.39%)</div>
             
         
     </div>
@@ -370,13 +334,13 @@
         <div class="card-label">국내 금시세 (1돈)</div>
         
             <div class="card-value">
-                689,866원
+                688,558원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 8,173 (1.20%)</div>
+             <div class="card-delta up">▲ 1,113 (0.16%)</div>
             
         
     </div>
@@ -386,13 +350,13 @@
         <div class="card-label">국내 은시세 (1돈)</div>
         
             <div class="card-value">
-                10,058원
+                10,055원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 272 (2.79%)</div>
+             <div class="card-delta up">▲ 121 (1.22%)</div>
             
         
     </div>
@@ -747,19 +711,19 @@
             <div class="list-box">
                 
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTE9nQmYwcEk0RHdwdzVKTGJZZUsyUVhVTW03ZXJuVEhBRUhNb2NkY1VrUEFRX2d1Z3ZYRmk3Vi1IYVg0QmllMWItYlhhMGhsalU4ekhHTkZCaW9wX3A2VkE?oc=5" target="_blank" class="news-link">긴축 압박 덜어낸 미 물가...연준, 금리 인상 카드 접을까 - YTN</a><br><span class="news-date">(2026-10-01 19:50)</span></div>
-                    
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiiAFBVV95cUxPcTA5bGlmN3FYeGpSczBaaWl5al9Kdzgxb1RiV2FjR01idUM4OUZlaWsxNHVJQ08xc09ROUpJS1lXZGpsTzB1X1dWeHNNbE0yZ003WUt4RVg3Skcyd1FYV0F2WE9WVEhId1JrTXEyNGx6ZUQwUTF5YjZKTkFyZmwxQ3VkV3hVb0x3?oc=5" target="_blank" class="news-link">상위 1%가 주식 절반을 쥔 뉴욕증시 랠리…미국 경제를 두 토막 내는 악어 경제 - 글로벌이코노믹</a><br><span class="news-date">(2026-10-01 21:41)</span></div>
-                    
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMigAFBVV95cUxPRnNmdkM4dlZfRVptUjk3SDliZDFWczBDcTQ0SkwtS2xYODRTRDd4TDJqdFp1MUpDWnA2LVJ3UHlTY3dfbW01cDlJWGdJRnVzRkF2Zm9LeE80aV83emlTM3VZdDFzMjBrLXNJbUZUeVZseVh0d1poVTVNalR6eTRzRw?oc=5" target="_blank" class="news-link">5%대 국채에도 美 증시가 버티고 있는 까닭은? - 조선일보</a><br><span class="news-date">(2026-10-01 15:35)</span></div>
+                    
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTFBnbDJsbHZ1a0Jfc3pFclpqNGpSLV83ckVRSFNQVy03dlNhUkw3OVFZcjAwMmFSUzlwcVRkcTBXcTNQYU5ybEVXR2RSOUE3NXB3bVh1bXBUN2ZnV2hiZWc?oc=5" target="_blank" class="news-link">JP모건, 미국 중간선거 앞두고 증시 변동성 확대 가능성 경고 - 더구루</a><br><span class="news-date">(2026-10-02 01:39)</span></div>
+                    
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBKTVRSejNWcElXMkoyY3JTQm53d1lEWEdhMV9WRGhJZGdSRXN5VkwteVRCeE1TMzlLRHA5VktHbUdWTVFhVldzRVpVel84YWxlb2NvaVkwS1RfQVY2T015VUNnVFBuRG5PV2QwZXlLcmk?oc=5" target="_blank" class="news-link">미국 고용지표 발표 앞두고 아시아 증시 혼조…홍콩 3% 급락 - Investing.com 한국어</a><br><span class="news-date">(2026-10-02 03:33)</span></div>
                     
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMifkFVX3lxTFBPcklHeTVldTRuV2ZvT0ZIS2dldXREYm05ZjhPa08xMDdlV2NTY0NfRlBmdmtYY0FMZmxSazBfeXlkcUNIMEJvWnNJSFRBYm1vRmMxdkNsLV8zNkJ6STVTQWN6V0NqT0xabjZjMG9qX3lla3U2ZnRRVDJYMGZmdw?oc=5" target="_blank" class="news-link">[서울데이터랩]미국 증시, 반도체 강세 속 주요 지수 혼조권 상승 마감 - 서울신문</a><br><span class="news-date">(2026-10-01 21:11)</span></div>
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE1oQ1Fudkc4YzBHNFFBelF4RmFHazdMVk05dHJ6SFZ5aFY1cHpqS2QzRjZlOExHMTcwb0EzZUlQS2RJWElmd1FLaURvV19sODNvbzBycjY0U2pic2vSAWBBVV95cUxNQ1NZSFhwV3lFTG1EV3FfWEcxb3pnRkdvVzR1a05uVGZLYnVOdkpUMXVpU2F4M05lTE9aYWNuU1pzR2RNRi1na2JIYmpzeFFQY1BXdFpickhKUTZTNEQ2Q1M?oc=5" target="_blank" class="news-link">美국채 금리 따라 등락 반복한 뉴욕증시…강보합 마감 - 연합뉴스</a><br><span class="news-date">(2026-10-01 20:22)</span></div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiiAFBVV95cUxPcTA5bGlmN3FYeGpSczBaaWl5al9Kdzgxb1RiV2FjR01idUM4OUZlaWsxNHVJQ08xc09ROUpJS1lXZGpsTzB1X1dWeHNNbE0yZ003WUt4RVg3Skcyd1FYV0F2WE9WVEhId1JrTXEyNGx6ZUQwUTF5YjZKTkFyZmwxQ3VkV3hVb0x3?oc=5" target="_blank" class="news-link">상위 1%가 주식 절반을 쥔 뉴욕증시 랠리…미국 경제를 두 토막 내는 악어 경제 - 글로벌이코노믹</a><br><span class="news-date">(2026-10-01 21:41)</span></div>
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTE54ZjNtb3pJNzhLOUJ4ZkwyUkJFOVNObDl2cGJrcTg4S0FOMHVPN1BPaGgwdkF3OEdmbTMwRTlXQS1GSXhEVFQ0aEZDaVlSY2VXbDRtX29ud0hkZXJtY25jMllld1QyS2s4elpHNXZOeXZZQQ?oc=5" target="_blank" class="news-link">[뉴욕증시] 채권 따라 춤추다 결국 제자리…강보합 마감 - KB Think</a><br><span class="news-date">(2026-10-01 20:50)</span></div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE5pNEFldzlESHl2NnlYU2xQaG1OTFpmb1NZdl9kRmRTTVh4OFppUXpQbDA5cEVldU5HRmt2WVhqWDRMUlM2b0prQk5CbzVnbERvQkpnTkxtd2pObzTSAWBBVV95cUxNclljaVdsdmFUX2VEV19uVGd0LV9xMGNJb092ZzVEcV9Ya3dFSzlLbDRoY0ljSUtVRnpmTjBvcS1aeFFoTHNmeTZyRnZ3OU1YNE13c0JkNnVzQnV6akwyeUs?oc=5" target="_blank" class="news-link">美국채 금리 따라 등락 반복한 뉴욕증시…강보합 마감(종합) - 연합뉴스</a><br><span class="news-date">(2026-10-01 21:10)</span></div>
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE5mWjBIZ0ctXzlBdXhuWHZyR0hERWhGNTV0T21VRk5wbUNvZmUyZHc3b0hEWWYxUXlIQjlKdEJDRHlMUVhvbE5JVDJRTGQ4aWtGX2xuTmZkelhRYzI4Q2JmdkF4b0dKdGV1bExxeTFCcmJ1R1E?oc=5" target="_blank" class="news-link">5.34% 찍고 돌아서자 美증시 반등…월가는 뉴노멀 적응중 - 마켓인</a><br><span class="news-date">(2026-10-01 20:47)</span></div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTE9nQmYwcEk0RHdwdzVKTGJZZUsyUVhVTW03ZXJuVEhBRUhNb2NkY1VrUEFRX2d1Z3ZYRmk3Vi1IYVg0QmllMWItYlhhMGhsalU4ekhHTkZCaW9wX3A2VkE?oc=5" target="_blank" class="news-link">긴축 압박 덜어낸 미 물가...연준, 금리 인상 카드 접을까 - YTN</a><br><span class="news-date">(2026-10-01 19:50)</span></div>
                     
                 
             </div>
