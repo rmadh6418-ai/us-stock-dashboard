@@ -317,12 +317,26 @@ HTML_TEMPLATE = """
 </div>
 
 <script>
-    // 💡 여기에 원하는 비밀번호를 설정하세요!
-    const SECRET_PASSWORD = "4203";
-
     function checkPassword() {
         const input = document.getElementById('pw-input').value;
-        if (input === SECRET_PASSWORD) {
+        
+        // 비트연산(XOR)을 활용한 비밀번호 검증 (원본 비밀번호 노출 방지)
+        // 0x1e, 0x18, 0x1a, 0x19는 각각 인코딩된 숫자 배열입니다.
+        const _hash = [0x1e, 0x18, 0x1a, 0x19]; 
+        const _k = 0x2a; // XOR 연산 키 값
+
+        let isAuth = (input.length === _hash.length);
+        if (isAuth) {
+            for (let i = 0; i < _hash.length; i++) {
+                // 입력받은 문자의 ASCII 코드를 키 값(_k)과 비트 연산(^)하여 검증
+                if ((input.charCodeAt(i) ^ _k) !== _hash[i]) {
+                    isAuth = false;
+                    break;
+                }
+            }
+        }
+
+        if (isAuth) {
             document.getElementById('lock-screen').style.display = 'none';
             sessionStorage.setItem('isUnlocked', 'true');
         } else {
