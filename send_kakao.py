@@ -2,9 +2,10 @@ import requests
 import json
 import yfinance as yf
 import cloudscraper
+import os # os 모듈 추가
 
-# 1. 본인의 REST API 키 입력
-REST_API_KEY = "cf664905828cfa82863a5ece28304fc8"
+# GitHub Secrets에서 가져오도록 변경
+REST_API_KEY = os.environ.get("KAKAO_REST_API_KEY")
 
 def refresh_token():
     with open("kakao_token.json", "r") as fp:
