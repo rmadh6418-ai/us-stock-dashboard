@@ -21,10 +21,6 @@ jobs:
         run: |
           pip install flask yfinance pandas requests feedparser pandas_datareader cloudscraper google-generativeai
 
-      - name: 토큰 파일 복원
-        run: |
-          echo '${{ secrets.KAKAO_TOKEN_JSON }}' > kakao_token.json
-
       - name: 대시보드 HTML 생성 및 카카오톡 전송 실행
         env:
           REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
