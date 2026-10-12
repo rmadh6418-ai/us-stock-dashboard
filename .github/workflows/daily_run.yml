@@ -23,7 +23,7 @@ jobs:
 
       - name: 대시보드 HTML 생성 및 카카오톡 전송 실행
         env:
-          REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python app.py
