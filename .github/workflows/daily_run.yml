@@ -40,3 +40,12 @@ jobs:
           git add index.html
           git commit -m "Auto-update US stock dashboard HTML by GitHub Actions" || exit 0
           git push
+
+      - name: Commit and push updated token
+        run: |
+         git config --global user.name 'github-actions'
+         git config --global user.email 'github-actions@github.com'
+         git add kakao_token.json
+         # 토큰 변경사항이 있을 때만 커밋하며, [skip ci]를 넣어 무한 루프 실행을 방지합니다.
+         git commit -m "chore: Update Kakao token [skip ci]" || echo "No changes to commit"
+         git push
