@@ -29,27 +29,19 @@ jobs:
         run: |
           python app.py
 
-      - name: 2. 생성된 index.html 자동 깃허브 반영(업데이트)
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git commit -m "Auto-update US stock dashboard HTML by GitHub Actions" || echo "No dashboard changes"
-          git pull --rebase origin main
-          git push
-
-      - name: 3. 카카오톡 브리핑 전송 및 토큰 자동 갱신
+      - name: 2. 카카오톡 브리핑 전송 및 토큰 자동 갱신
         env:
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
           REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
         run: |
           python kakao_bot.py
 
-      - name: 4. 갱신된 카카오 토큰 깃허브 반영
+      - name: 3. 대시보드 및 카카오 토큰 한 번에 깃허브 반영
+        if: always()
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add kakao_token.json
-          git commit -m "chore: Update Kakao token [skip ci]" || echo "No token changes"
+          git add index.html kakao_token.json
+          git commit -m "Auto-update US stock dashboard and Kakao token" || echo "No changes to commit"
           git pull --rebase origin main
           git push
