@@ -27,7 +27,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python app.py
-          python send_kakao.py
 
       - name: 생성된 index.html 자동 깃허브 반영(업데이트)
         run: |
