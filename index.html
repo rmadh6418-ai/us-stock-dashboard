@@ -1,10 +1,24 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 모바일 앱처럼 화면 확대/축소 방지 추가 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>실시간 미국 증시 대시보드</title>
+
+    <!-- 웹앱(PWA) 기본 설정 -->
+    <meta name="theme-color" content="#f3f4f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- iOS (아이폰) 전용 앱 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="미국증시">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2942/2942283.png">
+
+    <!-- Android (갤럭시 등) 전용 앱 설정 (인라인 Manifest) -->
+    <link rel="manifest" href='data:application/manifest+json;utf-8,{"name":"실시간 미국 증시 대시보드","short_name":"미국증시","display":"standalone","background_color":"#f3f4f6","theme_color":"#f3f4f6","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2942/2942283.png","sizes":"512x512","type":"image/png"}]}'>
+
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; }
@@ -713,7 +727,7 @@
                     
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTE5KLUJWbkV5UHhfUjhfQzQ1UWVQUWJKREdOT251X2pzMUNfUEJjLXBTTFlKMm84bFhDNE9CdTNGbGM3YUtaYTduQmhLYThxNUsxMTMtTnZBaFFFZGRoSTBxQ3hxR0NkRThpYnRiQk5CRmE?oc=5" target="_blank" class="news-link">미국 증시 조정 마무리 국면, 저점 매수 준비해야 - 모건 스탠리 - Investing.com 한국어</a><br><span class="news-date">(2026-10-19 11:09)</span></div>
                     
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE9jdGVvaHFQcVFtRFNlOTRDNEZQRGlyUE5PdmQxVUUtaV9nMG4zWUk2ZWdzalpPd3QtRHVETEVmNTJLVnpuZGg0ZjZZQjkyeTJaYXQtQ3hvMnQxaXdrMDA3X21kaHdXQzg?oc=5" target="_blank" class="news-link">코스피, 이틀 연속 상승…이번주 빅테크 실적 주목 - 연합뉴스TV</a><br><span class="news-date">(2026-10-19 11:57)</span></div>
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE9jdGVvaHFQcVFtRFNlOTRDNEZQRGirUE5PdmQxVUUtaV9nMG4zWUk2ZWdzalpPd3QtRHVETEVmNTJLVnpuZGg0ZjZZQjkyeTJaYXQtQ3hvMnQxaXdrMDA3X21kaHdXQzg?oc=5" target="_blank" class="news-link">코스피, 이틀 연속 상승…이번주 빅테크 실적 주목 - 연합뉴스TV</a><br><span class="news-date">(2026-10-19 11:57)</span></div>
                     
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTFA4a0FIb0c5eFdiQ0pjQUU5aU81d3R2S2dwVElONHI5Ukc3VUYxV1FDQmtFNEJybjgyZ1VvVTdYOEV0WW52YnBvQWVCM29jNnVLMm1tejBEZGxoY0x6UElLb0dzSXpHZWRGYy1zelE1eDdZdw?oc=5" target="_blank" class="news-link">日 증시, 美 기술주 반등에도 이틀 연속 하락 개장 - KB Think</a><br><span class="news-date">(2026-10-20 00:28)</span></div>
                     
