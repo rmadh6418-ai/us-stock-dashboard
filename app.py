@@ -1,3 +1,4 @@
+import flask
 from flask import Flask, render_template_string
 import yfinance as yf
 import pandas as pd
@@ -215,7 +216,6 @@ def get_ai_summary(data):
         - 연준 역레포 잔액(ON RRP): {fed_rrp}
         """
         
-        # 💡 에러 권고안에 따라 단종된 2.5-flash-lite 제거 및 gemini-3.5-flash-lite 추가
         models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash']
         last_error = ""
         
@@ -274,11 +274,34 @@ HTML_TEMPLATE = """
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>실시간 미국 증시 대시보드</title>
+
+    <!-- 웹앱(PWA) 기본 설정 -->
+    <meta name="theme-color" content="#f3f4f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- iOS (아이폰) 전용 앱 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="미국증시">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2942/2942269.png">
+
+    <!-- Android (갤럭시 등) 전용 앱 설정 파일 연결 -->
+    <link rel="manifest" href="./manifest.json">
+
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; }
+        /* 모바일 터치 최적화 */
+        body { 
+            font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; 
+            -webkit-tap-highlight-color: transparent; 
+            -webkit-touch-callout: none; 
+            user-select: none; 
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        input { user-select: auto; } /* 비밀번호 창 등 입력 허용 */
+
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; color: #111827; word-break: keep-all; }
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
@@ -325,14 +348,12 @@ HTML_TEMPLATE = """
         const input = document.getElementById('pw-input').value;
         
         // 비트연산(XOR)을 활용한 비밀번호 검증 (원본 비밀번호 노출 방지)
-        // 0x1e, 0x18, 0x1a, 0x19는 각각 인코딩된 숫자 배열입니다.
         const _hash = [0x1e, 0x18, 0x1a, 0x19]; 
         const _k = 0x2a; // XOR 연산 키 값
 
         let isAuth = (input.length === _hash.length);
         if (isAuth) {
             for (let i = 0; i < _hash.length; i++) {
-                // 입력받은 문자의 ASCII 코드를 키 값(_k)과 비트 연산(^)하여 검증
                 if ((input.charCodeAt(i) ^ _k) !== _hash[i]) {
                     isAuth = false;
                     break;
@@ -483,6 +504,19 @@ HTML_TEMPLATE = """
         </div>
     </div>
 </div>
+
+<script>
+    // PWA 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                console.log('Service Worker Registered!', reg);
+            }).catch(err => {
+                console.log('Service Worker registration failed: ', err);
+            });
+        });
+    }
+</script>
 </body>
 </html>
 """
