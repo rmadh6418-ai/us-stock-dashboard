@@ -196,7 +196,7 @@ def get_ai_summary(data):
         genai.configure(api_key=api_key)
 
         # 한국 시간(KST) 기준으로 오늘 날짜 가져오기 (예: "2026년 11월 05일")
-        today_str = datetime.datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
+        today_str = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
         
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
