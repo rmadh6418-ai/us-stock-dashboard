@@ -283,26 +283,31 @@ def get_dashboard_data():
         'tech_soft': fetch_yfinance_data({
             'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 
             'Meta': 'META', 'Oracle': 'ORCL', '크라우드스트라이크': 'CRWD', '클라우드플레어': 'NET', 
-            '세일스포스': 'CRM', '팔로알토 네트웍스': 'PANW', '앱러빈': 'APP'
+            '세일스포스': 'CRM', '팔로알토 네트웍스': 'PANW', '앱러빈': 'APP', '넷플릭스': 'NFLX'
         }),
         'semi_ai': fetch_yfinance_data({
             'NVIDIA': 'NVDA', 'AMD': 'AMD', 'TSMC': 'TSM', 'Micron': 'MU', '인텔': 'INTC', 
             '퀄컴': 'QCOM', '브로드컴': 'AVGO', 'ASML': 'ASML', '램리서치': 'LRCX', 
-            'Palantir': 'PLTR', '템퍼스 AI': 'TEM', '웨스턴디지털': 'WDC', '셀레스티카': 'CLS'
+            'Palantir': 'PLTR', '템퍼스 AI': 'TEM', '웨스턴디지털': 'WDC', '셀레스티카': 'CLS',
+            '델테크놀로지': 'DELL'
         }),
         'energy_infra': fetch_yfinance_data({
-            '엑슨모빌': 'XOM', 'GE버노바': 'GEV', '뉴스케일파워': 'SMR', '오클로': 'OKLO', 
+            '엑슨모빌': 'XOM', '셰브론': 'CVX', 'GE버노바': 'GEV', '뉴스케일파워': 'SMR', '오클로': 'OKLO', 
             'T1에너지': 'TE', '비스트라 에너지': 'VST', '블룸에너지': 'BE', 'BWX 테크놀로지스': 'BWXT', 
             '버티브홀딩스': 'VRT', '콴타서비시스': 'PWR', '카메코': 'CCJ', '파월 인더스트리스': 'POWL', '마스텍': 'MTZ'
         }),
         'health': fetch_yfinance_data({
-            'Eli Lilly': 'LLY', '화이자': 'PFE', '존슨앤드존슨': 'JNJ', '유나이티드헬스': 'UNH', '모더나': 'MRNA'
+            'Eli Lilly': 'LLY', '화이자': 'PFE', '존슨앤드존슨': 'JNJ', '유나이티드헬스': 'UNH', '모더나': 'MRNA', '암젠': 'AMGN'
         }),
         'space_mobility': fetch_yfinance_data({
-            'Tesla': 'TSLA', '스페이스X': 'SPCX', '로켓랩': 'RKLB'
+            'Tesla': 'TSLA', '스페이스X': 'SPCX', '로켓랩': 'RKLB', 'GE에어로스페이스': 'GE'
         }),
         'finance': fetch_yfinance_data({
-            'JP모건': 'JPM', '버크셔해서웨이': 'BRK-B', '모건스탠리': 'MS', 'KKR & CO': 'KKR'
+            'JP모건': 'JPM', '뱅크오브아메리카': 'BAC', '웰스파고': 'WFC', '모건스탠리': 'MS', '찰스슈왑': 'SCHW',
+            '비자': 'V', '마스터카드': 'MA', '버크셔해서웨이': 'BRK-B', '블랙록': 'BLK', 'KKR & CO': 'KKR'
+        }),
+        'consumer': fetch_yfinance_data({
+            '월마트': 'WMT', '코스트코': 'COST', '코카콜라': 'KO', '펩시코': 'PEP', '맥도날드': 'MCD'
         }),
         
         'news': get_google_news(),
@@ -569,6 +574,13 @@ HTML_TEMPLATE = """
     <div class="section-title">🏦 10. 금융 & 투자</div>
     <div class="grid">
         {% for name, obj in data.finance.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
+    </div>
+    
+    <div class="section-title">🛍️ 11. 소비재 & 리테일</div>
+    <div class="grid">
+        {% for name, obj in data.consumer.items() %}
             {{ render_metric(name, obj, False, '$') }}
         {% endfor %}
     </div>
