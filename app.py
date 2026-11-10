@@ -30,7 +30,28 @@ app = Flask(__name__)
 # --- [ 데이터 수집 함수 ] ---
 def fetch_yfinance_data(tickers):
     data = {}
+    
+    # 야후 파이낸스 티커를 트레이딩뷰 심볼로 변환하는 매핑 딕셔너리
+    tv_mapping = {
+        '^GSPC': 'SPX',
+        '^DJI': 'DJI',
+        '^NDX': 'NDX',
+        '^SOX': 'SOX',
+        '^NBI': 'NBI',
+        'DX-Y.NYB': 'DXY',
+        '^TNX': 'US10Y',
+        '^TYX': 'US30Y',
+        '^VIX': 'VIX',
+        'CL=F': 'USOIL',
+        'BZ=F': 'UKOIL',
+        'KRW=X': 'USDKRW',
+        'JPY=X': 'USDJPY'
+    }
+    
     for name, ticker in tickers.items():
+        # 트레이딩뷰 링크용 티커 설정
+        tv_ticker = tv_mapping.get(ticker, ticker)
+        
         try:
             # 52주(1년) 데이터를 가져와서 신고가 계산에 활용
             hist = yf.Ticker(ticker).history(period="1y")
@@ -52,12 +73,13 @@ def fetch_yfinance_data(tickers):
                         'value': current, 
                         'diff': diff, 
                         'pct': pct, 
-                        'near_52w_high': near_52w_high
+                        'near_52w_high': near_52w_high,
+                        'ticker': tv_ticker
                     }
                     continue
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker}
         except:
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker}
     return data
 
 def get_fear_and_greed():
@@ -90,10 +112,10 @@ def get_silver_don_price():
             prev = (float(si.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct}
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'XAGUSD'}
+        return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAGUSD'}
     except:
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+        return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAGUSD'}
 
 def get_gold_don_price():
     try:
@@ -104,10 +126,10 @@ def get_gold_don_price():
             prev = (float(gc.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct}
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'XAUUSD'}
+        return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAUUSD'}
     except:
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+        return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAUUSD'}
 
 def get_copper_krw_price():
     try:
@@ -118,10 +140,10 @@ def get_copper_krw_price():
             prev = float(hg.iloc[-2]) * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct}
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'HG1!'}
+        return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'HG1!'}
     except:
-        return {'value': "N/A", 'diff': 0, 'pct': 0}
+        return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'HG1!'}
 
 def get_fed_liquidity():
     end = datetime.today()
@@ -358,8 +380,19 @@ HTML_TEMPLATE = """
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; color: #111827; word-break: keep-all; }
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
+        
+        /* 카드 및 트레이딩뷰 링크 애니메이션 스타일 추가 */
+        .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        .card { 
+            background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+            text-align: center; height: 100%; box-sizing: border-box; 
+            border: 2px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; 
+        }
+        .card-link:hover .card { 
+            transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; 
+        }
+
         .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
         .card-value { font-size: 2.1rem; font-weight: 900; color: #111827; margin-bottom: 5px; word-break: break-all; }
         .card-delta { font-size: 1.1rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 5px; }
@@ -427,16 +460,22 @@ HTML_TEMPLATE = """
 </script>
 <!-- 🔐 비밀번호 잠금 화면 끝 -->
 
-<!-- 매크로: 52주 신고가 근접(3% 이내) 시 불꽃 마크 추가 -->
+<!-- 매크로: 52주 신고가 근접(3% 이내) 시 불꽃 마크 및 트레이딩뷰 링크 연결 -->
 {% macro render_metric(label, data_obj, is_int=False, suffix='') %}
+    {% set has_ticker = data_obj is mapping and data_obj.get('ticker') %}
+    
+    {% if has_ticker %}
+    <a href="https://kr.tradingview.com/chart/?symbol={{ data_obj.ticker }}" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    {% endif %}
+    
     <div class="card">
         <div class="card-label">
             {{ label }}
-            {% if data_obj.get and data_obj.get('near_52w_high') %}
+            {% if data_obj is mapping and data_obj.get('near_52w_high') %}
                 <span title="52주 신고가(3% 이내) 근접" style="font-size: 1.2rem; margin-left: 2px;">🔥</span>
             {% endif %}
         </div>
-        {% if data_obj.value != "N/A" %}
+        {% if data_obj is mapping and data_obj.get('value') != "N/A" and data_obj.get('value') is not none %}
             <div class="card-value">
                 {% if is_int %}{{ "{:,}".format(data_obj.value|int) }}{{ suffix }}
                 {% else %}{{ "{:,.2f}".format(data_obj.value) }}{{ suffix }}{% endif %}
@@ -451,6 +490,10 @@ HTML_TEMPLATE = """
             <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
         {% endif %}
     </div>
+    
+    {% if has_ticker %}
+    </a>
+    {% endif %}
 {% endmacro %}
 
 <div class="container">
@@ -503,7 +546,7 @@ HTML_TEMPLATE = """
         {{ render_metric('미국채 30년물 (%)', data.macros['미국채 30년물'], False, '%') }}
         {{ render_metric('빅스(VIX) 지수', data.macros['빅스(VIX)']) }}
         
-        <div class="card">
+        <div class="card" style="height: 100%; box-sizing: border-box;">
             <div class="card-label">CNN 공포탐욕지수</div>
             {% if data.cnn %}
                 <div class="card-value">{{ data.cnn.score | int }} ({{ data.cnn.rating }})</div>
