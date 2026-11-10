@@ -33,7 +33,8 @@ def fetch_yfinance_data(tickers):
     tv_mapping = {
         '^GSPC': 'SPX', '^DJI': 'DJI', '^NDX': 'NDX', '^SOX': 'SOX', '^NBI': 'NBI',
         'DX-Y.NYB': 'DXY', '^TNX': 'US10Y', '^TYX': 'US30Y', '^VIX': 'VIX',
-        'CL=F': 'USOIL', 'BZ=F': 'UKOIL', 'KRW=X': 'USDKRW', 'JPY=X': 'USDJPY'
+        'CL=F': 'USOIL', 'BZ=F': 'UKOIL', 'KRW=X': 'USDKRW', 'JPY=X': 'USDJPY',
+        '^N225': 'NI225', '^TWII': 'TAIEX'  # 니케이 및 대만 지수 트레이딩뷰 매핑 추가
     }
     for name, ticker in tickers.items():
         tv_ticker = tv_mapping.get(ticker, ticker)
@@ -223,7 +224,8 @@ CACHE = {}
 def get_dashboard_data():
     if 'data' in CACHE and time.time() - CACHE['time'] < 600: return CACHE['data']
     data = {
-        'indices': fetch_yfinance_data({'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI'}),
+        # 니케이 225 및 대만 가권 지수 추가
+        'indices': fetch_yfinance_data({'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'}),
         'macros': fetch_yfinance_data({'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'}),
         'cnn': get_fear_and_greed(),
         'commodities': fetch_yfinance_data({'WTI유': 'CL=F', '브렌트유': 'BZ=F'}),
@@ -282,6 +284,11 @@ HTML_TEMPLATE = """
         .chat-input-area input { flex: 1; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
         .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
+        /* 토글 애니메이션을 위한 클래스 */
+        .ai-toggle-title { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .ai-toggle-title:hover { opacity: 0.8; }
+        #ai-section-content { transition: all 0.3s ease; }
+
         @media (max-width: 768px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
@@ -319,6 +326,19 @@ HTML_TEMPLATE = """
         if (sessionStorage.getItem('isUnlocked') === 'true') document.getElementById('lock-screen').style.display = 'none';
         document.getElementById('pw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPassword(); });
     }
+    
+    // AI 섹션 토글 기능
+    function toggleAiSection() {
+        const content = document.getElementById('ai-section-content');
+        const icon = document.getElementById('ai-toggle-icon');
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.innerText = '▼';
+        } else {
+            content.style.display = 'none';
+            icon.innerText = '▶';
+        }
+    }
 </script>
 
 {% macro render_metric(label, data_obj, is_int=False, suffix='') %}
@@ -342,8 +362,15 @@ HTML_TEMPLATE = """
 
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
-    <div class="section-title">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
-    <div class="list-box">
+    
+    <!-- AI 토글 제목 영역 -->
+    <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
+        <span>✨ 🤖 AI 오늘의 증시 3줄 요약</span>
+        <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
+    </div>
+    
+    <!-- AI 내용 영역 (토글 대상) -->
+    <div class="list-box" id="ai-section-content">
         <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8;">{{ data.ai_summary }}</p>
         <hr style="border: 0; height: 1px; background: #d1d5db; margin: 25px 0;">
         <h3 style="margin: 0 0 12px 0;">💬 AI와 시황 대화하기</h3>
@@ -369,8 +396,16 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- 추가된 지수: 니케이 225, 대만 가권 -->
     <div class="section-title">📈 1. 주요 지수</div>
-    <div class="grid">{{ render_metric('S&P 500', data.indices['S&P 500'])}}{{ render_metric('다우존스', data.indices['다우존스'])}}{{ render_metric('나스닥 100', data.indices['나스닥 100'])}}{{ render_metric('반도체', data.indices['필라델피아 반도체'])}}</div>
+    <div class="grid">
+        {{ render_metric('S&P 500', data.indices['S&P 500']) }}
+        {{ render_metric('다우존스', data.indices['다우존스']) }}
+        {{ render_metric('나스닥 100', data.indices['나스닥 100']) }}
+        {{ render_metric('반도체', data.indices['필라델피아 반도체']) }}
+        {{ render_metric('니케이 225', data.indices['니케이 225']) }}
+        {{ render_metric('대만 가권', data.indices['대만 가권']) }}
+    </div>
     
     <div class="section-title">🌐 2. 매크로 및 시장 심리</div>
     <div class="grid">
@@ -460,14 +495,14 @@ HTML_TEMPLATE = """
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
+        if (msgDiv) msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
     }
     
     document.getElementById('chat-input').addEventListener('keypress', e => { 
