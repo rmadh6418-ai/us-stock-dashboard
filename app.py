@@ -437,14 +437,12 @@ HTML_TEMPLATE = """
         const inputEl = document.getElementById('chat-input');
         const message = inputEl.value.trim();
         
-        // 💡 질문이 비어있을 때 알림을 띄우고 종료하는 코드 추가
         if (!message) {
             alert("💬 질문을 먼저 입력해주세요!");
             inputEl.focus();
             return;
         }
 
-        // 브라우저 로컬 스토리지에서 API 키 확인, 없으면 팝업으로 요청
         let apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) {
             apiKey = prompt("AI 채팅을 사용하려면 Gemini API 키를 입력해주세요.\\n(키는 서버에 전송되지 않고 현재 기기(브라우저)에만 안전하게 저장됩니다.)");
@@ -452,15 +450,12 @@ HTML_TEMPLATE = """
             localStorage.setItem('gemini_api_key', apiKey.trim());
         }
 
-        // 최초 질문 시 요약 내용, 뉴스, 캘린더 데이터를 컨텍스트로 주입
         if (chatHistory.length === 0) {
             const summaryText = document.getElementById('ai-summary-text').innerText;
             
-            // 뉴스 데이터 수집
             const newsNodes = document.querySelectorAll('.news-item');
             const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\\n/g, ' ')).join('\\n- ');
             
-            // 캘린더 데이터 수집
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
 
@@ -470,7 +465,6 @@ HTML_TEMPLATE = """
             chatHistory.push({ "role": "model", "parts": [{ "text": "네, 오늘의 증시 요약, 최신 경제 뉴스, 주요 경제 지표 일정을 모두 확인했습니다. 질문해주시면 답변해 드리겠습니다." }] });
         }
 
-        // 화면에 사용자 메시지 표시 및 배열에 추가
         appendMessage('user', message);
         inputEl.value = '';
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
@@ -487,12 +481,10 @@ HTML_TEMPLATE = """
             
             const data = await response.json();
             
-            // HTTP 상태 코드가 정상이 아닐 경우 에러 처리
             if (!response.ok) {
                 throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
             }
 
-            // 성공 시 모델 응답을 배열에 추가하고 화면 업데이트
             const replyText = data.candidates[0].content.parts[0].text;
             chatHistory.push({ "role": "model", "parts": [{ "text": replyText }] });
             updateMessage(loadingId, replyText);
@@ -510,14 +502,14 @@ HTML_TEMPLATE = """
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        if (msgDiv) msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
     }
     
     document.getElementById('chat-input').addEventListener('keypress', e => { 
