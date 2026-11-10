@@ -75,21 +75,16 @@
 <script>
     function checkPassword() {
         const input = document.getElementById('pw-input').value;
-        
-        // 비트연산(XOR)을 활용한 비밀번호 검증 (원본 비밀번호 노출 방지)
         const _hash = [0x1e, 0x18, 0x1a, 0x19]; 
-        const _k = 0x2a; // XOR 연산 키 값
-
+        const _k = 0x2a; 
         let isAuth = (input.length === _hash.length);
         if (isAuth) {
             for (let i = 0; i < _hash.length; i++) {
                 if ((input.charCodeAt(i) ^ _k) !== _hash[i]) {
-                    isAuth = false;
-                    break;
+                    isAuth = false; break;
                 }
             }
         }
-
         if (isAuth) {
             document.getElementById('lock-screen').style.display = 'none';
             sessionStorage.setItem('isUnlocked', 'true');
@@ -97,15 +92,12 @@
             document.getElementById('pw-error').style.display = 'block';
         }
     }
-
     window.onload = function() {
         if (sessionStorage.getItem('isUnlocked') === 'true') {
             document.getElementById('lock-screen').style.display = 'none';
         }
         document.getElementById('pw-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
+            if (e.key === 'Enter') checkPassword();
         });
     }
 </script>
@@ -119,7 +111,7 @@
 
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 0; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
-        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">2026년 11월 10일 개장을 앞둔 한국 증시는 글로벌 매크로 환경의 상충하는 변수들이 맞물리며 신중한 흐름을 보일 것으로 전망됩니다. 간밤 미 증시는 S&amp;P 500 지수가 7549.94, 나스닥 100 지수가 27907.63을 기록하며 장기 기술주 강세 기조를 유지했으나, 고금리와 고유가 부담이 상승 폭을 제한했습니다. 이는 한국 증시의 핵심인 반도체 및 IT 수출주에 글로벌 빅테크의 펀더멘털 온기를 전달하는 한편, 높은 밸류에이션에 대한 상단 압박을 동시에 가하는 이중적 요인으로 작용할 것입니다. 특히 미 국채 10년물 금리가 4.86%라는 높은 수준을 지속함에 따라 채권의 상대적 매력도가 상향되어 글로벌 위험자산으로의 자금 유입을 지연시키고 있습니다. 원/달러 환율이 1344.58원 선에서 형성되어 국내 수출 대형주들의 환차익 유인에는 우호적이나, 높은 미 국채 금리와의 격차로 인해 외국인 투자자들의 전격적인 순매수 전환은 제한될 가능성이 큽니다. 투자심리 지표인 CNN 공포탐욕지수가 31.71의 &#39;공포&#39; 단계에 머물고 VIX 지수가 19.92까지 상승한 것은 시장 내 위험회피 성향이 짙어지고 있음을 방증합니다. 유동성 측면에서 연준 순유동성은 5조 7,907억 달러로 상단에서 지지되고 있으나, 역레포 잔액이 2억 5,200만 달러까지 감소하며 단기 유동성 완충 장치가 상당 부분 소진된 점은 금융시장의 잠재적 변동성 위험을 높입니다. 국제유가는 지정학적 리스크 확대로 브렌트유가 배럴당 91.78달러, WTI가 85.90달러까지 폭등하며 인플레이션 장기화 우려를 자극했고, 이는 미 증시의 하방 압력 및 연준의 매파적 스탠스 유지 명분으로 작동했습니다. 향후 발표를 앞둔 미국의 주요 물가 및 고용 관련 경제지표는 통화정책 행보를 가늠할 핵심 분기점이 될 것이며, 지표 발표 전까지 시장의 관망 심리는 더욱 짙어질 것으로 보입니다. 결론적으로 오늘 아침 한국 증시는 반도체 등 주력 섹터의 펀더멘털 지원에도 불구하고, 고금리·고유가·환율 변동성이라는 대외 악재로 인해 지수 차원의 강한 반등보다는 실적 가시성이 높은 종목 위주의 제한적인 섹터 차별화 장세가 펼쳐질 것으로 판단됩니다.</p>
+        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">2026년 11월 10일 기준 지정학적 리스크 심화로 브렌트유가 배럴당 91.69달러, WTI가 85.86달러까지 상승하며 글로벌 인플레이션 재발 우려가 고조되고 있습니다. 이러한 원자재 가격 급등 여파로 미국채 10년물 금리가 4.86% 수준까지 치솟았으며, 이는 S&amp;P 500과 나스닥 지수의 강고한 기술적 펀더멘털에도 불구하고 멀티플 상단을 제한하는 강력한 악재로 작용하고 있습니다. CNN 공포탐욕지수가 31.71로 공포 구간에 머물고 VIX 지수가 19.92로 20선에 근접한 것은 고금리와 중동발 지정학적 불안이 글로벌 투심을 옥죄고 있음을 시각적으로 입증합니다. 연준의 순유동성은 5.79조 달러 수준을 유지하며 극단적 하락을 방어하고 있으나, 역레포 잔액이 2.52억 달러까지 쥐어짜이듯 급감함에 따라 시장의 유동성 완충 지표가 소진되어 금리 변동성에 대한 시장 민감도는 그 어느 때보다 높은 상태입니다. 환율 측면에서는 원/달러 환율이 1,343.76원으로 고환율 기조를 지속함에 따라 한미 금리 역전 폭과 맞물려 국내 증시 내 외국인 순매수 유입을 저해하는 직접적인 원인이 되고 있습니다. 오늘 아침 한국 증시는 나스닥의 고점 경신 흐름에도 불구하고 고금리와 고유가라는 이중고로 인해 상방이 제한되는 둔화된 흐름을 보일 가능성이 높습니다. 반도체 및 핵심 수출 섹터는 글로벌 AI 펀더멘털이 유효함에도 불구하고 고금리 장기화 우려로 인한 외국인의 차익 실현 매물 압박을 받을 수 있습니다. 또한 높은 국제유가는 국내 제조업 전반의 원가 부담을 가중시켜 석유화학 및 자동차 등 주요 수출 대형주의 단기 실적 눈높이를 낮추는 요인으로 작용할 것입니다. 향후 발표 예정인 미국 소비자물가지수와 고용 지표가 예상치를 상회할 경우, 미 10년물 금리가 5% 선을 위협하며 국내 증시의 외국인 자금 이탈을 가속화할 위험이 존재합니다. 결과적으로 오늘 코스피와 코스닥은 외인 수급 부진 속에 성장주보다는 방어주 위주의 순환매가 진행되며 박스권 하단 테스트를 받을 것으로 전망됩니다. 따라서 투자자들은 미국채 금리의 4.85%선 안착 여부와 유가 추이를 면밀히 관찰하면서, 고베타 성장주에 대한 무리한 추격 매수를 자제하고 현금 비중을 일정 수준 유지하는 보수적 대응 전략이 필요합니다.</p>
     </div>
 
     <!-- AI 요약 아래로 이동된 뉴스 및 캘린더 -->
@@ -276,12 +268,12 @@
         </div>
         
             <div class="card-value">
-                101.66
+                101.68
             </div>
             
             
             
-             <div class="card-delta down">▼ 0.64 (0.62%)</div>
+             <div class="card-delta down">▼ 0.62 (0.61%)</div>
             
         
     </div>
@@ -294,12 +286,12 @@
         </div>
         
             <div class="card-value">
-                1,344.58원
+                1,343.76원
             </div>
             
             
             
-             <div class="card-delta down">▼ 18.12 (1.33%)</div>
+             <div class="card-delta down">▼ 18.94 (1.39%)</div>
             
         
     </div>
@@ -312,12 +304,12 @@
         </div>
         
             <div class="card-value">
-                157.99엔
+                157.96엔
             </div>
             
             
             
-             <div class="card-delta down">▼ 0.30 (0.19%)</div>
+             <div class="card-delta down">▼ 0.33 (0.21%)</div>
             
         
     </div>
@@ -397,12 +389,12 @@
         </div>
         
             <div class="card-value">
-                85.90
+                85.86
             </div>
             
             
             
-             <div class="card-delta down">▼ 4.93 (5.43%)</div>
+             <div class="card-delta down">▼ 4.97 (5.47%)</div>
             
         
     </div>
@@ -415,12 +407,12 @@
         </div>
         
             <div class="card-value">
-                91.78
+                91.69
             </div>
             
             
             
-             <div class="card-delta down">▼ 6.54 (6.65%)</div>
+             <div class="card-delta down">▼ 6.63 (6.74%)</div>
             
         
     </div>
@@ -433,13 +425,13 @@
         </div>
         
             <div class="card-value">
-                8,526원
+                8,530원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 52 (0.63%)</div>
+             <div class="card-delta up">▲ 56 (0.67%)</div>
             
         
     </div>
@@ -452,13 +444,13 @@
         </div>
         
             <div class="card-value">
-                667,807원
+                667,954원
                 
             </div>
             
             
             
-             <div class="card-delta down">▼ 1,675 (0.25%)</div>
+             <div class="card-delta down">▼ 1,528 (0.23%)</div>
             
         
     </div>
@@ -471,13 +463,13 @@
         </div>
         
             <div class="card-value">
-                8,590원
+                8,606원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 79 (0.94%)</div>
+             <div class="card-delta up">▲ 95 (1.12%)</div>
             
         
     </div>
@@ -564,9 +556,11 @@
     </div>
     
 
-    <div class="section-title">💻 5. 주요 빅테크 및 관심 종목 동향</div>
+    <!-- 섹터별 관심 종목 렌더링 -->
+    <div class="section-title">💻 5. 빅테크 & 소프트웨어</div>
     <div class="grid">
         
+            
     <div class="card">
         <div class="card-label">
             Apple
@@ -587,6 +581,7 @@
     </div>
 
         
+            
     <div class="card">
         <div class="card-label">
             Microsoft
@@ -607,6 +602,7 @@
     </div>
 
         
+            
     <div class="card">
         <div class="card-label">
             Alphabet
@@ -625,6 +621,7 @@
     </div>
 
         
+            
     <div class="card">
         <div class="card-label">
             Amazon
@@ -643,24 +640,7 @@
     </div>
 
         
-    <div class="card">
-        <div class="card-label">
-            NVIDIA
             
-        </div>
-        
-            <div class="card-value">
-                178.67$
-            </div>
-            
-            
-            
-             <div class="card-delta down">▼ 7.97 (4.27%)</div>
-            
-        
-    </div>
-
-        
     <div class="card">
         <div class="card-label">
             Meta
@@ -679,60 +659,7 @@
     </div>
 
         
-    <div class="card">
-        <div class="card-label">
-            Tesla
             
-        </div>
-        
-            <div class="card-value">
-                378.05$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 19.83 (5.54%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            Micron
-            
-        </div>
-        
-            <div class="card-value">
-                733.15$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 43.15 (6.25%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            TSMC
-            
-        </div>
-        
-            <div class="card-value">
-                388.62$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 13.18 (3.51%)</div>
-            
-        
-    </div>
-
-        
     <div class="card">
         <div class="card-label">
             Oracle
@@ -751,6 +678,278 @@
     </div>
 
         
+            
+    <div class="card">
+        <div class="card-label">
+            크라우드스트라이크
+            
+        </div>
+        
+            <div class="card-value">
+                228.58$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 11.68 (5.38%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            클라우드플레어
+            
+        </div>
+        
+            <div class="card-value">
+                293.75$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 25.00 (9.30%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            세일스포스
+            
+        </div>
+        
+            <div class="card-value">
+                214.94$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 1.29 (0.60%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            팔로알토 네트웍스
+            
+        </div>
+        
+            <div class="card-value">
+                330.89$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 17.05 (5.43%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            앱러빈
+            
+        </div>
+        
+            <div class="card-value">
+                410.00$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 18.78 (4.80%)</div>
+            
+        
+    </div>
+
+        
+    </div>
+
+    <div class="section-title">🧠 6. 반도체 & AI 하드웨어</div>
+    <div class="grid">
+        
+            
+    <div class="card">
+        <div class="card-label">
+            NVIDIA
+            
+        </div>
+        
+            <div class="card-value">
+                178.67$
+            </div>
+            
+            
+            
+             <div class="card-delta down">▼ 7.97 (4.27%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            AMD
+            
+        </div>
+        
+            <div class="card-value">
+                508.58$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 59.54 (13.26%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            TSMC
+            
+        </div>
+        
+            <div class="card-value">
+                388.62$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 13.18 (3.51%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            Micron
+            
+        </div>
+        
+            <div class="card-value">
+                733.15$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 43.15 (6.25%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            인텔
+            
+        </div>
+        
+            <div class="card-value">
+                59.37$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 3.09 (5.49%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            퀄컴
+            
+        </div>
+        
+            <div class="card-value">
+                171.47$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 6.06 (3.66%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            브로드컴
+            
+        </div>
+        
+            <div class="card-value">
+                319.48$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 25.79 (8.78%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            ASML
+            
+        </div>
+        
+            <div class="card-value">
+                1,513.25$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 88.50 (6.21%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            램리서치
+            
+        </div>
+        
+            <div class="card-value">
+                221.31$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 20.87 (10.41%)</div>
+            
+        
+    </div>
+
+        
+            
     <div class="card">
         <div class="card-label">
             Palantir
@@ -769,6 +968,321 @@
     </div>
 
         
+            
+    <div class="card">
+        <div class="card-label">
+            템퍼스 AI
+            
+        </div>
+        
+            <div class="card-value">
+                84.44$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 8.39 (11.03%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            웨스턴디지털
+            
+        </div>
+        
+            <div class="card-value">
+                289.78$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 26.00 (9.86%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            셀레스티카
+            
+        </div>
+        
+            <div class="card-value">
+                222.92$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 16.24 (7.86%)</div>
+            
+        
+    </div>
+
+        
+    </div>
+
+    <div class="section-title">⚡ 7. 원자력, 에너지 & 인프라</div>
+    <div class="grid">
+        
+            
+    <div class="card">
+        <div class="card-label">
+            엑슨모빌
+            
+        </div>
+        
+            <div class="card-value">
+                164.73$
+            </div>
+            
+            
+            
+             <div class="card-delta down">▼ 1.14 (0.69%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            GE버노바
+            
+        </div>
+        
+            <div class="card-value">
+                829.34$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 55.23 (7.13%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            뉴스케일파워
+            
+        </div>
+        
+            <div class="card-value">
+                5.44$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 0.36 (7.09%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            오클로
+            
+        </div>
+        
+            <div class="card-value">
+                26.84$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 3.29 (13.97%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            T1에너지
+            
+        </div>
+        
+            <div class="card-value">
+                2.29$
+            </div>
+            
+            
+            
+             <div class="card-delta down">▼ 0.07 (2.97%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            비스트라 에너지
+            
+        </div>
+        
+            <div class="card-value">
+                133.92$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 9.12 (7.31%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            블룸에너지
+            
+        </div>
+        
+            <div class="card-value">
+                193.88$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 20.64 (11.91%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            BWX 테크놀로지스
+            
+        </div>
+        
+            <div class="card-value">
+                127.99$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 8.47 (7.09%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            버티브홀딩스
+            
+        </div>
+        
+            <div class="card-value">
+                200.47$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 17.61 (9.63%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            콴타서비시스
+            
+        </div>
+        
+            <div class="card-value">
+                591.48$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 50.58 (9.35%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            카메코
+            
+        </div>
+        
+            <div class="card-value">
+                75.37$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 4.07 (5.71%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            파월 인더스트리스
+            
+        </div>
+        
+            <div class="card-value">
+                141.65$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 8.53 (6.41%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            마스텍
+            
+        </div>
+        
+            <div class="card-value">
+                189.05$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 14.95 (8.59%)</div>
+            
+        
+    </div>
+
+        
+    </div>
+
+    <div class="section-title">🏥 8. 제약 & 헬스케어</div>
+    <div class="grid">
+        
+            
     <div class="card">
         <div class="card-label">
             Eli Lilly
@@ -789,161 +1303,7 @@
     </div>
 
         
-    <div class="card">
-        <div class="card-label">
-            AMD
             
-        </div>
-        
-            <div class="card-value">
-                508.58$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 59.54 (13.26%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            뉴스케일파워
-            
-        </div>
-        
-            <div class="card-value">
-                5.44$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 0.36 (7.09%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            엑슨모빌
-            
-        </div>
-        
-            <div class="card-value">
-                164.73$
-            </div>
-            
-            
-            
-             <div class="card-delta down">▼ 1.14 (0.69%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            GE버노바
-            
-        </div>
-        
-            <div class="card-value">
-                829.34$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 55.23 (7.13%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            크라우드스트라이크
-            
-        </div>
-        
-            <div class="card-value">
-                228.58$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 11.68 (5.38%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            인텔
-            
-        </div>
-        
-            <div class="card-value">
-                59.37$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 3.09 (5.49%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            스페이스X
-            
-        </div>
-        
-            <div class="card-value">
-                142.07$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 7.80 (5.81%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            웨스턴디지털(샌디스크)
-            
-        </div>
-        
-            <div class="card-value">
-                289.78$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 26.00 (9.86%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            SK하이닉스(ADR)
-            
-        </div>
-        
-            <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
-        
-    </div>
-
-        
     <div class="card">
         <div class="card-label">
             화이자
@@ -962,314 +1322,7 @@
     </div>
 
         
-    <div class="card">
-        <div class="card-label">
-            T1에너지
             
-        </div>
-        
-            <div class="card-value">
-                2.29$
-            </div>
-            
-            
-            
-             <div class="card-delta down">▼ 0.07 (2.97%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            셀레스티카
-            
-        </div>
-        
-            <div class="card-value">
-                222.92$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 16.24 (7.86%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            버티브홀딩스
-            
-        </div>
-        
-            <div class="card-value">
-                200.47$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 17.61 (9.63%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            오클로
-            
-        </div>
-        
-            <div class="card-value">
-                26.84$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 3.29 (13.97%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            블룸에너지
-            
-        </div>
-        
-            <div class="card-value">
-                193.88$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 20.64 (11.91%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            비스트라 에너지
-            
-        </div>
-        
-            <div class="card-value">
-                133.92$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 9.12 (7.31%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            콴타서비시스
-            
-        </div>
-        
-            <div class="card-value">
-                591.48$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 50.58 (9.35%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            클라우드플레어
-            
-        </div>
-        
-            <div class="card-value">
-                293.75$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 25.00 (9.30%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            세일스포스
-            
-        </div>
-        
-            <div class="card-value">
-                214.94$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 1.29 (0.60%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            BWX 테크놀로지스
-            
-        </div>
-        
-            <div class="card-value">
-                127.99$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 8.47 (7.09%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            팔로알토 네트웍스
-            
-        </div>
-        
-            <div class="card-value">
-                330.89$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 17.05 (5.43%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            템퍼스 AI
-            
-        </div>
-        
-            <div class="card-value">
-                84.44$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 8.39 (11.03%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            앱러빈
-            
-        </div>
-        
-            <div class="card-value">
-                410.00$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 18.78 (4.80%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            퀄컴
-            
-        </div>
-        
-            <div class="card-value">
-                171.47$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 6.06 (3.66%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            JP모건
-            
-        </div>
-        
-            <div class="card-value">
-                342.08$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 7.59 (2.27%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            브로드컴
-            
-        </div>
-        
-            <div class="card-value">
-                319.48$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 25.79 (8.78%)</div>
-            
-        
-    </div>
-
-        
-    <div class="card">
-        <div class="card-label">
-            버크셔해서웨이
-            
-                <span title="52주 신고가(3% 이내) 근접" style="font-size: 1.2rem; margin-left: 2px;">🔥</span>
-            
-        </div>
-        
-            <div class="card-value">
-                575.25$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 4.36 (0.76%)</div>
-            
-        
-    </div>
-
-        
     <div class="card">
         <div class="card-label">
             존슨앤드존슨
@@ -1290,24 +1343,7 @@
     </div>
 
         
-    <div class="card">
-        <div class="card-label">
-            ASML
             
-        </div>
-        
-            <div class="card-value">
-                1,513.25$
-            </div>
-            
-            
-            
-             <div class="card-delta up">▲ 88.50 (6.21%)</div>
-            
-        
-    </div>
-
-        
     <div class="card">
         <div class="card-label">
             유나이티드헬스
@@ -1326,24 +1362,133 @@
     </div>
 
         
+            
     <div class="card">
         <div class="card-label">
-            램리서치
+            모더나
             
         </div>
         
             <div class="card-value">
-                221.31$
+                269.00$
             </div>
             
             
             
-             <div class="card-delta up">▲ 20.87 (10.41%)</div>
+             <div class="card-delta up">▲ 14.81 (5.83%)</div>
             
         
     </div>
 
         
+    </div>
+
+    <div class="section-title">🚀 9. 우주항공 & 모빌리티</div>
+    <div class="grid">
+        
+            
+    <div class="card">
+        <div class="card-label">
+            Tesla
+            
+        </div>
+        
+            <div class="card-value">
+                378.05$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 19.83 (5.54%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            스페이스X
+            
+        </div>
+        
+            <div class="card-value">
+                142.07$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 7.80 (5.81%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            로켓랩
+            
+        </div>
+        
+            <div class="card-value">
+                58.86$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 5.79 (10.91%)</div>
+            
+        
+    </div>
+
+        
+    </div>
+
+    <div class="section-title">🏦 10. 금융 & 투자</div>
+    <div class="grid">
+        
+            
+    <div class="card">
+        <div class="card-label">
+            JP모건
+            
+        </div>
+        
+            <div class="card-value">
+                342.08$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 7.59 (2.27%)</div>
+            
+        
+    </div>
+
+        
+            
+    <div class="card">
+        <div class="card-label">
+            버크셔해서웨이
+            
+                <span title="52주 신고가(3% 이내) 근접" style="font-size: 1.2rem; margin-left: 2px;">🔥</span>
+            
+        </div>
+        
+            <div class="card-value">
+                575.25$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 4.36 (0.76%)</div>
+            
+        
+    </div>
+
+        
+            
     <div class="card">
         <div class="card-label">
             모건스탠리
@@ -1361,17 +1506,34 @@
         
     </div>
 
+        
+            
+    <div class="card">
+        <div class="card-label">
+            KKR &amp; CO
+            
+        </div>
+        
+            <div class="card-value">
+                98.09$
+            </div>
+            
+            
+            
+             <div class="card-delta up">▲ 1.61 (1.67%)</div>
+            
+        
+    </div>
+
+        
     </div>
 
 </div>
 
 <script>
-    // PWA 서비스 워커 등록
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').then(reg => {
-                console.log('Service Worker Registered!', reg);
-            }).catch(err => {
+            navigator.serviceWorker.register('./sw.js').catch(err => {
                 console.log('Service Worker registration failed: ', err);
             });
         });
