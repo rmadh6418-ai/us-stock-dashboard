@@ -32,19 +32,32 @@ def fetch_yfinance_data(tickers):
     data = {}
     for name, ticker in tickers.items():
         try:
-            hist = yf.Ticker(ticker).history(period="5d")
-            if 'Close' in hist.columns:
+            # 52주(1년) 데이터를 가져와서 신고가 계산에 활용
+            hist = yf.Ticker(ticker).history(period="1y")
+            if 'Close' in hist.columns and len(hist) >= 2:
                 close_prices = hist['Close'].dropna()
+                high_prices = hist['High'].dropna()
+                
                 if len(close_prices) >= 2:
                     current = float(close_prices.iloc[-1])
                     prev = float(close_prices.iloc[-2])
                     diff = current - prev
                     pct = (diff / prev) * 100 if prev != 0 else 0
-                    data[name] = {'value': current, 'diff': diff, 'pct': pct}
+                    
+                    # 52주 최고가 계산 및 근접 여부(3% 이내) 판단
+                    fifty_two_week_high = float(high_prices.max())
+                    near_52w_high = current >= (fifty_two_week_high * 0.97)
+                    
+                    data[name] = {
+                        'value': current, 
+                        'diff': diff, 
+                        'pct': pct, 
+                        'near_52w_high': near_52w_high
+                    }
                     continue
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False}
         except:
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False}
     return data
 
 def get_fear_and_greed():
@@ -195,7 +208,7 @@ def get_ai_summary(data):
     try:
         genai.configure(api_key=api_key)
 
-        # 한국 시간(KST) 기준으로 오늘 날짜 가져오기 (예: "2026년 11월 05일")
+        # 한국 시간(KST) 기준으로 오늘 날짜 가져오기
         today_str = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
         
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
@@ -271,7 +284,33 @@ def get_dashboard_data():
         'bigtech': fetch_yfinance_data({
             'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA',
             'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY',
-            'AMD': 'AMD', '뉴스케일파워': 'SMR', '엑슨모빌': 'XOM', 'GE버노바': 'GEV', '크라우드스트라이크': 'CRWD', '인텔': 'INTC'
+            'AMD': 'AMD', '뉴스케일파워': 'SMR', '엑슨모빌': 'XOM', 'GE버노바': 'GEV', '크라우드스트라이크': 'CRWD', '인텔': 'INTC',
+            '스페이스X': 'SPCX', 
+            '웨스턴디지털(샌디스크)': 'WDC',
+            'SK하이닉스(ADR)': 'HXSCL',
+            '화이자': 'PFE',
+            'T1에너지': 'TE', 
+            '셀레스티카': 'CLS',
+            '버티브홀딩스': 'VRT',
+            '오클로': 'OKLO',
+            '블룸에너지': 'BE',
+            '비스트라 에너지': 'VST',
+            '콴타서비시스': 'PWR',
+            '클라우드플레어': 'NET',
+            '세일스포스': 'CRM',
+            'BWX 테크놀로지스': 'BWXT', 
+            '팔로알토 네트웍스': 'PANW',
+            '템퍼스 AI': 'TEM',
+            '앱러빈': 'APP',
+            '퀄컴': 'QCOM',
+            'JP모건': 'JPM',
+            '브로드컴': 'AVGO',
+            '버크셔해서웨이': 'BRK-B',
+            '존슨앤드존슨': 'JNJ',
+            'ASML': 'ASML',
+            '유나이티드헬스': 'UNH',
+            '램리서치': 'LRCX',
+            '모건스탠리': 'MS'
         }),
         'news': get_google_news(),
         'calendar': get_economic_calendar()
@@ -397,9 +436,16 @@ HTML_TEMPLATE = """
     }
 </script>
 <!-- 🔐 비밀번호 잠금 화면 끝 -->
+
+<!-- 매크로: 52주 신고가 근접(3% 이내) 시 불꽃 마크 추가 -->
 {% macro render_metric(label, data_obj, is_int=False, suffix='') %}
     <div class="card">
-        <div class="card-label">{{ label }}</div>
+        <div class="card-label">
+            {{ label }}
+            {% if data_obj.get and data_obj.get('near_52w_high') %}
+                <span title="52주 신고가(3% 이내) 근접" style="font-size: 1.2rem; margin-left: 2px;">🔥</span>
+            {% endif %}
+        </div>
         {% if data_obj.value != "N/A" %}
             <div class="card-value">
                 {% if is_int %}{{ "{:,}".format(data_obj.value|int) }}{{ suffix }}
@@ -421,8 +467,32 @@ HTML_TEMPLATE = """
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
 
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
-    <div class="list-box" style="margin-bottom: 30px; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
+    <div class="list-box" style="margin-bottom: 0; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
         <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">{{ data.ai_summary }}</p>
+    </div>
+
+    <!-- AI 요약 아래로 이동된 뉴스 및 캘린더 -->
+    <div class="dual-grid" style="margin-top: 20px; margin-bottom: 40px;">
+        <div>
+            <div class="section-title" style="margin-top:0;">📰 주요 경제 및 빅테크 뉴스</div>
+            <div class="list-box">
+                {% if data.news %}
+                    {% for item in data.news %}
+                        <div class="news-item"><a href="{{ item.link }}" target="_blank" class="news-link">{{ item.title }}</a><br><span class="news-date">({{ item.date }})</span></div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="section-title" style="margin-top:0;">📅 주간 주요 달러(USD) 경제 지표</div>
+            <div class="list-box">
+                {% if data.calendar %}
+                    {% for event in data.calendar %}
+                        <div class="cal-item">{{ event.title }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <div class="section-title">📈 1. 미국 주요 지수</div>
@@ -495,30 +565,34 @@ HTML_TEMPLATE = """
         {{ render_metric('GE버노바', data.bigtech['GE버노바'], False, '$') }}
         {{ render_metric('크라우드스트라이크', data.bigtech['크라우드스트라이크'], False, '$') }}
         {{ render_metric('인텔', data.bigtech['인텔'], False, '$') }}
+        {{ render_metric('스페이스X', data.bigtech['스페이스X'], False, '$') }}
+        {{ render_metric('웨스턴디지털(샌디스크)', data.bigtech['웨스턴디지털(샌디스크)'], False, '$') }}
+        {{ render_metric('SK하이닉스(ADR)', data.bigtech['SK하이닉스(ADR)'], False, '$') }}
+        {{ render_metric('화이자', data.bigtech['화이자'], False, '$') }}
+        {{ render_metric('T1에너지', data.bigtech['T1에너지'], False, '$') }}
+        {{ render_metric('셀레스티카', data.bigtech['셀레스티카'], False, '$') }}
+        {{ render_metric('버티브홀딩스', data.bigtech['버티브홀딩스'], False, '$') }}
+        {{ render_metric('오클로', data.bigtech['오클로'], False, '$') }}
+        {{ render_metric('블룸에너지', data.bigtech['블룸에너지'], False, '$') }}
+        {{ render_metric('비스트라 에너지', data.bigtech['비스트라 에너지'], False, '$') }}
+        {{ render_metric('콴타서비시스', data.bigtech['콴타서비시스'], False, '$') }}
+        {{ render_metric('클라우드플레어', data.bigtech['클라우드플레어'], False, '$') }}
+        {{ render_metric('세일스포스', data.bigtech['세일스포스'], False, '$') }}
+        {{ render_metric('BWX 테크놀로지스', data.bigtech['BWX 테크놀로지스'], False, '$') }}
+        {{ render_metric('팔로알토 네트웍스', data.bigtech['팔로알토 네트웍스'], False, '$') }}
+        {{ render_metric('템퍼스 AI', data.bigtech['템퍼스 AI'], False, '$') }}
+        {{ render_metric('앱러빈', data.bigtech['앱러빈'], False, '$') }}
+        {{ render_metric('퀄컴', data.bigtech['퀄컴'], False, '$') }}
+        {{ render_metric('JP모건', data.bigtech['JP모건'], False, '$') }}
+        {{ render_metric('브로드컴', data.bigtech['브로드컴'], False, '$') }}
+        {{ render_metric('버크셔해서웨이', data.bigtech['버크셔해서웨이'], False, '$') }}
+        {{ render_metric('존슨앤드존슨', data.bigtech['존슨앤드존슨'], False, '$') }}
+        {{ render_metric('ASML', data.bigtech['ASML'], False, '$') }}
+        {{ render_metric('유나이티드헬스', data.bigtech['유나이티드헬스'], False, '$') }}
+        {{ render_metric('램리서치', data.bigtech['램리서치'], False, '$') }}
+        {{ render_metric('모건스탠리', data.bigtech['모건스탠리'], False, '$') }}
     </div>
 
-    <div class="dual-grid">
-        <div>
-            <div class="section-title" style="margin-top:0;">📰 6. 주요 경제 및 빅테크 뉴스</div>
-            <div class="list-box">
-                {% if data.news %}
-                    {% for item in data.news %}
-                        <div class="news-item"><a href="{{ item.link }}" target="_blank" class="news-link">{{ item.title }}</a><br><span class="news-date">({{ item.date }})</span></div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        </div>
-        <div>
-            <div class="section-title" style="margin-top:0;">📅 7. 주간 주요 달러(USD) 경제 지표</div>
-            <div class="list-box">
-                {% if data.calendar %}
-                    {% for event in data.calendar %}
-                        <div class="cal-item">{{ event.title }}</div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -535,14 +609,3 @@ HTML_TEMPLATE = """
 </script>
 </body>
 </html>
-"""
-
-def generate_html():
-    with app.app_context():
-        dashboard_data = get_dashboard_data()
-        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
-        with open("index.html", "w", encoding="utf-8") as f:
-            f.write(rendered)
-
-if __name__ == "__main__":
-    generate_html()
