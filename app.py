@@ -395,6 +395,7 @@ HTML_TEMPLATE = """
 
 <script>
     let chatHistory = [];
+    
     async function sendChatMessage() {
         // 브라우저 로컬 스토리지에서 API 키 확인, 없으면 팝업으로 요청
         let apiKey = localStorage.getItem('gemini_api_key');
@@ -408,12 +409,14 @@ HTML_TEMPLATE = """
         const message = inputEl.value.trim();
         if (!message) return;
 
+        // 최초 질문 시 요약 내용을 컨텍스트로 주입
         if (chatHistory.length === 0) {
             const summaryText = document.getElementById('ai-summary-text').innerText;
             chatHistory.push({ "role": "user", "parts": [{ "text": `오늘의 증시 요약: ${summaryText}\\n이 내용을 바탕으로 내 질문에 대답해줘.` }] });
             chatHistory.push({ "role": "model", "parts": [{ "text": "네, 준비되었습니다." }] });
         }
 
+        // 화면에 사용자 메시지 표시 및 배열에 추가
         appendMessage('user', message);
         inputEl.value = '';
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
@@ -423,44 +426,51 @@ HTML_TEMPLATE = """
 
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: chatHistory })
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ contents: chatHistory })
             });
-            if (!response.ok) throw new Error('API Request Failed');
+            
             const data = await response.json();
+            
+            // HTTP 상태 코드가 정상이 아닐 경우 실제 에러 메시지를 던짐
+            if (!response.ok) {
+                throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
+            }
+
+            // 성공 시 모델 응답을 배열에 추가하고 화면 업데이트
             const replyText = data.candidates[0].content.parts[0].text;
             chatHistory.push({ "role": "model", "parts": [{ "text": replyText }] });
             updateMessage(loadingId, replyText);
+            
         } catch (error) {
-            console.error(error);
-            updateMessage(loadingId, '오류 발생: API 키가 잘못되었거나 한도를 초과했습니다. 다시 설정하려면 캐시를 지워주세요.');
-            localStorage.removeItem('gemini_api_key'); // 오류 시 키 초기화
+            console.error("API 통신 에러:", error);
+            
+            // 💡 핵심 해결: 실패 시 마지막 사용자 메시지를 배열에서 제거하여 다음 시도 시 role(user->model) 순서가 꼬이는 것을 방지
+            chatHistory.pop(); 
+            
+            // Google API가 반환한 실제 에러 텍스트를 화면에 표시
+            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 만료되었거나 잘못되었습니다. 새로고침하여 다시 입력해주세요.`);
+            localStorage.removeItem('gemini_api_key'); // 오류 시 기존 키 삭제
         }
     }
+    
     function appendMessage(role, text, id = null) {
         const historyEl = document.getElementById('chat-history');
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
         msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
-        historyEl.appendChild(msgDiv); historyEl.scrollTop = historyEl.scrollHeight;
+        historyEl.appendChild(msgDiv); 
+        historyEl.scrollTop = historyEl.scrollHeight;
     }
+    
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
         if (msgDiv) msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
     }
-    document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+    
+    document.getElementById('chat-input').addEventListener('keypress', e => { 
+        if (e.key === 'Enter') sendChatMessage(); 
+    });
 </script>
-</body>
-</html>
-"""
-
-def generate_html():
-    with app.app_context():
-        # HTML 렌더링 시 서버 단에서 API 키를 주입하지 않음 (GitHub 보안 정책 준수)
-        dashboard_data = get_dashboard_data()
-        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
-        with open("index.html", "w", encoding="utf-8") as f:
-            f.write(rendered)
-
-if __name__ == "__main__":
-    generate_html()
