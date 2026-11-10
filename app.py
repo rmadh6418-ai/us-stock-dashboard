@@ -197,13 +197,7 @@ def get_ai_summary(data):
         2. 매크로 및 환율: 미국채 금리와 원/달러 환율 변동이 국내 증시 외국인 수급에 미칠 파급력
         3. 투심 및 유동성: VIX, 공포탐욕지수, 연준 순유동성(Net Liquidity) 및 역레포(ON RRP) 추이를 바탕으로 한 글로벌 자금 환경 진단
         4. 정치, 경제 및 지정학적 리스크, 국제유가 : 분석 날짜 기준 S&P 500과 나스닥이 어떤 이유에서 상승과 하락하였는지 분석
-        5. 미국 주요 경제지표 : 분석 날짜 기준으로 발표 예정인 미국 주요 경제지표에 따라 국내 증시의 영향에 대한 분석 
-
-        [작성 지침]
-        1. 전체 분량은 15문장 내외의 매끄러운 단일 문단(줄글)으로만 작성할 것.
-        2. 마크다운 기호(*, #, - 등)는 일절 사용하지 말 것.
-        3. 단순 수치 나열을 피하고 객관적이고 전문적인 보고서 어조를 유지할 것.
-        4. 작성한 것에 대한 근거를 반드시 포함 할 것.
+        5. 미국 주요 경제지표 : 분석 날짜 기준으로 발표 예정인 미국 주요 경제지표에 따라 국내 증시의 영향에 대한 분석
         
         [오늘의 데이터]
         - S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -212,12 +206,8 @@ def get_ai_summary(data):
         - 원/달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
         - VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
         - WTI유: {data['commodities'].get('WTI유', {}).get('value')}달러
-        - 브렌트유: {data['commodities'].get('브렌트유', {}).get('value')}달러
-        - CNN 공포탐욕지수: {data['cnn'].get('score') if data.get('cnn') else '조회 불가'}
         - 연준 순유동성: {fed_net}
-        - 연준 역레포 잔액: {fed_rrp}
         """
-        
         for model_name in ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash']:
             try:
                 response = genai.GenerativeModel(model_name).generate_content(prompt)
