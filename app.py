@@ -208,9 +208,7 @@ def get_ai_summary(data):
     try:
         genai.configure(api_key=api_key)
 
-        # 한국 시간(KST) 기준으로 오늘 날짜 가져오기
         today_str = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
-        
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         
@@ -281,37 +279,32 @@ def get_dashboard_data():
         'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
         
-        'bigtech': fetch_yfinance_data({
-            'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'NVIDIA': 'NVDA', 'Meta': 'META', 'Tesla': 'TSLA',
-            'Micron': 'MU', 'TSMC': 'TSM', 'Oracle': 'ORCL', 'Palantir': 'PLTR', 'Eli Lilly': 'LLY',
-            'AMD': 'AMD', '뉴스케일파워': 'SMR', '엑슨모빌': 'XOM', 'GE버노바': 'GEV', '크라우드스트라이크': 'CRWD', '인텔': 'INTC',
-            '스페이스X': 'SPCX', 
-            '웨스턴디지털(샌디스크)': 'WDC',
-            'SK하이닉스(ADR)': 'HXSCL',
-            '화이자': 'PFE',
-            'T1에너지': 'TE', 
-            '셀레스티카': 'CLS',
-            '버티브홀딩스': 'VRT',
-            '오클로': 'OKLO',
-            '블룸에너지': 'BE',
-            '비스트라 에너지': 'VST',
-            '콴타서비시스': 'PWR',
-            '클라우드플레어': 'NET',
-            '세일스포스': 'CRM',
-            'BWX 테크놀로지스': 'BWXT', 
-            '팔로알토 네트웍스': 'PANW',
-            '템퍼스 AI': 'TEM',
-            '앱러빈': 'APP',
-            '퀄컴': 'QCOM',
-            'JP모건': 'JPM',
-            '브로드컴': 'AVGO',
-            '버크셔해서웨이': 'BRK-B',
-            '존슨앤드존슨': 'JNJ',
-            'ASML': 'ASML',
-            '유나이티드헬스': 'UNH',
-            '램리서치': 'LRCX',
-            '모건스탠리': 'MS'
+        # --- 섹터별 종목 분류 ---
+        'tech_soft': fetch_yfinance_data({
+            'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 
+            'Meta': 'META', 'Oracle': 'ORCL', '크라우드스트라이크': 'CRWD', '클라우드플레어': 'NET', 
+            '세일스포스': 'CRM', '팔로알토 네트웍스': 'PANW', '앱러빈': 'APP'
         }),
+        'semi_ai': fetch_yfinance_data({
+            'NVIDIA': 'NVDA', 'AMD': 'AMD', 'TSMC': 'TSM', 'Micron': 'MU', '인텔': 'INTC', 
+            '퀄컴': 'QCOM', '브로드컴': 'AVGO', 'ASML': 'ASML', '램리서치': 'LRCX', 
+            'Palantir': 'PLTR', '템퍼스 AI': 'TEM', '웨스턴디지털': 'WDC', '셀레스티카': 'CLS'
+        }),
+        'energy_infra': fetch_yfinance_data({
+            '엑슨모빌': 'XOM', 'GE버노바': 'GEV', '뉴스케일파워': 'SMR', '오클로': 'OKLO', 
+            'T1에너지': 'TE', '비스트라 에너지': 'VST', '블룸에너지': 'BE', 'BWX 테크놀로지스': 'BWXT', 
+            '버티브홀딩스': 'VRT', '콴타서비시스': 'PWR', '카메코': 'CCJ', '파월 인더스트리스': 'POWL', '마스텍': 'MTZ'
+        }),
+        'health': fetch_yfinance_data({
+            'Eli Lilly': 'LLY', '화이자': 'PFE', '존슨앤드존슨': 'JNJ', '유나이티드헬스': 'UNH', '모더나': 'MRNA'
+        }),
+        'space_mobility': fetch_yfinance_data({
+            'Tesla': 'TSLA', '스페이스X': 'SPCX', '로켓랩': 'RKLB'
+        }),
+        'finance': fetch_yfinance_data({
+            'JP모건': 'JPM', '버크셔해서웨이': 'BRK-B', '모건스탠리': 'MS', 'KKR & CO': 'KKR'
+        }),
+        
         'news': get_google_news(),
         'calendar': get_economic_calendar()
     }
@@ -401,21 +394,16 @@ HTML_TEMPLATE = """
 <script>
     function checkPassword() {
         const input = document.getElementById('pw-input').value;
-        
-        // 비트연산(XOR)을 활용한 비밀번호 검증 (원본 비밀번호 노출 방지)
         const _hash = [0x1e, 0x18, 0x1a, 0x19]; 
-        const _k = 0x2a; // XOR 연산 키 값
-
+        const _k = 0x2a; 
         let isAuth = (input.length === _hash.length);
         if (isAuth) {
             for (let i = 0; i < _hash.length; i++) {
                 if ((input.charCodeAt(i) ^ _k) !== _hash[i]) {
-                    isAuth = false;
-                    break;
+                    isAuth = false; break;
                 }
             }
         }
-
         if (isAuth) {
             document.getElementById('lock-screen').style.display = 'none';
             sessionStorage.setItem('isUnlocked', 'true');
@@ -423,15 +411,12 @@ HTML_TEMPLATE = """
             document.getElementById('pw-error').style.display = 'block';
         }
     }
-
     window.onload = function() {
         if (sessionStorage.getItem('isUnlocked') === 'true') {
             document.getElementById('lock-screen').style.display = 'none';
         }
         document.getElementById('pw-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
+            if (e.key === 'Enter') checkPassword();
         });
     }
 </script>
@@ -545,63 +530,55 @@ HTML_TEMPLATE = """
     </div>
     {% endif %}
 
-    <div class="section-title">💻 5. 주요 빅테크 및 관심 종목 동향</div>
+    <!-- 섹터별 관심 종목 렌더링 -->
+    <div class="section-title">💻 5. 빅테크 & 소프트웨어</div>
     <div class="grid">
-        {{ render_metric('Apple', data.bigtech['Apple'], False, '$') }}
-        {{ render_metric('Microsoft', data.bigtech['Microsoft'], False, '$') }}
-        {{ render_metric('Alphabet', data.bigtech['Alphabet'], False, '$') }}
-        {{ render_metric('Amazon', data.bigtech['Amazon'], False, '$') }}
-        {{ render_metric('NVIDIA', data.bigtech['NVIDIA'], False, '$') }}
-        {{ render_metric('Meta', data.bigtech['Meta'], False, '$') }}
-        {{ render_metric('Tesla', data.bigtech['Tesla'], False, '$') }}
-        {{ render_metric('Micron', data.bigtech['Micron'], False, '$') }}
-        {{ render_metric('TSMC', data.bigtech['TSMC'], False, '$') }}
-        {{ render_metric('Oracle', data.bigtech['Oracle'], False, '$') }}
-        {{ render_metric('Palantir', data.bigtech['Palantir'], False, '$') }}
-        {{ render_metric('Eli Lilly', data.bigtech['Eli Lilly'], False, '$') }}
-        {{ render_metric('AMD', data.bigtech['AMD'], False, '$') }}
-        {{ render_metric('뉴스케일파워', data.bigtech['뉴스케일파워'], False, '$') }}
-        {{ render_metric('엑슨모빌', data.bigtech['엑슨모빌'], False, '$') }}
-        {{ render_metric('GE버노바', data.bigtech['GE버노바'], False, '$') }}
-        {{ render_metric('크라우드스트라이크', data.bigtech['크라우드스트라이크'], False, '$') }}
-        {{ render_metric('인텔', data.bigtech['인텔'], False, '$') }}
-        {{ render_metric('스페이스X', data.bigtech['스페이스X'], False, '$') }}
-        {{ render_metric('웨스턴디지털(샌디스크)', data.bigtech['웨스턴디지털(샌디스크)'], False, '$') }}
-        {{ render_metric('SK하이닉스(ADR)', data.bigtech['SK하이닉스(ADR)'], False, '$') }}
-        {{ render_metric('화이자', data.bigtech['화이자'], False, '$') }}
-        {{ render_metric('T1에너지', data.bigtech['T1에너지'], False, '$') }}
-        {{ render_metric('셀레스티카', data.bigtech['셀레스티카'], False, '$') }}
-        {{ render_metric('버티브홀딩스', data.bigtech['버티브홀딩스'], False, '$') }}
-        {{ render_metric('오클로', data.bigtech['오클로'], False, '$') }}
-        {{ render_metric('블룸에너지', data.bigtech['블룸에너지'], False, '$') }}
-        {{ render_metric('비스트라 에너지', data.bigtech['비스트라 에너지'], False, '$') }}
-        {{ render_metric('콴타서비시스', data.bigtech['콴타서비시스'], False, '$') }}
-        {{ render_metric('클라우드플레어', data.bigtech['클라우드플레어'], False, '$') }}
-        {{ render_metric('세일스포스', data.bigtech['세일스포스'], False, '$') }}
-        {{ render_metric('BWX 테크놀로지스', data.bigtech['BWX 테크놀로지스'], False, '$') }}
-        {{ render_metric('팔로알토 네트웍스', data.bigtech['팔로알토 네트웍스'], False, '$') }}
-        {{ render_metric('템퍼스 AI', data.bigtech['템퍼스 AI'], False, '$') }}
-        {{ render_metric('앱러빈', data.bigtech['앱러빈'], False, '$') }}
-        {{ render_metric('퀄컴', data.bigtech['퀄컴'], False, '$') }}
-        {{ render_metric('JP모건', data.bigtech['JP모건'], False, '$') }}
-        {{ render_metric('브로드컴', data.bigtech['브로드컴'], False, '$') }}
-        {{ render_metric('버크셔해서웨이', data.bigtech['버크셔해서웨이'], False, '$') }}
-        {{ render_metric('존슨앤드존슨', data.bigtech['존슨앤드존슨'], False, '$') }}
-        {{ render_metric('ASML', data.bigtech['ASML'], False, '$') }}
-        {{ render_metric('유나이티드헬스', data.bigtech['유나이티드헬스'], False, '$') }}
-        {{ render_metric('램리서치', data.bigtech['램리서치'], False, '$') }}
-        {{ render_metric('모건스탠리', data.bigtech['모건스탠리'], False, '$') }}
+        {% for name, obj in data.tech_soft.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
+    </div>
+
+    <div class="section-title">🧠 6. 반도체 & AI 하드웨어</div>
+    <div class="grid">
+        {% for name, obj in data.semi_ai.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
+    </div>
+
+    <div class="section-title">⚡ 7. 원자력, 에너지 & 인프라</div>
+    <div class="grid">
+        {% for name, obj in data.energy_infra.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
+    </div>
+
+    <div class="section-title">🏥 8. 제약 & 헬스케어</div>
+    <div class="grid">
+        {% for name, obj in data.health.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
+    </div>
+
+    <div class="section-title">🚀 9. 우주항공 & 모빌리티</div>
+    <div class="grid">
+        {% for name, obj in data.space_mobility.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
+    </div>
+
+    <div class="section-title">🏦 10. 금융 & 투자</div>
+    <div class="grid">
+        {% for name, obj in data.finance.items() %}
+            {{ render_metric(name, obj, False, '$') }}
+        {% endfor %}
     </div>
 
 </div>
 
 <script>
-    // PWA 서비스 워커 등록
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').then(reg => {
-                console.log('Service Worker Registered!', reg);
-            }).catch(err => {
+            navigator.serviceWorker.register('./sw.js').catch(err => {
                 console.log('Service Worker registration failed: ', err);
             });
         });
