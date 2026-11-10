@@ -39,6 +39,11 @@
         .chat-input-area input { flex: 1; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
         .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
+        /* 토글 애니메이션을 위한 클래스 */
+        .ai-toggle-title { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .ai-toggle-title:hover { opacity: 0.8; }
+        #ai-section-content { transition: all 0.3s ease; }
+
         @media (max-width: 768px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
@@ -76,69 +81,83 @@
         if (sessionStorage.getItem('isUnlocked') === 'true') document.getElementById('lock-screen').style.display = 'none';
         document.getElementById('pw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPassword(); });
     }
+    
+    // AI 섹션 토글 기능
+    function toggleAiSection() {
+        const content = document.getElementById('ai-section-content');
+        const icon = document.getElementById('ai-toggle-icon');
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.innerText = '▼';
+        } else {
+            content.style.display = 'none';
+            icon.innerText = '▶';
+        }
+    }
 </script>
 
 
 
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
-    <div class="section-title">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
-    <div class="list-box">
-        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8;">[분석 기준 날짜: 2026년 11월 10일]
-
-**[글로벌 매크로 &amp; 한국 증시 개장 전 최종 전략 보고서]**
-**작성: 0.1% 매크로 &amp; 금융 애널리스트**
-
----
-
-### **[Executive Summary: 개장 전 핵심 요약]**
-미국 증시는 S&amp;P 500(7,549.94p)과 나스닥 100(27,907.63p)이 견조한 실적과 구조적 테크 성장세에 힘입어 역사적 높은 수준을 유지하고 있으나, **미국채 10년물 금리 급등(4.86%)과 국제유가 상승(WTI $85.51), VIX 지수의 20pt 임박(19.92)**이 상방을 제한하는 국면입니다. 
-
-오늘 아침 한국 증시는 미국 증시의 강세 흐름을 이어받아 상승 출발을 시도할 수 있으나, **고금리·고유가 압력에 따른 외국인 수급의 제한적 유입**으로 지수 전체의 폭등보다는 **&#39;섹터별 차별화(순환매)&#39;** 양상이 짙게 나타날 것입니다.
+    
+    <!-- AI 토글 제목 영역 -->
+    <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
+        <span>✨ 🤖 AI 오늘의 증시 3줄 요약</span>
+        <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
+    </div>
+    
+    <!-- AI 내용 영역 (토글 대상) -->
+    <div class="list-box" id="ai-section-content">
+        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8;">[모닝 브리핑: 2026년 11월 10일 개장 전 글로벌 매크로 및 증시 종합 분석]
 
 ---
 
-### **1. 지수 흐름 및 국내 주요 섹터 파급력**
-*   **미국 증시 현황:** S&amp;P 500(7,549.94) 및 나스닥 100(27,907.63)은 빅테크 기업들의 AI 밸류체인 수익화 및 강한 기업 펀더멘털을 기반으로 견고한 흐름을 보이고 있습니다.
-*   **국내 반도체 (삼성전자, SK하이닉스):** 나스닥의 강세는 글로벌 AI 서플라이체인의 핵심인 국내 메모리 반도체 섹터에 우호적인 모멘텀을 제공합니다. 다만, 미국 10년물 금리가 4.86%를 기록함에 따라 밸류에이션(멀티플) 부담이 공존하므로 차익 실현 물량 소화 과정이 예상됩니다.
-*   **수출 대형주 (자동차, 조선, 방산):** 미국 경기 침체 우려가 낮은 상황에서 고환율(1,330원대) 수혜가 지속되고 있어 안정적인 하단 지지력을 확보할 것입니다.
-
-### **2. 매크로 및 환율: 외국인 수급 변동성 진단**
-*   **미국채 10년물 금리 (4.864%):** 위험자산 전반에 강한 밸류에이션 억제 압력으로 작용하고 있습니다. 금리가 4.8% 상단에 고착화될 경우 성장주에 대한 디스카운트 요소로 작동합니다.
-*   **원/달러 환율 (1,337.26원):** 미국 금리 급등에도 불구하고 1,330원 대 중반에서 억제되고 있는 점은 긍정적입니다. 환율 변동성이 폭발하지 않아 대규모 외국인 자금 이탈(Sell Korea) 가능성은 낮습니다.
-*   **외국인 수급 전망:** 외국인은 지수 선물/현물에 대한 일방적인 매수보다는 **실적 가시성이 확실한 반도체·자동차·조선 등 핵심 카테고리 중심의 숏커버링 및 핀셋 매수세**를 보일 확률이 높습니다.
-
-### **3. 투심 및 유동성: 리스크 온/오프 경계선 진단**
-*   **VIX 지수 (19.92):** 공포지수가 리스크 오프(위험회피)의 기준선인 20pt 턱밑까지 상승했습니다. 이는 지수가 고점에 위치해 있음에도 시장 참여자들이 변동성 확대 및 하방 리스크 헤지(Hedge) 수요를 빠르게 늘리고 있음을 의미합니다.
-*   **연준 순유동성 ($5.79Trillion):** 5.79조 달러 수준을 유지하며 글로벌 금융시장의 급격한 유동성 경색을 막아주는 든든한 방파제 역할을 하고 있습니다. 
-*   **진단:** 시장은 **&#34;상승 여력은 존재하나, 언제든 조정받을 수 있다는 경계감이 팽팽한 상태&#34;**입니다. 유동성 고갈로 인한 급락 가능성은 낮으나, 섣부른 레버리지 투자는 지양해야 하는 구간입니다.
-
-### **4. 정치, 경제, 지정학적 리스크 &amp; 국제유가 분석**
-*   **국제유가 (WTI $85.51):** 중동 지역의 지정학적 불안 및 공급망 차질 우려가 재부각되며 $85를 상회했습니다. 이는 향후 미국 인플레이션의 둔화 속도를 둔화시키는 핵심 원인입니다.
-*   **미국 증시 상·하방 요인 복합 분석:**
-    *   *상승 요인:* 체질 개선에 성공한 미국 빅테크의 독점적 이익 창출력과 미국 내 견조한 소비 지표.
-    *   *하방 압력 요인:* 지정학적 리스크에 따른 국제유가 강세, 미국 재정적자 확대에 따른 국채 발행 물량 부담(금리 상승), 지정학적 공급망 재편 비용 발생.
-*   **국내 영향:** 고유가는 국내 석유화학, 항공, 정유업종의 이익 마진 변화를 유발하고, 제조기업의 전반적인 원가 부담을 가중시키는 요인입니다.
-
-### **5. 미국 주요 경제지표 발표 및 한국 증시 대응 전략**
-*   **주요 관전 지표:** 금주 발표 예정인 **미국 CPI(소비자물가지수) 및 PPI(생산자물가지수)**에 시장의 모든 관심이 쏠려 있습니다. 유가 상승($85.51)이 반영되어 물가지수가 예상을 상회할 경우, 10년물 금리가 5%를 위협하며 증시 단기 발작을 유발할 수 있습니다.
-*   **국내 증시 전망 (KOSPI / KOSDAQ):**
-    *   **KOSPI:** 보합권 출발 후 2,800pt~2,900pt 선에서의 박스권 및 순환매 장세 예상.
-    *   **KOSDAQ:** 고금리 여파로 바이오, 2차전지 등 고멀티플 성장주의 상방이 다소 제한될 수 있음.
+### 1. 지수 흐름 분석 및 국내 주요 섹터 영향
+* **미국 증시 현황:** S&amp;P 500은 **7,549.94pt**, 나스닥 100은 **27,907.63pt**로 마감하며 대형 기술주 중심의 고점 부근 등락 흐름을 지속하고 있습니다. 
+* **국내 섹터 방향성:**
+  * **반도체(삼성전자, SK하이닉스 등):** 미 빅테크 기업들의 AI 인프라 투자 지속성으로 나스닥 100의 하방 경직성은 유지되고 있으나, 미 국채 10년물 금리가 4.86%를 돌파함에 따라 밸류에이션(멀티플) 상단이 제약받는 국면입니다. 오늘 한국 반도체 섹터는 강한 상승보다는 **실적 기반의 차별화 장세**를 보일 가능성이 높습니다.
+  * **수출주(자동차, 조선, 방산):** 미 증시 내 밸류에이션 부담에 따른 순환매 장세 영향으로, 상대적으로 밸류에이션 매력이 높고 고환율 수혜를 받는 **자동차 및 방산·조선 섹터로의 기관/외국인 자금 이동**이 예상됩니다.
 
 ---
 
-### **[오늘 아침 투자자 최종 액션 플랜]**
-1.  **시초가 과열 매수 자제:** 나스닥 강세로 시초가가 높게 형성될 경우 갭상승 추격 매수는 위험합니다. VIX(19.92)와 채권 금리(4.86%)가 높으므로 장중 변동성에 대비하십시오.
-2.  **바벨 전략(Barbell Strategy) 유지:** 
-    *   한 축에는 **AI 반도체/고대역폭 메모리(HBM) 및 방산/조선** 등 실적 성장주 배치.
-    *   다른 한 축에는 고금리/고환율 국면에서 유망한 **고배당주 및 금융주** 배치.
-3.  **유가/금리 연동 섹터 체크:** 유가 상승($85.51) 수혜를 받는 정유/조선/에너지 섹터에 단기 수급 몰림 현상이 발생할 수 있으므로 관련 종목의 단기 모멘텀을 활용하는 것이 유리합니다.</p>
+### 2. 매크로 및 환율: 미 국채 금리와 원/달러 환율 분석
+* **미 국채 10년물 금리 (4.864%):** 4.86% 수준의 고금리는 시장에 직접적인 중력으로 작용하고 있습니다. 미 정부의 재정 적자 확대에 따른 국채 발행 물량 부담과 연준의 단기 금리 인하 신중론이 결합된 결과입니다.
+* **원/달러 환율 (1,335.98원):** 미 국채 금리가 급등했음에도 원/달러 환율은 1,330원대 중반에서 비교적 안정적인 하방 경직성을 나타내고 있습니다. 이는 한국의 반도체 흑자 기조 등 매크로 펀더멘털이 일정 부분 방어하고 있음을 의미합니다.
+* **외국인 수급 파급력:** 미 국채 금리가 4.8%대에 안착함에 따라 글로벌 채권 대비 한국 주식의 풋옵션 프리미엄이 낮아졌습니다. 이에 따라 **국내 증시 전반으로의 패시브(Passive) 외국인 자금 유입은 제한적**일 것이며, 특정 모멘텀이 확실한 개별 종목 위주의 **액티브(Active) 롱-숏 전략**이 주를 이룰 것입니다.
+
+---
+
+### 3. 투심 및 유동성: VIX, 공포탐욕지수 및 순유동성 진단
+* **VIX 지수 (19.92):** 변동성 지수가 임계점인 20선 턱밑까지 상승했습니다. 미 증시가 사상 최고치 부근에 위치해 있음에도 하방 리스크에 대한 헤지 수요(Put Option 매수)가 크게 늘어났음을 뜻합니다.
+* **연준 순유동성 ($5.79 Trillion):** 연준의 순유동성은 약 5.79조 달러로 여전히 시중 유동성 버퍼 역할을 하고 있으나, 양적축소(QT) 여파와 역레포(ON RRP) 잔고 소진으로 인해 추가적인 유동성 공급 여력은 정체되어 있습니다.
+* **자금 환경 진단:** &#34;유동성이 풍부하나 리스크 관리 심리가 팽배한 국면&#34;입니다. 펀더멘털이 약한 **고베타 밸류에이션 주식(코스닥 중소형주, 펀딩 차입형 바이오 등)은 유동성 가뭄**을 겪을 수 있으며, 현금 흐름이 확실한 **대형 고배당/저PBR 주식으로 자금 쏠림**이 심화될 것입니다.
+
+---
+
+### 4. 정치·지정학적 리스크 및 국제유가 분석
+* **국제유가 (WTI 85.17달러):** WTI가 배럴당 85달러를 돌파했습니다. 중동 지역의 지리적 불확실성 지속 및 OPEC+의 공급 감산 기조 유지가 인플레이션 상방 압력을 지속 자극하고 있습니다.
+* **증시 상승/하락 요인 복합 분석:**
+  * **하락 압력 요인:** 유가 상승($85 선 상회) → 인플레이션 재발 우려 → 미 국채 금리 급등(4.86%)으로 이어지는 &#39;스태그플레이션형 미니 쇼크&#39;가 시장 상승폭을 제한하고 VIX를 끌어올렸습니다.
+  * **상승 지지 요인:** 그럼에도 불구하고 S&amp;P 500과 나스닥이 고점대를 유지하는 이유는 빅테크의 견고한 실적(Q3/Q4 실적 호조)과 미 정부의 재정 지출 확대가 민간 소비의 급격한 위축을 막아주고 있기 때문입니다.
+
+---
+
+### 5. 미국 주요 경제지표 전망 및 한국 증시 대응 전략
+
+* **주요 미국 경제지표 관전 포인트:**
+  * 주중 발표 예정인 **미 소매판매(Retail Sales) 및 PPI/CPI 향방**이 핵심입니다. 유가 상승이 물가지표에 반영되는지 여부와 고금리(4.86%)가 미 소비 심리를 둔화시키고 있는지 확인해야 합니다.
+  * 만약 경제 지표가 강하게 나온다면 금리 추가 상승 우려로 증시에 악재(Good is Bad)로 작용할 가능성이 높습니다.
+
+* **오늘 아침 한국 증시 대응 전략:**
+  1. **코스피(KOSPI):** 보수적 관망세 속 **보합권 출발** 예상. 지수 전체의 대규모 상승보다는 3분기 실적 발표 이후 연말 실적 가시성이 높은 &#39;방산, 조선, 자동차, 금융&#39;으로의 **대안주 매수세**에 주목하십시오.
+  2. **코스닥(KOSDAQ):** VIX(19.92) 상승과 미 금리 부담으로 **상대적 약세**가 우려됩니다. 적자 바이오 및 성장성만으로 오르던 테마주의 비중을 줄이고, 흑자 전환 및 확실한 매출 발생 기업으로 리밸런싱을 권장합니다.
+  3. **핵심 포트폴리오 전략:** High Beta(고변동성) 성장주보다는 **High Quality(우량 재무구조) 및 고배당주**를 포트폴리오의 방어막으로 삼고, 유가 상승 수혜주(에너지/화학 일부)에 대한 단기 트레이딩 접근이 유효한 시점입니다.</p>
         <hr style="border: 0; height: 1px; background: #d1d5db; margin: 25px 0;">
         <h3 style="margin: 0 0 12px 0;">💬 AI와 시황 대화하기</h3>
         <div class="chat-container">
             <div id="chat-history" class="chat-history">
-                <div class="chat-msg ai">오늘의 증시 요약 내용을 바탕으로 질문해주세요. (최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</div>
+                <div class="chat-msg ai">오늘의 증시 요약, 최신 뉴스, 경제 지표 내용을 바탕으로 질문해주세요. (최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="chat-input" placeholder="질문을 입력하세요...">
@@ -150,7 +169,7 @@
     <div class="dual-grid" style="margin-bottom: 40px;">
         <div>
             <div class="section-title" style="margin-top:0;">📰 경제 뉴스</div>
-            <div class="list-box"><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTE5lbDlmMTJzNkNqMDkyTEkzbUdTQ19lV1ZuZk52MVRidWFtUl9EMzVuZjFZMGVZeWhTWks5MUl1WWZmaUEzX0xOOGhiOUFfU09zN05WM0lyQ3RqYkMzRFE?oc=5" target="_blank" class="news-link">미국 증시 상승·유가 하락에 코스피 코스닥 반등 - YTN</a><br><span class="news-date">(2026-11-10 04:43)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBHSlNsd3hBV0JvSkttdU04NFpoRlpLanJ2d1N1ODJiOThjeDV3WDhXeURPVHZ3THBzOEtWbmUwOEhCY2xud1ROSW00VjdGRmNBcFZrOW1hRzdaeWNQdFA0UlZYV2pMb1RXMjhmejFVdG0?oc=5" target="_blank" class="news-link">기술주 반등 후 미국 증시 선물 보합세…CPI 발표 주목 - Investing.com 한국어</a><br><span class="news-date">(2026-11-10 00:13)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE1qLWIyWEJXMDZsUDBzQmJaVHdaREZRZURDY0V5a3ZwMzB5cmI0NDd0VjBabzA0ZUVGaXlsT2ZXODRVdnN0NGp1elBYX2ZwZE9EbmxlM0dBb2M5UQ?oc=5" target="_blank" class="news-link">씨티그룹, 미국 증시·기술주 &#39;비중 확대&#39;→&#39;중립&#39; 하향 왜 - 한국경제</a><br><span class="news-date">(2026-11-10 06:06)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMib0FVX3lxTE9XeTNLbjc1akV2cVJXbTdObkJqZXFJZUVfMnREb0RtUm1GV0xfVXVsMFNaTkMtZFJ5bDJibEhqdkh1alNJSnpQWXFOTzVmWWNfZld0WE1hWF9oU1ZFV2RHdFl0TlNRbnotc2NuRk1jZw?oc=5" target="_blank" class="news-link">[서울데이터랩] 미국 증시, 기술주·반도체 강세에 일제히 급등 마감 - 서울신문</a><br><span class="news-date">(2026-11-09 21:26)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiVkFVX3lxTFBGMDBCV2xrMDA2NmY5bm5lMEp4WGUza19BN01nSmY1S0tOcllzSllockhUM21jNHlHRVhoc3cwc0s2dTJTdkpXMEtoSTFTc2xiSWR4SUJR?oc=5" target="_blank" class="news-link">엔비디아만 빼고 다 상승... 달라진 미국 증시, 추세전환 시작인가 - 매일경제</a><br><span class="news-date">(2026-11-09 23:07)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMibEFVX3lxTE9kdUN5RUdVNUxhNE90cEt2bXlOclE1QWFvM3RTMXVhb1hkbnQzRUpLeWhUcDhWWVZXV2VVMVdkTXVqamg1YmJlWVZfSVZBYW1ielVjWUpaeG5YQXctZ1Y0VG9NeXh0bm5Bd3Jtdw?oc=5" target="_blank" class="news-link">[11월 2주차] 금주 국내외 경제 전망 - KB Think</a><br><span class="news-date">(2026-11-10 04:08)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXEFVX3lxTE04NzFhb05VODBCYTBLMUZJU2xVN2t5ejdCX0pUY0piWXNhVlBDa2JnTGRHUWtBZS1nRGpMZk5HZ2x0Nmd1NmNRNWRwZHU2VFBGV2JWa0dkR0Ezd3B6?oc=5" target="_blank" class="news-link">[AI MY 증시전망] 뉴욕증시 급반등에 코스피 반등 시도…물가·금리 주목 - 뉴스핌</a><br><span class="news-date">(2026-11-09 23:12)</span></div></div>
+            <div class="list-box"><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE1qLWIyWEJXMDZsUDBzQmJaVHdaREZRZURDY0V5a3ZwMzB5cmI0NDd0VjBabzA0ZUVGaXlsT2ZXODRVdnN0NGp1elBYX2ZwZE9EbmxlM0dBb2M5UQ?oc=5" target="_blank" class="news-link">씨티그룹, 미국 증시·기술주 &#39;비중 확대&#39;→&#39;중립&#39; 하향 왜 - 한국경제</a><br><span class="news-date">(2026-11-10 06:06)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTE5lbDlmMTJzNkNqMDkyTEkzbUdTQ19lV1ZuZk52MVRidWFtUl9EMzVuZjFZMGVZeWhTWks5MUl1WWZmaUEzX0xOOGhiOUFfU09zN05WM0lyQ3RqYkMzRFE?oc=5" target="_blank" class="news-link">미국 증시 상승·유가 하락에 코스피 코스닥 반등 - YTN</a><br><span class="news-date">(2026-11-10 04:43)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBHSlNsd3hBV0JvSkttdU04NFpoRlpLanJ2d1N1ODJiOThjeDV3WDhXeURPVHZ3THBzOEtWbmUwOEhCY2xud1ROSW00VjdGRmNBcFZrOW1hRzdaeWNQdFA0UlZYV2pMb1RXMjhmejFVdG0?oc=5" target="_blank" class="news-link">기술주 반등 후 미국 증시 선물 보합세…CPI 발표 주목 - Investing.com 한국어</a><br><span class="news-date">(2026-11-10 00:13)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMib0FVX3lxTE9XeTNLbjc1akV2cVJXbTdObkJqZXFJZUVfMnREb0RtUm1GV0xfVXVsMFNaTkMtZFJ5bDJibEhqdkh1alNJSnpQWXFOTzVmWWNfZld0WE1hWF9oU1ZFV2RHdFl0TlNRbnotc2NuRk1jZw?oc=5" target="_blank" class="news-link">[서울데이터랩] 미국 증시, 기술주·반도체 강세에 일제히 급등 마감 - 서울신문</a><br><span class="news-date">(2026-11-09 21:26)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTFBVejJ4VDBHbWdLYVJ0d2hhMzZRRnNyRGdUVjI2aHI2Y2k0cWk1Zkh2VmtwRFlzY1ZVeVNma0RqZWQ1c3lXc1FRb0ZnMDJ3dVNvTXJMTU5YWVlSWnfSAWBBVV95cUxNbTFGbmI2R24yWVMtM0U2U0IxSzhhS3phZ0lyT01NLXVyUHpIYXZtakhjdFRHeE5TeWw0Z3ZDWUNxYjh5VE9kenAxODdYZm84N24zbFBRcWZiUk5pa3dSWDc?oc=5" target="_blank" class="news-link">환율, 美·이란 협상기대 위험선호↑…9.6원 하락한 1,337.5원 - 연합뉴스</a><br><span class="news-date">(2026-11-10 07:29)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXEFVX3lxTE9NSXVoY1Racl9yd3Z0a2hhQ1lZelBFZVpkRVVFMmF3clhRbDRraDhRSmR6Mnh5YkNlNXc2YnNncmdNN2trcTFkcnByRlh0RWZsNXF6QU1NNW1lZTky?oc=5" target="_blank" class="news-link">[ETF 특징주] 증시 급락에도 미국 ETF 한 주간 141억달러 유입 - 뉴스핌</a><br><span class="news-date">(2026-11-10 07:15)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMibEFVX3lxTE9kdUN5RUdVNUxhNE90cEt2bXlOclE1QWFvM3RTMXVhb1hkbnQzRUpLeWhUcDhWWVZXV2VVMVdkTXVqamg1YmJlWVZfSVZBYW1ielVjWUpaeG5YQXctZ1Y0VG9NeXh0bm5Bd3Jtdw?oc=5" target="_blank" class="news-link">[11월 2주차] 금주 국내외 경제 전망 - KB Think</a><br><span class="news-date">(2026-11-10 04:08)</span></div></div>
         </div>
         <div>
             <div class="section-title" style="margin-top:0;">📅 경제 지표</div>
@@ -158,8 +177,10 @@
         </div>
     </div>
 
+    <!-- 추가된 지수: 니케이 225, 대만 가권 -->
     <div class="section-title">📈 1. 주요 지수</div>
     <div class="grid">
+        
     
     <a href="https://kr.tradingview.com/chart/?symbol=SPX" target="_blank" class="card-link">
     <div class="card">
@@ -174,6 +195,7 @@
     </div>
     </a>
 
+        
     
     <a href="https://kr.tradingview.com/chart/?symbol=DJI" target="_blank" class="card-link">
     <div class="card">
@@ -188,6 +210,7 @@
     </div>
     </a>
 
+        
     
     <a href="https://kr.tradingview.com/chart/?symbol=NDX" target="_blank" class="card-link">
     <div class="card">
@@ -202,6 +225,7 @@
     </div>
     </a>
 
+        
     
     <a href="https://kr.tradingview.com/chart/?symbol=SOX" target="_blank" class="card-link">
     <div class="card">
@@ -215,7 +239,38 @@
         
     </div>
     </a>
-</div>
+
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NI225" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">니케이 225 </div>
+        
+            <div class="card-value">60,459.58</div>
+            
+            
+             <div class="card-delta up">▲ 1,684.08 (2.87%)</div>
+            
+        
+    </div>
+    </a>
+
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TAIEX" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">대만 가권 </div>
+        
+            <div class="card-value">42,711.92</div>
+            
+            
+             <div class="card-delta up">▲ 1,050.22 (2.52%)</div>
+            
+        
+    </div>
+    </a>
+
+    </div>
     
     <div class="section-title">🌐 2. 매크로 및 시장 심리</div>
     <div class="grid">
@@ -225,10 +280,10 @@
     <div class="card">
         <div class="card-label">달러 인덱스 <span title="52주 신고가 근접">🔥</span></div>
         
-            <div class="card-value">101.65</div>
+            <div class="card-value">101.58</div>
             
             
-             <div class="card-delta up">▲ 0.00 (0.00%)</div>
+             <div class="card-delta down">▼ 0.07 (0.06%)</div>
             
         
     </div>
@@ -239,10 +294,10 @@
     <div class="card">
         <div class="card-label">원/달러 </div>
         
-            <div class="card-value">1,337.26원</div>
+            <div class="card-value">1,335.98원</div>
             
             
-             <div class="card-delta down">▼ 25.44 (1.87%)</div>
+             <div class="card-delta down">▼ 26.72 (1.96%)</div>
             
         
     </div>
@@ -1220,11 +1275,22 @@
         const message = inputEl.value.trim();
         if (!message) return;
 
-        // 최초 질문 시 요약 내용을 컨텍스트로 주입
+        // 최초 질문 시 요약 내용, 뉴스, 캘린더 데이터를 컨텍스트로 주입
         if (chatHistory.length === 0) {
             const summaryText = document.getElementById('ai-summary-text').innerText;
-            chatHistory.push({ "role": "user", "parts": [{ "text": `오늘의 증시 요약: ${summaryText}\n이 내용을 바탕으로 내 질문에 대답해줘.` }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 준비되었습니다." }] });
+            
+            // 뉴스 데이터 수집 (줄바꿈 제거하여 한 줄로 텍스트화)
+            const newsNodes = document.querySelectorAll('.news-item');
+            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\n/g, ' ')).join('\n- ');
+            
+            // 캘린더 데이터 수집
+            const calNodes = document.querySelectorAll('.cal-item');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
+
+            const initialPrompt = `[오늘의 증시 요약]\n${summaryText}\n\n[최신 경제 뉴스]\n- ${newsList}\n\n[이번 주 주요 경제 지표]\n- ${calList}\n\n위의 정보들을 모두 종합해서 내 질문에 대답해줘.`;
+            
+            chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 오늘의 증시 요약, 최신 경제 뉴스, 주요 경제 지표 일정을 모두 확인했습니다. 질문해주시면 답변해 드리겠습니다." }] });
         }
 
         // 화면에 사용자 메시지 표시 및 배열에 추가
@@ -1271,14 +1337,16 @@
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/
+/g, '<br>');
         historyEl.appendChild(msgDiv); 
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        if (msgDiv) msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/
+/g, '<br>');
     }
     
     document.getElementById('chat-input').addEventListener('keypress', e => { 
