@@ -609,3 +609,14 @@ HTML_TEMPLATE = """
 </script>
 </body>
 </html>
+"""
+
+def generate_html():
+    with app.app_context():
+        dashboard_data = get_dashboard_data()
+        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(rendered)
+
+if __name__ == "__main__":
+    generate_html()
