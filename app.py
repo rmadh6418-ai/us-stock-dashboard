@@ -446,11 +446,11 @@ HTML_TEMPLATE = """
         } catch (error) {
             console.error("API 통신 에러:", error);
             
-            // 💡 핵심 해결: 실패 시 마지막 사용자 메시지를 배열에서 제거하여 다음 시도 시 role(user->model) 순서가 꼬이는 것을 방지
+            // 💡 실패 시 마지막 사용자 메시지를 배열에서 제거하여 다음 시도 시 role(user->model) 순서가 꼬이는 것을 방지
             chatHistory.pop(); 
             
-            // Google API가 반환한 실제 에러 텍스트를 화면에 표시
-            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 만료되었거나 잘못되었습니다. 새로고침하여 다시 입력해주세요.`);
+            // 실제 에러 텍스트를 화면에 표시
+            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 잘못되었거나 오류가 발생했습니다. 브라우저 캐시를 지우거나 새로고침하여 키를 다시 입력해주세요.`);
             localStorage.removeItem('gemini_api_key'); // 오류 시 기존 키 삭제
         }
     }
@@ -474,3 +474,17 @@ HTML_TEMPLATE = """
         if (e.key === 'Enter') sendChatMessage(); 
     });
 </script>
+</body>
+</html>
+"""
+
+def generate_html():
+    with app.app_context():
+        # HTML 렌더링 시 서버 단에서 API 키를 주입하지 않음 (GitHub 보안 정책 준수)
+        dashboard_data = get_dashboard_data()
+        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(rendered)
+
+if __name__ == "__main__":
+    generate_html()
