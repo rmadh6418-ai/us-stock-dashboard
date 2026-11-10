@@ -281,7 +281,11 @@ HTML_TEMPLATE = """
         .chat-msg.ai { background: #e5e7eb; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
         .chat-input-area { display: flex; gap: 10px; }
         .chat-input-area input { flex: 1; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
-        .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        /* 버튼 눌림 효과 추가 */
+        .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.1s, transform 0.1s; }
+        .chat-input-area button:hover { background: #1f2937; }
+        .chat-input-area button:active { transform: scale(0.95); background: #374151; }
         
         /* 토글 애니메이션을 위한 클래스 */
         .ai-toggle-title { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
@@ -395,7 +399,6 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- 추가된 지수: 니케이 225, 대만 가권 -->
     <div class="section-title">📈 1. 주요 지수</div>
     <div class="grid">
         {{ render_metric('S&P 500', data.indices['S&P 500']) }}
@@ -431,6 +434,16 @@ HTML_TEMPLATE = """
     let chatHistory = [];
     
     async function sendChatMessage() {
+        const inputEl = document.getElementById('chat-input');
+        const message = inputEl.value.trim();
+        
+        // 💡 질문이 비어있을 때 알림을 띄우고 종료하는 코드 추가
+        if (!message) {
+            alert("💬 질문을 먼저 입력해주세요!");
+            inputEl.focus();
+            return;
+        }
+
         // 브라우저 로컬 스토리지에서 API 키 확인, 없으면 팝업으로 요청
         let apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) {
@@ -439,15 +452,11 @@ HTML_TEMPLATE = """
             localStorage.setItem('gemini_api_key', apiKey.trim());
         }
 
-        const inputEl = document.getElementById('chat-input');
-        const message = inputEl.value.trim();
-        if (!message) return;
-
         // 최초 질문 시 요약 내용, 뉴스, 캘린더 데이터를 컨텍스트로 주입
         if (chatHistory.length === 0) {
             const summaryText = document.getElementById('ai-summary-text').innerText;
             
-            // 뉴스 데이터 수집 (줄바꿈 제거하여 한 줄로 텍스트화)
+            // 뉴스 데이터 수집
             const newsNodes = document.querySelectorAll('.news-item');
             const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\\n/g, ' ')).join('\\n- ');
             
@@ -478,7 +487,7 @@ HTML_TEMPLATE = """
             
             const data = await response.json();
             
-            // HTTP 상태 코드가 정상이 아닐 경우 실제 에러 메시지를 던짐
+            // HTTP 상태 코드가 정상이 아닐 경우 에러 처리
             if (!response.ok) {
                 throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
             }
@@ -490,13 +499,9 @@ HTML_TEMPLATE = """
             
         } catch (error) {
             console.error("API 통신 에러:", error);
-            
-            // 💡 실패 시 마지막 사용자 메시지를 배열에서 제거하여 다음 시도 시 role(user->model) 순서가 꼬이는 것을 방지
             chatHistory.pop(); 
-            
-            // 실제 에러 텍스트를 화면에 표시
             updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 잘못되었거나 오류가 발생했습니다. 브라우저 캐시를 지우거나 새로고침하여 키를 다시 입력해주세요.`);
-            localStorage.removeItem('gemini_api_key'); // 오류 시 기존 키 삭제
+            localStorage.removeItem('gemini_api_key'); 
         }
     }
     
@@ -525,7 +530,6 @@ HTML_TEMPLATE = """
 
 def generate_html():
     with app.app_context():
-        # HTML 렌더링 시 서버 단에서 API 키를 주입하지 않음 (GitHub 보안 정책 준수)
         dashboard_data = get_dashboard_data()
         rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
         with open("index.html", "w", encoding="utf-8") as f:
