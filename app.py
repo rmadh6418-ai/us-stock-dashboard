@@ -34,7 +34,7 @@ def fetch_yfinance_data(tickers):
         '^GSPC': 'SPX', '^DJI': 'DJI', '^NDX': 'NDX', '^SOX': 'SOX', '^NBI': 'NBI',
         'DX-Y.NYB': 'DXY', '^TNX': 'US10Y', '^TYX': 'US30Y', '^VIX': 'VIX',
         'CL=F': 'USOIL', 'BZ=F': 'UKOIL', 'KRW=X': 'USDKRW', 'JPY=X': 'USDJPY',
-        '^N225': 'NI225', '^TWII': 'TAIEX'  # 니케이 및 대만 지수 트레이딩뷰 매핑 추가
+        '^N225': 'NI225', '^TWII': 'TAIEX'
     }
     for name, ticker in tickers.items():
         tv_ticker = tv_mapping.get(ticker, ticker)
@@ -224,7 +224,6 @@ CACHE = {}
 def get_dashboard_data():
     if 'data' in CACHE and time.time() - CACHE['time'] < 600: return CACHE['data']
     data = {
-        # 니케이 225 및 대만 가권 지수 추가
         'indices': fetch_yfinance_data({'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'}),
         'macros': fetch_yfinance_data({'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'}),
         'cnn': get_fear_and_greed(),
@@ -376,7 +375,7 @@ HTML_TEMPLATE = """
         <h3 style="margin: 0 0 12px 0;">💬 AI와 시황 대화하기</h3>
         <div class="chat-container">
             <div id="chat-history" class="chat-history">
-                <div class="chat-msg ai">오늘의 증시 요약 내용을 바탕으로 질문해주세요. (최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</div>
+                <div class="chat-msg ai">오늘의 증시 요약, 최신 뉴스, 경제 지표 내용을 바탕으로 질문해주세요. (최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="chat-input" placeholder="질문을 입력하세요...">
@@ -444,11 +443,22 @@ HTML_TEMPLATE = """
         const message = inputEl.value.trim();
         if (!message) return;
 
-        // 최초 질문 시 요약 내용을 컨텍스트로 주입
+        // 최초 질문 시 요약 내용, 뉴스, 캘린더 데이터를 컨텍스트로 주입
         if (chatHistory.length === 0) {
             const summaryText = document.getElementById('ai-summary-text').innerText;
-            chatHistory.push({ "role": "user", "parts": [{ "text": `오늘의 증시 요약: ${summaryText}\\n이 내용을 바탕으로 내 질문에 대답해줘.` }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 준비되었습니다." }] });
+            
+            // 뉴스 데이터 수집 (줄바꿈 제거하여 한 줄로 텍스트화)
+            const newsNodes = document.querySelectorAll('.news-item');
+            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\\n/g, ' ')).join('\\n- ');
+            
+            // 캘린더 데이터 수집
+            const calNodes = document.querySelectorAll('.cal-item');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
+
+            const initialPrompt = `[오늘의 증시 요약]\\n${summaryText}\\n\\n[최신 경제 뉴스]\\n- ${newsList}\\n\\n[이번 주 주요 경제 지표]\\n- ${calList}\\n\\n위의 정보들을 모두 종합해서 내 질문에 대답해줘.`;
+            
+            chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 오늘의 증시 요약, 최신 경제 뉴스, 주요 경제 지표 일정을 모두 확인했습니다. 질문해주시면 답변해 드리겠습니다." }] });
         }
 
         // 화면에 사용자 메시지 표시 및 배열에 추가
