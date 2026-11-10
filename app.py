@@ -49,11 +49,8 @@ def fetch_yfinance_data(tickers):
     }
     
     for name, ticker in tickers.items():
-        # 트레이딩뷰 링크용 티커 설정
         tv_ticker = tv_mapping.get(ticker, ticker)
-        
         try:
-            # 52주(1년) 데이터를 가져와서 신고가 계산에 활용
             hist = yf.Ticker(ticker).history(period="1y")
             if 'Close' in hist.columns and len(hist) >= 2:
                 close_prices = hist['Close'].dropna()
@@ -65,7 +62,6 @@ def fetch_yfinance_data(tickers):
                     diff = current - prev
                     pct = (diff / prev) * 100 if prev != 0 else 0
                     
-                    # 52주 최고가 계산 및 근접 여부(3% 이내) 판단
                     fifty_two_week_high = float(high_prices.max())
                     near_52w_high = current >= (fifty_two_week_high * 0.97)
                     
@@ -229,19 +225,17 @@ def get_ai_summary(data):
     
     try:
         genai.configure(api_key=api_key)
-
         today_str = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         
         prompt = f"""
         [분석 기준 날짜: {today_str}]
-        
-        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 및 전세계 매크로 데이터, 미국정치, 미국경제, 전 세계 지정학적 리스크, 국제유가 추세를 심층 분석하여, 오늘 아침 한국 증시(코스피/코스닥) 개장을 준비하는 투자자들이 반드시 알아야 할 '핵심 인사이트와 시장 전망'을 도출해주세요.
+        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 및 전세계 매크로 데이터, 미국정치, 미국경제, 전 세계 지정학적 리스크, 국제유가를 심층 분석하여, 오늘 아침 한국 증시(코스피/코스닥) 개장을 준비하는 투자자들이 반드시 알아야 할 '핵심 인사이트와 시장 전망'을 도출해주세요.
 
         [분석 포인트]
-        1. 지수 흐름: 분석 날짜 기준 S&P 500과 나스닥 지수의 추세를 분석하고 한국 증시의 주요 섹터(반도체, 수출주 등)에 미칠 방향성
-        2. 매크로 및 환율: 미국채 금리와 원/달러 환율 변동 추세가 국내 증시 외국인 수급에 미칠 파급력
+        1. 지수 흐름: 분석 날짜 기준 S&P 500과 나스닥 지수를 분석하고 한국 증시의 주요 섹터(반도체, 수출주 등)에 미칠 방향성
+        2. 매크로 및 환율: 미국채 금리와 원/달러 환율 변동이 국내 증시 외국인 수급에 미칠 파급력
         3. 투심 및 유동성: VIX, 공포탐욕지수, 연준 순유동성(Net Liquidity) 및 역레포(ON RRP) 추이를 바탕으로 한 글로벌 자금 환경 진단
         4. 정치, 경제 및 지정학적 리스크, 국제유가 : 분석 날짜 기준 S&P 500과 나스닥이 어떤 이유에서 상승과 하락하였는지 분석
         5. 미국 주요 경제지표 : 분석 날짜 기준으로 발표 예정인 미국 주요 경제지표에 따라 국내 증시의 영향에 대한 분석 
@@ -261,13 +255,12 @@ def get_ai_summary(data):
         - WTI유: {data['commodities'].get('WTI유', {}).get('value')}달러
         - 브렌트유: {data['commodities'].get('브렌트유', {}).get('value')}달러
         - CNN 공포탐욕지수: {data['cnn'].get('score') if data.get('cnn') else '조회 불가'}
-        - 연준 순유동성(Net Liquidity): {fed_net}
-        - 연준 역레포 잔액(ON RRP): {fed_rrp}
+        - 연준 순유동성: {fed_net}
+        - 연준 역레포 잔액: {fed_rrp}
         """
         
         models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash']
         last_error = ""
-        
         for model_name in models_to_try:
             try:
                 print(f"🤖 {model_name} 모델로 분석 시도 중...")
@@ -279,9 +272,7 @@ def get_ai_summary(data):
                 last_error = str(e)
                 time.sleep(2.0)
                 continue
-                
         return f"⚠️ AI 분석 실패 (사유: {last_error})"
-        
     except Exception as e:
         return f"⚠️ AI 설정 중 오류가 발생했습니다: {e}"
 
@@ -301,7 +292,6 @@ def get_dashboard_data():
         'gold': get_gold_don_price(),
         'fed': get_fed_liquidity(),
         
-        # --- 섹터별 종목 분류 ---
         'tech_soft': fetch_yfinance_data({
             'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 
             'Meta': 'META', 'Oracle': 'ORCL', '크라우드스트라이크': 'CRWD', '클라우드플레어': 'NET', 
@@ -352,46 +342,35 @@ HTML_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>실시간 미국 증시 대시보드</title>
 
-    <!-- 웹앱(PWA) 기본 설정 -->
     <meta name="theme-color" content="#f3f4f6">
     <meta name="mobile-web-app-capable" content="yes">
-    
-    <!-- iOS (아이폰) 전용 앱 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="미국증시">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2942/2942269.png">
-
-    <!-- Android (갤럭시 등) 전용 앱 설정 파일 연결 -->
     <link rel="manifest" href="./manifest.json">
 
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
-        /* 모바일 터치 최적화 */
         body { 
             font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; 
-            -webkit-tap-highlight-color: transparent; 
-            -webkit-touch-callout: none; 
-            user-select: none; 
+            -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; 
             padding-bottom: env(safe-area-inset-bottom);
         }
-        input { user-select: auto; } /* 비밀번호 창 등 입력 허용 */
+        input { user-select: auto; } 
 
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; color: #111827; word-break: keep-all; }
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
         
-        /* 카드 및 트레이딩뷰 링크 애니메이션 스타일 추가 */
         .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
         .card { 
             background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
             text-align: center; height: 100%; box-sizing: border-box; 
             border: 2px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; 
         }
-        .card-link:hover .card { 
-            transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; 
-        }
+        .card-link:hover .card { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
 
         .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
         .card-value { font-size: 2.1rem; font-weight: 900; color: #111827; margin-bottom: 5px; word-break: break-all; }
@@ -405,6 +384,18 @@ HTML_TEMPLATE = """
         .cal-item:last-child { border-bottom: none; }
         .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
         
+        /* 채팅 UI 스타일 추가 */
+        .chat-container { margin-top: 20px; background: #f9fafb; border-radius: 10px; padding: 15px; border: 1px solid #e5e7eb; }
+        .chat-history { max-height: 350px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; }
+        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.5; word-break: break-word; user-select: text; }
+        .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-msg.ai { background: #e5e7eb; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-input-area { display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
+        .chat-input-area input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        .chat-input-area button:hover { background: #374151; }
+
         @media (max-width: 768px) {
             body { padding: 5px; }
             .header-title { font-size: 1.6rem; margin: 15px 0 20px 0; }
@@ -415,11 +406,12 @@ HTML_TEMPLATE = """
             .card-value { font-size: 1.5rem; }
             .card-delta { font-size: 0.9rem; }
             .dual-grid { grid-template-columns: 1fr; gap: 15px; }
+            .chat-input-area { flex-direction: column; }
         }
     </style>
 </head>
 <body>
-<!-- 🔐 비밀번호 잠금 화면 시작 -->
+<!-- 🔐 비밀번호 잠금 화면 -->
 <div id="lock-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f3f4f6; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
     <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
         <h2 style="margin-top: 0; margin-bottom: 20px; color: #111827; font-weight: 800;">🔒 대시보드 잠금</h2>
@@ -458,12 +450,10 @@ HTML_TEMPLATE = """
         });
     }
 </script>
-<!-- 🔐 비밀번호 잠금 화면 끝 -->
 
 <!-- 매크로: 52주 신고가 근접(3% 이내) 시 불꽃 마크 및 트레이딩뷰 링크 연결 -->
 {% macro render_metric(label, data_obj, is_int=False, suffix='') %}
     {% set has_ticker = data_obj is mapping and data_obj.get('ticker') %}
-    
     {% if has_ticker %}
     <a href="https://kr.tradingview.com/chart/?symbol={{ data_obj.ticker }}" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
     {% endif %}
@@ -491,9 +481,7 @@ HTML_TEMPLATE = """
         {% endif %}
     </div>
     
-    {% if has_ticker %}
-    </a>
-    {% endif %}
+    {% if has_ticker %}</a>{% endif %}
 {% endmacro %}
 
 <div class="container">
@@ -501,7 +489,20 @@ HTML_TEMPLATE = """
 
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 0; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
-        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">{{ data.ai_summary }}</p>
+        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;" id="ai-summary-text">{{ data.ai_summary }}</p>
+        
+        <!-- 💬 AI 대화창 UI -->
+        <hr style="border: 0; height: 1px; background: #d1d5db; margin: 25px 0;">
+        <h3 style="margin: 0 0 12px 0; font-size: 1.3rem; color: #111827;">💬 AI와 시황 대화하기</h3>
+        <div class="chat-container">
+            <div id="chat-history" class="chat-history">
+                <div class="chat-msg ai">오늘의 증시 요약 내용을 바탕으로 대답해 드릴 준비가 되었습니다. 궁금하신 점이나 특정 종목에 대해 자유롭게 물어보세요!</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="예: 오늘 나스닥이 왜 올랐어? 반도체 관련 이슈는?">
+                <button onclick="sendChatMessage()">질문하기</button>
+            </div>
+        </div>
     </div>
 
     <!-- AI 요약 아래로 이동된 뉴스 및 캘린더 -->
@@ -528,6 +529,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- 1. 지수 -->
     <div class="section-title">📈 1. 미국 주요 지수</div>
     <div class="grid">
         {{ render_metric('S&P 500', data.indices['S&P 500']) }}
@@ -537,6 +539,7 @@ HTML_TEMPLATE = """
         {{ render_metric('나스닥 생명공학', data.indices['나스닥 생명공학']) }}
     </div>
 
+    <!-- 2. 매크로 -->
     <div class="section-title">🌐 2. 매크로 및 시장 심리 지표</div>
     <div class="grid">
         {{ render_metric('달러 인덱스', data.macros['달러 인덱스']) }}
@@ -545,7 +548,6 @@ HTML_TEMPLATE = """
         {{ render_metric('미국채 10년물 (%)', data.macros['미국채 10년물'], False, '%') }}
         {{ render_metric('미국채 30년물 (%)', data.macros['미국채 30년물'], False, '%') }}
         {{ render_metric('빅스(VIX) 지수', data.macros['빅스(VIX)']) }}
-        
         <div class="card" style="height: 100%; box-sizing: border-box;">
             <div class="card-label">CNN 공포탐욕지수</div>
             {% if data.cnn %}
@@ -559,6 +561,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- 3. 원자재 -->
     <div class="section-title">🛢️ 3. 원자재 및 귀금속 시세</div>
     <div class="grid">
         {{ render_metric('WTI유 ($/bbl)', data.commodities['WTI유']) }}
@@ -568,6 +571,7 @@ HTML_TEMPLATE = """
         {{ render_metric('국내 은시세 (1돈)', data.silver, True, '원') }}
     </div>
 
+    <!-- 4. 연준 -->
     <div class="section-title">🏦 4. 연준(Fed) 유동성 현황 (단위: 백만 $)</div>
     {% if data.fed %}
     <div class="grid">
@@ -578,59 +582,116 @@ HTML_TEMPLATE = """
     </div>
     {% endif %}
 
-    <!-- 섹터별 관심 종목 렌더링 -->
+    <!-- 5~11. 섹터별 관심 종목 -->
     <div class="section-title">💻 5. 빅테크 & 소프트웨어</div>
-    <div class="grid">
-        {% for name, obj in data.tech_soft.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
-
+    <div class="grid">{% for name, obj in data.tech_soft.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
     <div class="section-title">🧠 6. 반도체 & AI 하드웨어</div>
-    <div class="grid">
-        {% for name, obj in data.semi_ai.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
-
+    <div class="grid">{% for name, obj in data.semi_ai.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
     <div class="section-title">⚡ 7. 원자력, 에너지 & 인프라</div>
-    <div class="grid">
-        {% for name, obj in data.energy_infra.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
-
+    <div class="grid">{% for name, obj in data.energy_infra.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
     <div class="section-title">🏥 8. 제약 & 헬스케어</div>
-    <div class="grid">
-        {% for name, obj in data.health.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
-
+    <div class="grid">{% for name, obj in data.health.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
     <div class="section-title">🚀 9. 우주항공 & 모빌리티</div>
-    <div class="grid">
-        {% for name, obj in data.space_mobility.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
-
+    <div class="grid">{% for name, obj in data.space_mobility.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
     <div class="section-title">🏦 10. 금융 & 투자</div>
-    <div class="grid">
-        {% for name, obj in data.finance.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
-    
+    <div class="grid">{% for name, obj in data.finance.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
     <div class="section-title">🛍️ 11. 소비재 & 리테일</div>
-    <div class="grid">
-        {% for name, obj in data.consumer.items() %}
-            {{ render_metric(name, obj, False, '$') }}
-        {% endfor %}
-    </div>
+    <div class="grid">{% for name, obj in data.consumer.items() %}{{ render_metric(name, obj, False, '$') }}{% endfor %}</div>
 
 </div>
 
+<!-- 채팅 기능 스크립트 -->
 <script>
+    const GEMINI_API_KEY = "{{ api_key }}";
+    
+    // AI 요약 내용을 프롬프트 컨텍스트에 삽입
+    const summaryText = document.getElementById('ai-summary-text').innerText;
+    let chatHistory = [
+        {
+            "role": "user",
+            "parts": [{ "text": `너는 거시경제 및 금융 애널리스트야. 다음은 오늘 아침 생성된 미국 증시 요약 내용이야. 이 내용을 바탕으로 나의 질문에 전문적이고 친절하게 대답해줘.\n\n[오늘의 증시 요약]\n${summaryText}` }]
+        },
+        {
+            "role": "model",
+            "parts": [{ "text": "네, 오늘의 증시 요약 내용을 완벽히 숙지했습니다. 시장 상황이나 특정 섹터에 대해 궁금한 점을 질문해 주시면 자세히 답변해 드리겠습니다." }]
+        }
+    ];
+
+    async function sendChatMessage() {
+        if (!GEMINI_API_KEY) {
+            alert("API 키가 설정되지 않아 채팅을 사용할 수 없습니다.");
+            return;
+        }
+
+        const inputEl = document.getElementById('chat-input');
+        const message = inputEl.value.trim();
+        if (!message) return;
+
+        // 화면에 유저 메시지 표시
+        appendMessageToUI('user', message);
+        inputEl.value = '';
+
+        // 기록에 유저 메시지 추가
+        chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
+
+        // 화면에 로딩 상태 표시
+        const loadingId = 'msg-' + Date.now();
+        appendMessageToUI('ai', '생각 중...', loadingId);
+
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: chatHistory })
+            });
+
+            if (!response.ok) throw new Error('API Request Failed');
+            
+            const data = await response.json();
+            const replyText = data.candidates[0].content.parts[0].text;
+
+            // 기록에 AI 답변 추가
+            chatHistory.push({ "role": "model", "parts": [{ "text": replyText }] });
+
+            // 화면 업데이트
+            updateMessageInUI(loadingId, replyText);
+        } catch (error) {
+            console.error(error);
+            updateMessageInUI(loadingId, '오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+    }
+
+    function appendMessageToUI(role, text, id = null) {
+        const historyEl = document.getElementById('chat-history');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg ' + role;
+        if (id) msgDiv.id = id;
+        
+        // 텍스트 내 볼드체(**)와 줄바꿈(\n)을 HTML로 치환하여 렌더링
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        msgDiv.innerHTML = formattedText;
+        
+        historyEl.appendChild(msgDiv);
+        historyEl.scrollTop = historyEl.scrollHeight;
+    }
+
+    function updateMessageInUI(id, text) {
+        const msgDiv = document.getElementById(id);
+        if (msgDiv) {
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+            msgDiv.innerHTML = formattedText;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const inputEl = document.getElementById('chat-input');
+        if (inputEl) {
+            inputEl.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+        }
+    });
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').catch(err => {
@@ -646,7 +707,11 @@ HTML_TEMPLATE = """
 def generate_html():
     with app.app_context():
         dashboard_data = get_dashboard_data()
-        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
+        
+        # 깃허브 시크릿에 등록된 API 키를 HTML로 전달 (인앱 채팅용)
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        
+        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data, api_key=api_key)
         with open("index.html", "w", encoding="utf-8") as f:
             f.write(rendered)
 
