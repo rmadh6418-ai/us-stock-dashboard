@@ -34,8 +34,19 @@
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; color: #111827; word-break: keep-all; }
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
+        
+        /* 카드 및 트레이딩뷰 링크 애니메이션 스타일 추가 */
+        .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        .card { 
+            background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+            text-align: center; height: 100%; box-sizing: border-box; 
+            border: 2px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; 
+        }
+        .card-link:hover .card { 
+            transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; 
+        }
+
         .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
         .card-value { font-size: 2.1rem; font-weight: 900; color: #111827; margin-bottom: 5px; word-break: break-all; }
         .card-delta { font-size: 1.1rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 5px; }
@@ -103,7 +114,7 @@
 </script>
 <!-- 🔐 비밀번호 잠금 화면 끝 -->
 
-<!-- 매크로: 52주 신고가 근접(3% 이내) 시 불꽃 마크 추가 -->
+<!-- 매크로: 52주 신고가 근접(3% 이내) 시 불꽃 마크 및 트레이딩뷰 링크 연결 -->
 
 
 <div class="container">
@@ -111,7 +122,7 @@
 
     <div class="section-title" style="margin-top: 0; border-left-color: #8b5cf6; color: #6d28d9;">✨ 🤖 AI 오늘의 증시 3줄 요약</div>
     <div class="list-box" style="margin-bottom: 0; background: linear-gradient(145deg, #f3f4f6, #ffffff); border: 2px solid #e5e7eb;">
-        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">2026년 11월 10일 기준 미 증시는 S&amp;P 500이 7549.94p, 나스닥 100이 27907.63p를 기록하며 대형 기술주 중심의 견조한 흐름을 유지했으나, 국채 금리 급등과 유가 상승 악재가 맞물려 오늘 아침 한국 증시에는 뚜렷한 종목별 차별화 장세가 연출될 것으로 전망됩니다. 미국 10년물 국채 금리가 4.86%까지 치솟으며 고금리 장기화에 대한 우려를 자극함에 따라 밸류에이션 부담이 큰 성장주를 중심으로 투심 위축이 불가피합니다. 원/달러 환율이 1343.78원 선에서 형성되며 비교적 안정을 유지하고 있어 국내 주요 수출 기업들의 실적 하단은 지지되겠으나, 높게 형성된 미국채 금리로 인해 외국인의 공격적인 순매수 유입은 제한될 가능성이 높습니다. 글로벌 시장의 불안정성을 나타내는 VIX 지수가 19.92로 위험 둔화 경계선인 20선에 바짝 다가섰으며, CNN 공포탐욕지수가 31.71의 공포 단계를 기록한 점은 글로벌 투자자들의 뚜렷한 위험 회피 심리를 반영합니다. 특히 연준의 순유동성이 5조 7907억 달러 수준에 머무는 가운데 역레포 잔액이 2억 5200만 달러까지 급감한 점은 시중 유동성 완충 지대가 사실상 고갈되었음을 의미하며, 향후 금리 변동성에 글로벌 시장이 더욱 민감하게 반응할 수 있음을 경고합니다. 여기에 WTI유가 85.80달러, 브렌트유가 91.60달러까지 상승하며 국제유가가 강세를 보이는 것은 지정학적 리스크 확산과 중동발 공급 불안에 기인한 것으로, 다시금 인플레이션 상방 압력을 자극하고 있습니다. 이러한 유가 상승과 고금리 환경은 기업들의 원가 부담을 가중시키고 소비 둔화를 초래할 수 있어 개장을 앞둔 국내 증시 전반에 부담 요인으로 작용할 것입니다. 미 증시의 기술주 강세 흐름에 힘입어 국내 반도체 및 핵심 IT 수출 섹터는 상대적 우위를 보이며 지수 하단을 받칠 것으로 기대되지만, 높은 국채 금리 여파로 바이오, 이차전지 등 금리 민감주 및 내수 소비주 전반에는 매물 출회 가능성이 높습니다. 금일 밤 발표를 앞둔 미국 주요 경제지표를 앞두고 시장 내 관망세가 짙어질 것으로 보이며, 지표 결과에 따라 연준의 통화정책 경로가 재설정될 수 있습니다. 이에 따라 국내 증시는 개장 초 미 증시의 기술주 모멘텀을 반영하며 출발하겠지만, 시가 형성 이후 외국인 수급 향방에 따라 상승 폭이 제한되는 흐름을 보일 가능성이 큽니다. 유동성 완충 장치의 부재와 공포 심리 확산을 감안할 때, 현 시점에서는 지수의 전체적인 상승을 기대하기보다 외국인 수급 변동성과 환율 추이를 면밀히 점검하며 개별 종목의 펀더멘털에 기반한 철저한 리스크 관리 전략이 요구됩니다.</p>
+        <p style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8; color: #374151; margin: 0;">2026년 11월 10일 개장을 앞둔 한국 증시는 미 국채 금리 급등과 고유가라는 이중 악재 속에 다소 보수적인 흐름을 보일 것으로 전망됩니다. 간밤 미 증시는 S&amp;P 500이 7,549.94, 나스닥 100이 27,907.63을 기록하며 고점 부근에서 매물 압박을 받았으며, 이는 오늘 국내 반도체 및 대형 수출주의 상승 밸류에이션을 제약하는 요소로 작용할 것입니다. 특히 브렌트유가 배럴당 91.54달러, WTI가 85.76달러까지 치솟으며 지정학적 리스크발 인플레이션 우려가 다시 자극되었고, 이로 인해 미 국채 10년물 금리가 4.86%선까지 상향 돌파하며 기술주 전반에 밸류에이션 부담을 더했습니다. 원/달러 환율은 1,339.96원 수준에서 상대적인 안정세를 유지하고 있으나, 4.8%를 상회하는 미 국채 고금리 환경은 국내 증시 내 외국인 순매수 유입을 제한하는 구조적 방해 요인입니다. 심리 지표 측면에서는 VIX 지수가 19.92로 경계선인 20 부근까지 상승하고 CNN 공포탐욕지수가 31.69의 &#39;공포&#39; 단계를 나타내고 있어 위험 자산 전반에 대한 투심 위축이 확인됩니다. 연준의 순유동성은 5조 7,907억 달러 수준을 유지하며 최악의 경색은 막고 있으나, 역레포(ON RRP) 잔액이 2억 5,200만 달러까지 급감해 시장 유동성의 안전판이 사실상 고갈되었음을 의미하므로 향후 국채 발행 확대 시 자금 시장의 변동성이 확대될 리스크가 존재합니다. 에너지 가격 상승은 에너지 의존도가 높은 한국 제조업 전반의 마진 압박으로 이어질 가능성이 높으며, 시장 참가자들은 조만간 발표될 미국의 주요 물가 및 고용 경제지표 결과를 확인하기 전까지 적극적인 매수를 자제할 것으로 보입니다. 따라서 오늘 아침 한국 증시는 반도체 등 고배타성 민감주보다는 원자재 가격 상승 수혜주나 방어주 위주의 차별화된 순환매 장세가 연출될 것으로 예상되며, 투자자들은 외국인 수급 향방을 확인하며 신중하게 대응할 필요가 있습니다.</p>
     </div>
 
     <!-- AI 요약 아래로 이동된 뉴스 및 캘린더 -->
@@ -120,6 +131,8 @@
             <div class="section-title" style="margin-top:0;">📰 주요 경제 및 빅테크 뉴스</div>
             <div class="list-box">
                 
+                    
+                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMib0FVX3lxTE5UZS0teXJTQjVSOE0xWW0tazUxa1lsVF82Z3l6c1hNY0dJSl9oNE9HNjY2ODhSQ1hCZzh4MW1WSEJQZGxTNzlsdDd6TGhIRlVQZ2trRXk1dkZnRkdEMVhiSk9EbThhaWtYbFg1RjNHTQ?oc=5" target="_blank" class="news-link">미국 증시 상승·유가 하락에 코스피 코스닥 반등 - YTN</a><br><span class="news-date">(2026-11-10 04:43)</span></div>
                     
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTE9UZVBpMHBwTjBlTzM2ZkVCTHZCMFRBSWk2SzJMS3ZsR1FibWhBSklJbXl4X3dXVHlWejhMOWRhYUI4STBkSkVnT29YcC15RktFNmRtMkV5bTRvQTJoNmhHUERzVEZ1Z1djcm5ZUEJpRTU?oc=5" target="_blank" class="news-link">[분석] 미국 불확실성 피한 빅테크…한국 데이터센터에 수조원 승부수 By FinancialPost - Investing.com 한국어</a><br><span class="news-date">(2026-11-09 23:43)</span></div>
                     
@@ -132,8 +145,6 @@
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMibEFVX3lxTE9kdUN5RUdVNUxhNE90cEt2bXlOclE1QWFvM3RTMXVhb1hkbnQzRUpLeWhUcDhWWVZXV2VVMVdkTXVqamg1YmJlWVZfSVZBYW1ielVjWUpaeG5YQXctZ1Y0VG9NeXh0bm5Bd3Jtdw?oc=5" target="_blank" class="news-link">[11월 2주차] 금주 국내외 경제 전망 - KB Think</a><br><span class="news-date">(2026-11-10 04:08)</span></div>
                     
                         <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiXEFVX3lxTE04NzFhb05VODBCYTBLMUZJU2xVN2t5ejdCX0pUY0piWXNhVlBDa2JnTGRHUWtBZS1nRGpMZk5HZ2x0Nmd1NmNRNWRwZHU2VFBGV2JWa0dkR0Ezd3B6?oc=5" target="_blank" class="news-link">[AI MY 증시전망] 뉴욕증시 급반등에 코스피 반등 시도…물가·금리 주목 - 뉴스핌</a><br><span class="news-date">(2026-11-09 23:12)</span></div>
-                    
-                        <div class="news-item"><a href="https://news.google.com/rss/articles/CBMiYkFVX3lxTFAzLTJZZUV4X0Z6X1ZWcl9hdlk3WUhRXy1WR2xwRnFvcnZnRndObnljekJDbmxfd3IxSUJzY2ZOZDExcm5lV3NSdmVsOHIzS1NIeHlyWFVydktyVHcxX0dRRy1B?oc=5" target="_blank" class="news-link">[시황] 미국증시, 유가 급락과 반도체 반발매수에 상승 - 버핏연구소</a><br><span class="news-date">(2026-11-09 23:12)</span></div>
                     
                 
             </div>
@@ -163,6 +174,12 @@
     <div class="section-title">📈 1. 미국 주요 지수</div>
     <div class="grid">
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SPX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             S&amp;P 500
@@ -179,8 +196,18 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=DJI" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             다우존스
@@ -197,8 +224,18 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NDX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             나스닥 100
@@ -206,17 +243,27 @@
         </div>
         
             <div class="card-value">
-                27,907.62
+                27,907.63
             </div>
             
             
             
-             <div class="card-delta up">▲ 917.63 (3.40%)</div>
+             <div class="card-delta up">▲ 917.64 (3.40%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SOX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             필라델피아 반도체
@@ -233,8 +280,18 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NBI" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             나스닥 생명공학
@@ -253,12 +310,22 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
     </div>
 
     <div class="section-title">🌐 2. 매크로 및 시장 심리 지표</div>
     <div class="grid">
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=DXY" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             달러 인덱스
@@ -273,12 +340,22 @@
             
             
             
-             <div class="card-delta down">▼ 0.64 (0.62%)</div>
+             <div class="card-delta up">▲ 0.01 (0.01%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=USDKRW" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             원/달러 환율
@@ -286,17 +363,27 @@
         </div>
         
             <div class="card-value">
-                1,343.78원
+                1,339.96원
             </div>
             
             
             
-             <div class="card-delta down">▼ 18.92 (1.39%)</div>
+             <div class="card-delta down">▼ 22.74 (1.67%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=USDJPY" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             엔/달러 환율
@@ -309,12 +396,22 @@
             
             
             
-             <div class="card-delta down">▼ 0.35 (0.22%)</div>
+             <div class="card-delta down">▼ 0.36 (0.22%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=US10Y" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             미국채 10년물 (%)
@@ -331,8 +428,18 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=US30Y" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             미국채 30년물 (%)
@@ -349,8 +456,18 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=VIX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             빅스(VIX) 지수
@@ -367,13 +484,17 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
-        <div class="card">
+        <div class="card" style="height: 100%; box-sizing: border-box;">
             <div class="card-label">CNN 공포탐욕지수</div>
             
                 <div class="card-value">31 (fear)</div>
-                 <div class="card-delta up">▲ 9 (전일대비)</div>
+                 <div class="card-delta down">▼ 0 (전일대비)</div>
                 
             
         </div>
@@ -382,6 +503,12 @@
     <div class="section-title">🛢️ 3. 원자재 및 귀금속 시세</div>
     <div class="grid">
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=USOIL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             WTI유 ($/bbl)
@@ -389,17 +516,27 @@
         </div>
         
             <div class="card-value">
-                85.80
+                85.76
             </div>
             
             
             
-             <div class="card-delta down">▼ 5.03 (5.54%)</div>
+             <div class="card-delta down">▼ 1.09 (1.26%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=UKOIL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             브렌트유 ($/bbl)
@@ -407,17 +544,27 @@
         </div>
         
             <div class="card-value">
-                91.60
+                91.54
             </div>
             
             
             
-             <div class="card-delta down">▼ 6.72 (6.83%)</div>
+             <div class="card-delta down">▼ 1.03 (1.11%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=HG1!" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             구리 가격 (lb)
@@ -425,18 +572,28 @@
         </div>
         
             <div class="card-value">
-                8,534원
+                8,524원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 61 (0.72%)</div>
+             <div class="card-delta down">▼ 99 (1.15%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=XAUUSD" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             국내 금시세 (1돈)
@@ -444,18 +601,28 @@
         </div>
         
             <div class="card-value">
-                668,338원
+                666,501원
                 
             </div>
             
             
             
-             <div class="card-delta down">▼ 1,144 (0.17%)</div>
+             <div class="card-delta down">▼ 9,487 (1.40%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
         
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=XAGUSD" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             국내 은시세 (1돈)
@@ -463,16 +630,20 @@
         </div>
         
             <div class="card-value">
-                8,627원
+                8,601원
                 
             </div>
             
             
             
-             <div class="card-delta up">▲ 116 (1.37%)</div>
+             <div class="card-delta down">▼ 34 (0.40%)</div>
             
         
     </div>
+    
+    
+    </a>
+    
 
     </div>
 
@@ -480,6 +651,10 @@
     
     <div class="grid">
         
+    
+    
+    
+    
     <div class="card">
         <div class="card-label">
             순유동성 (Net Liquidity)
@@ -497,8 +672,14 @@
             
         
     </div>
+    
+    
 
         
+    
+    
+    
+    
     <div class="card">
         <div class="card-label">
             역레포 잔액 (ON RRP)
@@ -516,8 +697,14 @@
             
         
     </div>
+    
+    
 
         
+    
+    
+    
+    
     <div class="card">
         <div class="card-label">
             은행 지급준비금
@@ -534,8 +721,14 @@
              <div class="card-delta flat">- 0 (0.00%)</div> 
         
     </div>
+    
+    
 
         
+    
+    
+    
+    
     <div class="card">
         <div class="card-label">
             재무부 일반계정 (TGA)
@@ -552,6 +745,8 @@
              <div class="card-delta flat">- 0 (0.00%)</div> 
         
     </div>
+    
+    
 
     </div>
     
@@ -561,6 +756,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AAPL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Apple
@@ -579,9 +780,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MSFT" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Microsoft
@@ -600,9 +811,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=GOOGL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Alphabet
@@ -619,9 +840,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AMZN" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Amazon
@@ -638,9 +869,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=META" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Meta
@@ -657,9 +898,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=ORCL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Oracle
@@ -676,9 +927,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CRWD" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             크라우드스트라이크
@@ -695,9 +956,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NET" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             클라우드플레어
@@ -714,9 +985,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CRM" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             세일스포스
@@ -733,9 +1014,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PANW" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             팔로알토 네트웍스
@@ -752,9 +1043,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=APP" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             앱러빈
@@ -771,9 +1072,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NFLX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             넷플릭스
@@ -790,6 +1101,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
@@ -798,6 +1113,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NVDA" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             NVIDIA
@@ -814,9 +1135,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AMD" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             AMD
@@ -833,9 +1164,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TSM" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             TSMC
@@ -852,9 +1193,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MU" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Micron
@@ -871,9 +1222,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=INTC" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             인텔
@@ -890,9 +1251,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=QCOM" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             퀄컴
@@ -909,9 +1280,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AVGO" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             브로드컴
@@ -928,9 +1309,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=ASML" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             ASML
@@ -947,9 +1338,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=LRCX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             램리서치
@@ -966,9 +1367,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PLTR" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Palantir
@@ -985,9 +1396,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TEM" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             템퍼스 AI
@@ -1004,9 +1425,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=WDC" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             웨스턴디지털
@@ -1023,9 +1454,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CLS" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             셀레스티카
@@ -1042,9 +1483,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=DELL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             델테크놀로지
@@ -1061,6 +1512,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
@@ -1069,6 +1524,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=XOM" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             엑슨모빌
@@ -1085,9 +1546,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CVX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             셰브론
@@ -1104,9 +1575,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=GEV" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             GE버노바
@@ -1123,9 +1604,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SMR" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             뉴스케일파워
@@ -1142,9 +1633,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=OKLO" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             오클로
@@ -1161,9 +1662,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TE" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             T1에너지
@@ -1180,9 +1691,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=VST" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             비스트라 에너지
@@ -1199,9 +1720,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BE" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             블룸에너지
@@ -1218,9 +1749,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BWXT" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             BWX 테크놀로지스
@@ -1237,9 +1778,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=VRT" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             버티브홀딩스
@@ -1256,9 +1807,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PWR" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             콴타서비시스
@@ -1275,9 +1836,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CCJ" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             카메코
@@ -1294,9 +1865,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=POWL" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             파월 인더스트리스
@@ -1313,9 +1894,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MTZ" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             마스텍
@@ -1332,6 +1923,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
@@ -1340,6 +1935,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=LLY" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Eli Lilly
@@ -1358,9 +1959,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PFE" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             화이자
@@ -1377,9 +1988,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=JNJ" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             존슨앤드존슨
@@ -1398,9 +2019,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=UNH" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             유나이티드헬스
@@ -1417,9 +2048,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MRNA" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             모더나
@@ -1436,9 +2077,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AMGN" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             암젠
@@ -1455,6 +2106,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
@@ -1463,6 +2118,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TSLA" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             Tesla
@@ -1479,9 +2140,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SPCX" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             스페이스X
@@ -1498,9 +2169,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=RKLB" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             로켓랩
@@ -1517,9 +2198,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=GE" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             GE에어로스페이스
@@ -1536,6 +2227,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
@@ -1544,6 +2239,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=JPM" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             JP모건
@@ -1560,9 +2261,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BAC" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             뱅크오브아메리카
@@ -1579,9 +2290,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=WFC" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             웰스파고
@@ -1598,9 +2319,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MS" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             모건스탠리
@@ -1617,9 +2348,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SCHW" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             찰스슈왑
@@ -1636,9 +2377,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=V" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             비자
@@ -1655,9 +2406,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MA" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             마스터카드
@@ -1674,9 +2435,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BRK-B" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             버크셔해서웨이
@@ -1695,9 +2466,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BLK" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             블랙록
@@ -1716,9 +2497,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=KKR" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             KKR &amp; CO
@@ -1735,6 +2526,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
@@ -1743,6 +2538,12 @@
     <div class="grid">
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=WMT" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             월마트
@@ -1759,9 +2560,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=COST" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             코스트코
@@ -1780,9 +2591,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=KO" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             코카콜라
@@ -1801,9 +2622,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PEP" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             펩시코
@@ -1820,9 +2651,19 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
             
+    
+    
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MCD" target="_blank" class="card-link" title="트레이딩뷰 차트 보기">
+    
+    
     <div class="card">
         <div class="card-label">
             맥도날드
@@ -1839,6 +2680,10 @@
             
         
     </div>
+    
+    
+    </a>
+    
 
         
     </div>
