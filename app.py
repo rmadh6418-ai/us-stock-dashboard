@@ -196,7 +196,8 @@ def get_ai_summary(data):
         [★엄격한 작성 규칙 - 할루시네이션(정보 왜곡) 절대 금지★]
         1. 오직 제공된 [오늘의 데이터]만을 기반으로 사실 관계를 확인하여 작성할 것.
         2. 근거 없는 수치, 지어낸 미래 주가 예측, 제공되지 않은 뉴스 내용은 절대 포함하지 말 것.
-        3. 마크다운 특수기호(*, #, -, _ 등)를 단 하나도 사용하지 말고, 오직 줄바꿈과 띄어쓰기만 활용한 가독성 좋은 아주 깔끔한 평문(Plain Text)으로 작성할 것.
+        3. 마크다운 특수기호(*, #, -, _ 등)를 단 하나도 사용하지 말고, 오직 줄바꿈과 띄어쓰기만 활용할 것.
+        4. 내용 요약 시 각 문단 앞에 반드시 "1. ", "2. ", "3. " 처럼 번호를 매겨서 아주 깔끔하게 정리할 것.
         
         [분석 포인트]
         1. 지수 흐름 분석 및 한국 주요 섹터 방향성
@@ -213,8 +214,8 @@ def get_ai_summary(data):
         연준 순유동성: {fed_net}
         """
         
-        # 모델 원본 유지
-        for model_name in ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash']:
+        # 3.1-flash-lite 폴백 추가 유지
+        for model_name in ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3-flash']:
             try:
                 response = genai.GenerativeModel(model_name).generate_content(prompt)
                 # 기호 2차 필터링
@@ -409,7 +410,7 @@ HTML_TEMPLATE = """
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
     
     <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
-        <span>✨ 🤖 AI 오늘의 증시 브리핑 (기호 제거 버전)</span>
+        <span>✨ 🤖 AI 오늘의 증시 브리핑</span>
         <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
     </div>
     
@@ -488,14 +489,15 @@ HTML_TEMPLATE = """
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
 
-            // 엄격한 할루시네이션 방지 프롬프트 세팅
+            // 엄격한 할루시네이션 방지 및 번호 매기기 규칙
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 바탕으로 사용자의 질문에 답하세요.
 
-[★할루시네이션(정보 왜곡) 절대 차단 규칙★]
+[★할루시네이션(정보 왜곡) 절대 차단 및 작성 규칙★]
 1. 답변 시 스스로 정보를 지어내거나 추측성 주가 예측을 절대 하지 마세요.
 2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
 3. 제공된 데이터로 확인할 수 없는 내용은 무리해서 답변하지 말고 "현재 제공된 데이터로는 확인이 어렵습니다"라고 단호하게 답변하세요.
+4. 마크다운 기호를 쓰지 말고, 여러 내용을 안내할 때는 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
 - 오늘의 증시 요약: \\n${summaryText}\\n
@@ -516,17 +518,30 @@ HTML_TEMPLATE = """
         appendMessage('ai', '팩트 기반 분석 중...', loadingId);
 
         try {
-            // 원본 모델 요청 URL 사용
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+            // 원본 3.5 모델 먼저 시도
+            let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ contents: chatHistory })
             });
             
-            const data = await response.json();
+            let data = await response.json();
             
+            // 3.5가 과부하/에러일 경우 3.1로 자동 Fallback
             if (!response.ok) {
-                throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
+                console.warn("3.5-flash-lite 에러 발생, 3.1-flash-lite로 자동 전환하여 재시도합니다.", data.error);
+                
+                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ contents: chatHistory })
+                });
+                
+                data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
+                }
             }
 
             const replyText = data.candidates[0].content.parts[0].text;
@@ -536,7 +551,7 @@ HTML_TEMPLATE = """
         } catch (error) {
             console.error("API 통신 에러:", error);
             chatHistory.pop(); 
-            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 잘못되었거나 잠시 지연이 발생했습니다. 새로고침 후 다시 시도해주세요.`);
+            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>잠시 서버 트래픽 지연이 발생했습니다. 새로고침 후 다시 시도해주세요.`);
         }
     }
     
