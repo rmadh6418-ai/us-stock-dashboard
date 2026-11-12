@@ -67,7 +67,12 @@ def get_fear_and_greed():
         res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
-            return {'score': data['fear_and_greed']['score'], 'rating': data['fear_and_greed']['rating'], 'diff': data['fear_and_greed']['score'] - data['fear_and_greed']['previous_close']}
+            score = data['fear_and_greed']['score']
+            prev = data['fear_and_greed']['previous_close']
+            diff = score - prev
+            pct = (diff / prev) * 100 if prev != 0 else 0
+            # 화면 표시를 위해 key를 'value'로 맞춤
+            return {'value': score, 'diff': diff, 'pct': pct, 'rating': data['fear_and_greed']['rating']}
         return None
     except:
         return None
@@ -188,11 +193,10 @@ def get_ai_summary(data):
         genai.configure(api_key=api_key)
         today_str = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
         
-        # 연준 및 CNN 데이터 파싱 및 검증
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_tga = f"{int(data['fed']['TGA']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
-        cnn_score = f"{int(data['cnn']['score'])} ({data['cnn']['rating']})" if data.get('cnn') else "조회 불가"
+        cnn_score = f"{int(data['cnn']['value'])} ({data['cnn'].get('rating', '')})" if data.get('cnn') else "조회 불가"
         
         prompt = f"""
         [분석 기준 날짜: {today_str}]
@@ -225,13 +229,10 @@ def get_ai_summary(data):
         TGA 잔액: {fed_tga}
         """
         
-        # 3.1-flash-lite 폴백 유지
         for model_name in ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3-flash']:
             try:
                 response = genai.GenerativeModel(model_name).generate_content(prompt)
-                # 기호 2차 필터링
                 clean_text = response.text.replace('*', '').replace('#', '').replace('_', '').replace('+', '').replace('-', '')
-                # 빈 줄 정리
                 clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text)
                 return clean_text.strip()
             except:
@@ -404,7 +405,9 @@ HTML_TEMPLATE = """
     <div class="card">
         <div class="card-label">{{ label }} {% if data_obj is mapping and data_obj.get('near_52w_high') %}<span title="52주 신고가 근접">🔥</span>{% endif %}</div>
         {% if data_obj is mapping and data_obj.get('value') != "N/A" %}
-            <div class="card-value">{% if is_int %}{{ "{:,}".format(data_obj.value|int) }}{% else %}{{ "{:,.2f}".format(data_obj.value) }}{% endif %}{{ suffix }}</div>
+            <div class="card-value">{% if is_int %}{{ "{:,}".format(data_obj.value|int) }}{% else %}{{ "{:,.2f}".format(data_obj.value) }}{% endif %}{{ suffix }}
+            {% if data_obj.get('rating') %} <span style="font-size:1rem; color:#6b7280;">({{ data_obj.rating }})</span>{% endif %}
+            </div>
             {% set diff_val = data_obj.diff|abs %}
             {% set diff_fmt = "{:,}".format(diff_val|int) if is_int else "{:,.2f}".format(diff_val) %}
             {% if data_obj.diff > 0 %} <div class="card-delta up">▲ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
@@ -453,6 +456,28 @@ HTML_TEMPLATE = """
     <div class="section-title">🌐 2. 매크로 및 시장 심리</div>
     <div class="grid">
         {{ render_metric('달러 인덱스', data.macros['달러 인덱스']) }}{{ render_metric('원/달러', data.macros['원/달러 환율'], False, '원') }}{{ render_metric('미국채 10년', data.macros['미국채 10년물'], False, '%') }}{{ render_metric('빅스(VIX)', data.macros['빅스(VIX)']) }}
+        {{ render_metric('CNN 공포지수', data.cnn, True) }}
+    </div>
+
+    <div class="section-title">💧 3. 연준(FED) 유동성 지표</div>
+    <div class="grid">
+        {% if data.fed %}
+            {{ render_metric('순유동성(Net)', data.fed['Net Liquidity'], True, 'M$') }}
+            {{ render_metric('역레포(RRP)', data.fed['Reverse Repo'], True, 'M$') }}
+            {{ render_metric('TGA 잔액', data.fed['TGA'], True, 'M$') }}
+            {{ render_metric('총 자산', data.fed['Total Assets'], True, 'M$') }}
+        {% else %}
+            <div class="card"><div class="card-label">연준 유동성</div><div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div></div>
+        {% endif %}
+    </div>
+
+    <div class="section-title">🛢️ 4. 원자재 및 귀금속</div>
+    <div class="grid">
+        {{ render_metric('WTI유', data.commodities['WTI유'], False, '$') }}
+        {{ render_metric('브렌트유', data.commodities['브렌트유'], False, '$') }}
+        {{ render_metric('금(1돈)', data.gold, True, '원') }}
+        {{ render_metric('은(1돈)', data.silver, True, '원') }}
+        {{ render_metric('구리(파운드)', data.copper, True, '원') }}
     </div>
 
     <div class="section-title">💻 5. 빅테크 & 소프트웨어</div>
