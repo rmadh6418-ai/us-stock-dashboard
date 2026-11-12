@@ -59,22 +59,23 @@ def fetch_yfinance_data(tickers):
 
 def get_fear_and_greed():
     url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-    # User-Agent를 실제 최신 브라우저처럼 강화
+    # 고객님의 원본 코드에서 정상 작동했던 가장 확실한 헤더로 롤백
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0", 
         "Accept": "application/json, text/plain, */*",
         "Origin": "https://edition.cnn.com", 
         "Referer": "https://edition.cnn.com/"
     }
     try:
-        # requests 대신 scraper(cloudscraper)를 사용하여 차단 우회
-        res = scraper.get(url, headers=headers, timeout=10)
+        # cloudscraper 대신 원래 유저님이 성공하셨던 requests 모듈로 완벽 원복
+        res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
             score = data['fear_and_greed']['score']
             prev = data['fear_and_greed']['previous_close']
             diff = score - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
+            # 화면(UI) 출력 규칙에 맞게 'value' 로만 매핑
             return {'value': score, 'diff': diff, 'pct': pct, 'rating': data['fear_and_greed']['rating']}
         return None
     except:
@@ -615,14 +616,3 @@ HTML_TEMPLATE = """
 </script>
 </body>
 </html>
-"""
-
-def generate_html():
-    with app.app_context():
-        dashboard_data = get_dashboard_data()
-        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
-        with open("index.html", "w", encoding="utf-8") as f:
-            f.write(rendered)
-
-if __name__ == "__main__":
-    generate_html()
