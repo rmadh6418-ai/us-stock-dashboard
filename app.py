@@ -59,15 +59,19 @@ def fetch_yfinance_data(tickers):
 
 def get_fear_and_greed():
     url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+    
+    # 1. 최신 브라우저 완벽 위장 헤더
     headers = {
-        "User-Agent": "Mozilla/5.0", 
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
-        "Origin": "https://edition.cnn.com", 
+        "Origin": "https://edition.cnn.com",
         "Referer": "https://edition.cnn.com/"
     }
+    
+    # 1차 시도: 고급 브라우저 지문(Fingerprint)이 적용된 scraper 사용
+    advanced_scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True})
     try:
-        # 정상 작동했던 requests 모듈로 복구
-        res = requests.get(url, headers=headers, timeout=10)
+        res = advanced_scraper.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
             score = data['fear_and_greed']['score']
@@ -75,9 +79,25 @@ def get_fear_and_greed():
             diff = score - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
             return {'value': score, 'diff': diff, 'pct': pct, 'rating': data['fear_and_greed']['rating']}
-        return None
     except:
-        return None
+        pass
+
+    # 2차 시도: 깃허브 IP가 완전히 막혔을 경우 대비 프록시(allorigins) 우회
+    proxy_url = f"https://api.allorigins.win/raw?url={url}"
+    try:
+        res = requests.get(proxy_url, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            score = data['fear_and_greed']['score']
+            prev = data['fear_and_greed']['previous_close']
+            diff = score - prev
+            pct = (diff / prev) * 100 if prev != 0 else 0
+            return {'value': score, 'diff': diff, 'pct': pct, 'rating': data['fear_and_greed']['rating']}
+    except:
+        pass
+
+    # 모두 실패하더라도 화면이 깨지지 않도록 기본값 반환
+    return {'value': "N/A", 'diff': 0, 'pct': 0, 'rating': "서버 차단됨"}
 
 def get_silver_don_price():
     try:
@@ -198,7 +218,7 @@ def get_ai_summary(data):
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         fed_tga = f"{int(data['fed']['TGA']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
-        cnn_score = f"{int(data['cnn']['value'])} ({data['cnn'].get('rating', '')})" if data.get('cnn') else "조회 불가"
+        cnn_score = f"{int(data['cnn']['value'])} ({data['cnn'].get('rating', '')})" if data.get('cnn') and data['cnn'].get('value') != "N/A" else "조회 불가"
         
         prompt = f"""
         [분석 기준 날짜: {today_str}]
@@ -614,14 +634,3 @@ HTML_TEMPLATE = """
 </script>
 </body>
 </html>
-"""
-
-def generate_html():
-    with app.app_context():
-        dashboard_data = get_dashboard_data()
-        rendered = render_template_string(HTML_TEMPLATE, data=dashboard_data)
-        with open("index.html", "w", encoding="utf-8") as f:
-            f.write(rendered)
-
-if __name__ == "__main__":
-    generate_html()
