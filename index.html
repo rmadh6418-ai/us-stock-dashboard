@@ -25,9 +25,10 @@
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .news-item { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; }
         .news-link { color: #1d4ed8; text-decoration: none; }
-        .news-date { font-size: 0.9rem; color: #6b7280; }
-        .cal-item { font-size: 1.1rem; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-        .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+        .news-link:hover { text-decoration: underline; }
+        .news-date { font-size: 0.9rem; color: #6b7280; display: block; margin-top: 4px; }
+        .cal-item { font-size: 1.1rem; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+        .cal-item:last-child { border-bottom: none; }
         
         /* 플로팅 챗봇 스타일 */
         .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background-color: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.2s; user-select: none; }
@@ -51,7 +52,6 @@
         @media (max-width: 768px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
-            .dual-grid { grid-template-columns: 1fr; }
             .chatbot-window { right: 5vw; width: 90vw; bottom: 90px; }
             .chatbot-fab { bottom: 20px; right: 20px; width: 55px; height: 55px; font-size: 1.5rem; }
         }
@@ -137,34 +137,103 @@
 
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+
+    <!-- 진짜 실시간 주가 티커 위젯 (페이지 머무는 동안 실시간 변동) -->
+    <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-ticker-tape.js" async>
+      {
+      "symbols": [
+        { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" },
+        { "proName": "FOREXCOM:NSXUSD", "title": "나스닥 100" },
+        { "proName": "NASDAQ:NVDA", "title": "엔비디아" },
+        { "proName": "NASDAQ:AAPL", "title": "애플" },
+        { "proName": "NASDAQ:MSFT", "title": "마이크로소프트" },
+        { "proName": "NASDAQ:TSLA", "title": "테슬라" },
+        { "proName": "KRX:005930", "title": "삼성전자" }
+      ],
+      "showSymbolLogo": true,
+      "isTransparent": false,
+      "displayMode": "adaptive",
+      "colorTheme": "light",
+      "locale": "kr"
+    }
+      </script>
+    </div>
     
     <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
         <span>✨ 🤖 AI 오늘의 증시 브리핑</span>
         <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
     </div>
     
-    <div class="list-box" id="ai-section-content">
-        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">2026년 11월 13일 기준 글로벌 매크로 데이터 및 미국 증시 분석을 바탕으로 정리한 한국 증시 개장 전 핵심 시장 전망입니다.
+    <div class="list-box" id="ai-section-content" style="margin-bottom: 40px;">
+        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">1. 주요 지수 흐름 및 한국 증시 주요 섹터 방향성 분석
+미국 증시는 S&amp;P 500 지수가 7592.40pt, 나스닥 100 지수가 28289.19pt를 기록하고, 필라델피아 반도체 지수가 10506.67pt를 나타내며 기술주 중심의 견조한 흐름을 보여주었습니다. 아시아 시장에서도 니케이 225 지수가 61248.59pt, 대만 가권 지수가 44257.15pt를 기록하는 등 인접국의 기술 및 글로벌 공급망 관련 지수가 높은 수준을 유지하고 있습니다. 필라델피아 반도체 지수와 대만 지수의 견조한 수준은 한국 증시 개장 시 반도체 및 주요 IT 대형주 섹터에 긍정적인 모멘텀을 제공하는 핵심 요인으로 작용할 전망입니다.
 
-1. 글로벌 주요 지수 흐름 및 국내 핵심 섹터 전망
-미국 증시는 S&amp;P 500 지수가 7592.40포인트, 나스닥 100 지수가 28289.19포인트를 나타내고 필라델피아 반도체 지수가 10506.67포인트를 기록하며 첨단 기술주 중심의 상방 지지력을 보여주고 있습니다. 이와 연동된 아시아 시장에서도 일본 니케이 225 지수가 61248.59포인트, 대만 가권 지수가 44257.15포인트를 기록하며 글로벌 반도체 및 IT 공급망 전반에 높은 지수대가 형성되어 있습니다. 필라델피아 반도체 지수의 10506.67포인트 유지와 대만 가권 지수의 강세 흐름은 대만 TSMC 등 반도체 밸류체인의 견조함을 입증하는 근거이며, 이는 한국 개장 후 삼성전자 및 SK하이닉스 등 메모리 반도체 대표 종목과 관련 부품 섹터에 긍정적인 모멘텀으로 작용할 전망입니다. 다만 WTI 국제유가가 배럴당 88.71달러까지 상승해 있어 유가 상승에 민감한 국내 제조업 및 화학, 운송 섹터에는 원가 부담에 따른 수익성 악화 우려가 하방 요인으로 작용할 수 있습니다.
+2. 환율, 금리 및 국제유가가 외국인 수급에 미치는 파급력
+미국 10년물 국채 금리가 5.10% 수준까지 상승하고 WTI 국제유가가 배럴당 88.78달러를 기록하면서, 시장 전반에 고금리와 고유가로 인한 거시경제적 부담이 존재합니다. 그러나 원달러 환율은 1334.63원으로 금리와 유가의 상승세에 비해 비교적 관리 가능한 범주 내에서 형성되어 있습니다. 높은 국채 금리는 외국인의 유가증권 시장 유입을 일부 제약할 수 있으나, 안정적인 환율 흐름 덕분에 급격한 자금 이탈 가능성은 낮으며 국내 반도체 등 실적 우수 섹터를 중심으로 한 선별적 수급이 유입될 것으로 분석됩니다.
 
-2. 환율 및 금리 환경과 외국인 수급 파급력 분석
-미국 10년물 국채 금리가 5.103%를 기록하며 5%를 상회하는 고금리 환경이 지속되고 있습니다. 5.103% 수준의 높은 국채 금리는 무위험 자산의 수익률을 높여 주식 시장 전반의 할인율을 상승시키고 신흥국으로의 자금 유입을 제한하는 강력한 압박 요인입니다. 한편 원달러 환율은 1334.87원에 위치해 있습니다. 미국 국채 금리가 5.103%에 달함에도 불구하고 원달러 환율이 1334.87원에서 통제되고 있는 점은 환차손 위험을 일정 부분 제어해주는 요인입니다. 고금리 지속은 한국 증시 내 외국인 투자자들의 공격적인 순매수를 제약하고 고밸류에이션 성장주에 대한 투심을 약화시키는 원인이 되지만, 1334.87원 수준의 환율은 패닉 성격의 외국인 대규모 자금 유출을 막아주는 완충재 역할을 할 것으로 분석됩니다.
-
-3. 변동성 지표 및 연준 유동성 기반 글로벌 자금 환경 진단
-시장 변동성 지수(VIX)는 18.70을 기록하고 있으며, CNN 공포탐욕지수는 39점으로 공포(Fear) 단계를 나타내고 있습니다. VIX 지수가 18.70으로 극단적 폭등 상태는 아니지만, 공포탐욕지수가 39 수준에 머물러 있는 것은 투자자들의 위험 자산 선호 심리가 위축되어 있음을 보여줍니다. 연준의 순유동성은 5,844,247 백만 달러를 기록 중이나 세부 유동성 구조는 타이트한 상태입니다. TGA(재무부 일반계정) 잔액이 914,370 백만 달러로 높게 유지되며 시중 유동성을 흡수하고 있는 반면, 유동성 완충 장치 역할을 하는 역레포(RRP) 잔액은 250 백만 달러까지 급감하여 거의 소진된 상태입니다. 역레포 잔액 250 백만 달러 고갈과 TGA 잔액 914,370 백만 달러 유지 상태는 연준이 시중에 공급할 수 있는 순유동성 여력을 제한하는 직접적인 근거가 되며, 이로 인해 시장 심리가 39의 공포 단계에 갇혀 향후 증시의 강력한 반등 탄력을 제약하는 구조적 원인으로 작동하고 있습니다.</p>
+3. 시장 위험 지표 및 연준 유동성 기반 글로벌 자금 환경 진단
+VIX 지수는 18.70으로 변동성이 제한적인 모습을 보이고 있지만, CNN 공포탐욕지수는 39를 기록하며 시장 심리가 공포(Fear) 구간에 진입해 있어 자산 가격 수준 대비 투자자들의 경계감이 살아있음을 보여줍니다. 연준의 순유동성은 5,844,247백만 달러 수준을 나타내고 있는 가운데, 역레포(RRP) 잔액은 250백만 달러까지 감소한 반면 TGA 잔액은 914,370백만 달러로 고점을 유지하고 있습니다. RRP 유동성 완충 장치가 거의 소진되고 TGA 잔액이 높게 유지되는 구조는 시중 유동성을 제약하는 요인이므로, 한국 증시는 공격적인 매수세보다는 철저히 실적과 모멘텀에 기반한 차별화 장세를 보일 가능성이 높습니다.</p>
     </div>
 
-    <div class="dual-grid" style="margin-bottom: 40px;">
-        <div>
-            <div class="section-title" style="margin-top:0;">📰 경제 뉴스</div>
-            <div class="list-box"><div class="news-item"><a href="https://news.google.com/rss/articles/CBMib0FVX3lxTFB4d3pTeE1laDBDQkJPWmlTcmw1bEJoOEt0Nm0yRDVfbmpmeVRBZUgtb052MXBrbTg3dEtMZHJuSkVCUXdUTmZXdk00Qk5hdjVRX29NMDRuc1lNZDlVR2xPbXIxYVRWVW5HMlFBV0hvNA?oc=5" target="_blank" class="news-link">[서울데이터랩]미국 증시, 주요 지수 일제히 하락 마감…반도체 약세 속 변동성 확대 - 서울신문</a><br><span class="news-date">(2026-11-12 21:13)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTE5JUEJmVVJsa0V4d1NoSkpvYzVZYXJzeTVpdmJ1VU9JZmVzNTg2RzRxTlYxNG1kZGtMdlozSW9jUHNvTEhVLVVoRGNmTXd6RkE4cEdB?oc=5" target="_blank" class="news-link">미국 연준 12월 기준금리 인상 전망: &#39;빅스텝&#39; 가능성과 한국 경제 영향 정리 💸 - 뉴닉</a><br><span class="news-date">(2026-11-12 02:25)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9pUU9rX0VMZWZhX3pFRmdJNGtOTDg2YUtGYWpId3hXdlZIVHNXM3BiTTBia29mRnZ0bXNoTE5Jbk9LTDFKa0ZsUEZ6Rl9DWVJrTmZCbkVsTjhVODjSAWBBVV95cUxNc3lGX3hrdzNLWkE0RmR3VWN2VnhjMmJidGtzLWhMTEJKenRWWUR4OHhkSlRvUzhjajl1aElWN3VQbWpTOGhLYlpod3ZrWG5aT3pvd3pGbFlXMEFJVU50ZDE?oc=5" target="_blank" class="news-link">젠슨 황 퇴진·유가 급등에 뉴욕증시 하락…나스닥 0.4%↓ - 연합뉴스</a><br><span class="news-date">(2026-11-12 21:10)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMikAFBVV95cUxPaWdNanF1WlNkV2haLTMySTgtenhvRTRMbG1LdGNhNjY3ZHJwOUVaV3JoYTY1NmZvaE1ZTVYzZjR5cDItN28yUzVocjNvcUZPM2pVVlJZMENiSlRudU5EZEZldUNUQUw2dDNUdXk2c3BBVGpkQ1l2ZDRCQ21ESUR0bm1pWHd0ay1qV3M4eVc2Rnk?oc=5" target="_blank" class="news-link">연준 인상론, 속도는? - 네이버 프리미엄콘텐츠</a><br><span class="news-date">(2026-11-12 03:28)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTFBqaWg5cWRuVXJObzB5RVNiUld6elFTSEhMSDdWVVpXemxkeWZmLUVPVUoyRUtZRTZldkV4ZXIzVUZNRWNoSC1BR1I4eUlrV3BsUlRNcTlOV3RpcTRiYUIySDFzTmdsNTBfZFRYOEk1anVXQQ?oc=5" target="_blank" class="news-link">[亞증시-종합] 엔비디아발 우려에 中·홍콩·臺 ↓…日 홀로 혼조 - KB Think</a><br><span class="news-date">(2026-11-12 08:22)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMibEFVX3lxTFB6SnVUbzM0LWVJeTN0M0RkZWVwaFA3dXZocjZWbmNadXFVSExFOFEwekhLUlVxOXVCRGtfYlFjdG00WnNnbmdoYldOaE15dzQ2YU1ETEk1QVdVaFcyczk2Vl81RkEtZkMwUUVLag?oc=5" target="_blank" class="news-link">[박래혁의 테크오딧세이] AI 발전을 늦추자던 앤트로픽, 빅테크의 돈으로 몸집을 키우는 역설...다리오 아모데이의 진짜 속내는 - 알티케이뉴스</a><br><span class="news-date">(2026-11-12 18:24)</span></div><div class="news-item"><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBRU21zOEtoR2RyQ0FHd2lpclotMGpZRGNGZnBsZ3dxOFctbnlZa3U0akd1YXhUTE9zaFFYZFlsNUpISkMwZXBfdE5XY3NCMlZlYkQ3RUZhQ011NEp4eE1UNDZpRzVRSDduc2xnZ1V3WkPSAXRBVV95cUxQUGUwYTk2WTZ0LW50TkJVSHFIdHJ2WUlhUWU5U1hKRDVCYzdjc3NrcEk2YlYteXpJY1dFdmJDV1c3VXZWMVVHeXJJWkhIRXpFcG14Sjc0eDRLS3JOSkFPVzlscFdXUVZjTmoyY0hFMDdweDEySg?oc=5" target="_blank" class="news-link">미국증시 반등해도 안심을 할 수 없는 이유 - 연합인포맥스</a><br><span class="news-date">(2026-11-08 23:34)</span></div></div>
+    <!-- 경제 지표 (가로 100% 폭으로 배치) -->
+    <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
+    <div class="list-box" style="margin-bottom: 30px;">
+        
+        <div class="cal-item">🟡 [11월 10일 오후 6:00] FOMC Member Waller Speaks</div>
+        
+        <div class="cal-item">🔴 [11월 10일 오후 10:30] 근원 소비자물가지수(CPI) (전월대비)</div>
+        
+        <div class="cal-item">🔴 [11월 10일 오후 10:30] 소비자물가지수(CPI) (전월대비)</div>
+        
+        <div class="cal-item">🟡 [11월 12일 오후 10:30] 신규 실업수당 청구건수</div>
+        
+        <div class="cal-item">🔴 [11월 13일 오후 10:30] 근원 생산자물가지수(PPI) (전월대비)</div>
+        
+        <div class="cal-item">🔴 [11월 13일 오후 10:30] 생산자물가지수(PPI) (전월대비)</div>
+        
+    </div>
+
+    <!-- 경제 뉴스 (지표 아래 가로 100% 폭으로 배치) -->
+    <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스</div>
+    <div class="list-box" style="margin-bottom: 40px;">
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMib0FVX3lxTFB4d3pTeE1laDBDQkJPWmlTcmw1bEJoOEt0Nm0yRDVfbmpmeVRBZUgtb052MXBrbTg3dEtMZHJuSkVCUXdUTmZXdk00Qk5hdjVRX29NMDRuc1lNZDlVR2xPbXIxYVRWVW5HMlFBV0hvNA?oc=5" target="_blank" class="news-link">[서울데이터랩]미국 증시, 주요 지수 일제히 하락 마감…반도체 약세 속 변동성 확대 - 서울신문</a>
+            <span class="news-date">(2026-11-12 21:13)</span>
         </div>
-        <div>
-            <div class="section-title" style="margin-top:0;">📅 경제 지표</div>
-            <div class="list-box"><div class="cal-item">🟡 [11월 10일 오후 6:00] FOMC Member Waller Speaks</div><div class="cal-item">🔴 [11월 10일 오후 10:30] 근원 소비자물가지수(CPI) (전월대비)</div><div class="cal-item">🔴 [11월 10일 오후 10:30] 소비자물가지수(CPI) (전월대비)</div><div class="cal-item">🟡 [11월 12일 오후 10:30] 신규 실업수당 청구건수</div><div class="cal-item">🔴 [11월 13일 오후 10:30] 근원 생산자물가지수(PPI) (전월대비)</div><div class="cal-item">🔴 [11월 13일 오후 10:30] 생산자물가지수(PPI) (전월대비)</div></div>
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTE5JUEJmVVJsa0V4d1NoSkpvYzVZYXJzeTVpdmJ1VU9JZmVzNTg2RzRxTlYxNG1kZGtMdlozSW9jUHNvTEhVLVVoRGNmTXd6RkE4cEdB?oc=5" target="_blank" class="news-link">미국 연준 12월 기준금리 인상 전망: &#39;빅스텝&#39; 가능성과 한국 경제 영향 정리 💸 - 뉴닉</a>
+            <span class="news-date">(2026-11-12 02:25)</span>
         </div>
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9pUU9rX0VMZWZhX3pFRmdJNGtOTDg2YUtGYWpId3hXdlZIVHNXM3BiTTBia29mRnZ0bXNoTE5Jbk9LTDFKa0ZsUEZ6Rl9DWVJrTmZCbkVsTjhVODjSAWBBVV95cUxNc3lGX3hrdzNLWkE0RmR3VWN2VnhjMmJidGtzLWhMTEJKenRWWUR4OHhkSlRvUzhjajl1aElWN3VQbWpTOGhLYlpod3ZrWG5aT3pvd3pGbFlXMEFJVU50ZDE?oc=5" target="_blank" class="news-link">젠슨 황 퇴진·유가 급등에 뉴욕증시 하락…나스닥 0.4%↓ - 연합뉴스</a>
+            <span class="news-date">(2026-11-12 21:10)</span>
+        </div>
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE9KZHprT1ZqS1ZkUS1TaU9NVl9BcWRBNldTdXNmMmVHc1h5OWpJdXEteEZRNGhESGRyb3VsVXdrb2dqWHQ3VHdWai1oLTdUZzZUV3dSamtUYkVwdHJNcXow?oc=5" target="_blank" class="news-link">미국 증시 일제 하락...&#39;불륜&#39; 젠슨 황 사임·유가도 말썽 - 스마트투데이</a>
+            <span class="news-date">(2026-11-12 22:46)</span>
+        </div>
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE1LUFNhTXc5Z25ZUy11aXh0bmlScHhDUHFzY3BHYWZVeUtacEZtekhmSk5YMnk5YWR3S05US2lJMGo3VlV5aXA1cW5BdW96MklpbnREc0Uzc2J6dFF5WTRsdTdRVFRnN3g3VXZkZ3E1Tk1ldUE?oc=5" target="_blank" class="news-link">젠슨 황 사임 후폭풍…환율도 1340원대 재진입 시도 - 마켓인</a>
+            <span class="news-date">(2026-11-12 23:09)</span>
+        </div>
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE1aTGdxWEZFWHE5TXgwSjdpOHc1enA5UFJtNWctM2RyNnBLbDJXRVVMVmVkdks0alB5SHAtV1N4SXNFRnpPc0hlYV8xVnJKVzhqR3c?oc=5" target="_blank" class="news-link">“젠슨 황 사임에 삼전닉스 어쩌나”…코스피 4800선 경고도 [오늘 나온 보고서] - 매일경제 마켓</a>
+            <span class="news-date">(2026-11-12 23:31)</span>
+        </div>
+        
+        <div class="news-item">
+            <a href="https://news.google.com/rss/articles/CBMikAFBVV95cUxPaWdNanF1WlNkV2haLTMySTgtenhvRTRMbG1LdGNhNjY3ZHJwOUVaV3JoYTY1NmZvaE1ZTVYzZjR5cDItN28yUzVocjNvcUZPM2pVVlJZMENiSlRudU5EZEZldUNUQUw2dDNUdXk2c3BBVGpkQ1l2ZDRCQ21ESUR0bm1pWHd0ay1qV3M4eVc2Rnk?oc=5" target="_blank" class="news-link">연준 인상론, 속도는? - 네이버 프리미엄콘텐츠</a>
+            <span class="news-date">(2026-11-12 03:28)</span>
+        </div>
+        
     </div>
 
     <div class="section-title">📈 1. 주요 지수</div>
@@ -281,12 +350,12 @@
     <div class="card">
         <div class="card-label">달러 인덱스 <span title="52주 신고가 근접">🔥</span></div>
         
-            <div class="card-value">103.18
+            <div class="card-value">103.17
             
             </div>
             
             
-             <div class="card-delta up">▲ 0.27 (0.26%)</div>
+             <div class="card-delta up">▲ 0.26 (0.25%)</div>
             
         
     </div>
@@ -297,12 +366,12 @@
     <div class="card">
         <div class="card-label">원/달러 </div>
         
-            <div class="card-value">1,334.87원
+            <div class="card-value">1,334.63원
             
             </div>
             
             
-             <div class="card-delta down">▼ 7.04 (0.52%)</div>
+             <div class="card-delta down">▼ 7.28 (0.54%)</div>
             
         
     </div>
@@ -439,12 +508,12 @@
     <div class="card">
         <div class="card-label">WTI유 </div>
         
-            <div class="card-value">88.71$
+            <div class="card-value">88.78$
             
             </div>
             
             
-             <div class="card-delta up">▲ 2.18 (2.52%)</div>
+             <div class="card-delta up">▲ 2.25 (2.60%)</div>
             
         
     </div>
@@ -456,12 +525,12 @@
     <div class="card">
         <div class="card-label">브렌트유 </div>
         
-            <div class="card-value">95.79$
+            <div class="card-value">95.92$
             
             </div>
             
             
-             <div class="card-delta up">▲ 3.03 (3.27%)</div>
+             <div class="card-delta up">▲ 3.16 (3.41%)</div>
             
         
     </div>
@@ -473,12 +542,12 @@
     <div class="card">
         <div class="card-label">금(1돈) </div>
         
-            <div class="card-value">624,668원
+            <div class="card-value">624,372원
             
             </div>
             
             
-             <div class="card-delta down">▼ 22,563 (3.49%)</div>
+             <div class="card-delta down">▼ 22,859 (3.53%)</div>
             
         
     </div>
@@ -490,12 +559,12 @@
     <div class="card">
         <div class="card-label">은(1돈) </div>
         
-            <div class="card-value">8,038원
+            <div class="card-value">8,039원
             
             </div>
             
             
-             <div class="card-delta down">▼ 354 (4.23%)</div>
+             <div class="card-delta down">▼ 354 (4.22%)</div>
             
         
     </div>
@@ -507,12 +576,12 @@
     <div class="card">
         <div class="card-label">구리(파운드) </div>
         
-            <div class="card-value">8,266원
+            <div class="card-value">8,274원
             
             </div>
             
             
-             <div class="card-delta down">▼ 152 (1.82%)</div>
+             <div class="card-delta down">▼ 145 (1.73%)</div>
             
         
     </div>
@@ -1600,25 +1669,33 @@
             const summaryText = document.getElementById('ai-summary-text').innerText;
             
             const newsNodes = document.querySelectorAll('.news-item');
-            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\n/g, ' ')).join('\n- ');
+            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/
+/g, ' ')).join('
+- ');
             
             const calNodes = document.querySelectorAll('.cal-item');
-            const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('
+- ');
 
-            // 엄격한 할루시네이션 방지 및 번호 매기기 규칙
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 바탕으로 사용자의 질문에 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 및 작성 규칙★]
 1. 답변 시 스스로 정보를 지어내거나 추측성 주가 예측을 절대 하지 마세요.
-​2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
+2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
 3. 제공된 데이터로 확인할 수 없는 내용은 무리해서 답변하지 말고 "현재 제공된 데이터로는 확인이 어렵습니다"라고 단호하게 답변하세요.
 4. 마크다운 기호를 쓰지 말고, 여러 내용을 안내할 때는 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
-- 오늘의 증시 요약: \n${summaryText}\n
-- 최신 경제 뉴스: \n- ${newsList}\n
-- 주요 경제 지표: \n- ${calList}\n
+- 오늘의 증시 요약: 
+${summaryText}
+
+- 최신 경제 뉴스: 
+- ${newsList}
+
+- 주요 경제 지표: 
+- ${calList}
+
 
 위 규칙을 인지했다면 즉시 분석 답변을 시작할 준비가 되었다고만 짧게 응답하세요.`;
             
@@ -1634,7 +1711,6 @@
         appendMessage('ai', '팩트 기반 분석 중...', loadingId);
 
         try {
-            // 원본 3.5 모델 먼저 시도
             let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -1643,7 +1719,6 @@
             
             let data = await response.json();
             
-            // 3.5가 과부하/에러일 경우 3.1로 자동 Fallback
             if (!response.ok) {
                 console.warn("3.5-flash-lite 에러 발생, 3.1-flash-lite로 자동 전환하여 재시도합니다.", data.error);
                 
@@ -1676,14 +1751,16 @@
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/
+/g, '<br>');
         historyEl.appendChild(msgDiv); 
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        if (msgDiv) msgDiv.innerHTML = text.replace(/
+/g, '<br>');
     }
     
     document.getElementById('chat-input').addEventListener('keypress', e => { 
