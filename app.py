@@ -187,7 +187,12 @@ def get_ai_summary(data):
     try:
         genai.configure(api_key=api_key)
         today_str = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y년 %m월 %d일")
+        
+        # 연준 및 CNN 데이터 파싱 및 검증
         fed_net = f"{int(data['fed']['Net Liquidity']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
+        fed_rrp = f"{int(data['fed']['Reverse Repo']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
+        fed_tga = f"{int(data['fed']['TGA']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
+        cnn_score = f"{int(data['cnn']['score'])} ({data['cnn']['rating']})" if data.get('cnn') else "조회 불가"
         
         prompt = f"""
         [분석 기준 날짜: {today_str}]
@@ -200,21 +205,27 @@ def get_ai_summary(data):
         4. 내용 요약 시 각 문단 앞에 반드시 "1. ", "2. ", "3. " 처럼 번호를 매겨서 아주 깔끔하게 정리할 것.
         
         [분석 포인트]
-        1. 지수 흐름 분석 및 한국 주요 섹터 방향성
+        1. 지수 흐름 분석 및 한국 주요 섹터 방향성 (반도체, 니케이, 대만 지수 흐름 포함)
         2. 환율 및 금리가 외국인 수급에 미칠 파급력
-        3. VIX 및 연준 순유동성 기반 글로벌 자금 환경
+        3. VIX, CNN 공포탐욕지수 및 연준 유동성(순유동성, TGA, 역레포) 기반 글로벌 자금 환경 진단
         
         [오늘의 데이터]
         S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
         나스닥 100: {data['indices'].get('나스닥 100', {}).get('value')}
+        필라델피아 반도체: {data['indices'].get('필라델피아 반도체', {}).get('value')}
+        니케이 225: {data['indices'].get('니케이 225', {}).get('value')}
+        대만 가권: {data['indices'].get('대만 가권', {}).get('value')}
         미국채 10년물 금리: {data['macros'].get('미국채 10년물', {}).get('value')}%
         원달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
         VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
+        CNN 공포탐욕지수: {cnn_score}
         WTI유: {data['commodities'].get('WTI유', {}).get('value')}달러
         연준 순유동성: {fed_net}
+        역레포(RRP) 잔액: {fed_rrp}
+        TGA 잔액: {fed_tga}
         """
         
-        # 3.1-flash-lite 폴백 추가 유지
+        # 3.1-flash-lite 폴백 유지
         for model_name in ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3-flash']:
             try:
                 response = genai.GenerativeModel(model_name).generate_content(prompt)
