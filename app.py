@@ -16,7 +16,7 @@ import os
 import xml.etree.ElementTree as ET
 import re
 
-# --- SSL 우회 및 클라우드스크래퍼 설정 (CNN 우회 적용) ---
+# --- SSL 우회 및 클라우드스크래퍼 설정 ---
 try:
     _create_unverified_https_context = ssl._create_unverified_context
 except AttributeError:
@@ -67,7 +67,6 @@ def fetch_yfinance_data(tickers):
 def get_fear_and_greed():
     url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
     
-    # 실제 브라우저와 100% 동일한 헤더 정보 구성
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -83,7 +82,6 @@ def get_fear_and_greed():
     }
     
     try:
-        # 정상 작동했던 scraper 모듈 사용
         res = scraper.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
@@ -226,12 +224,11 @@ def get_ai_summary(data):
         2. 근거 없는 수치, 지어낸 미래 주가 예측, 제공되지 않은 뉴스 내용은 절대 포함하지 말 것.
         3. 마크다운 특수기호(*, #, -, _ 등)를 단 하나도 사용하지 말고, 오직 줄바꿈과 띄어쓰기만 활용할 것.
         4. 내용 요약 시 각 문단 앞에 반드시 "1. ", "2. ", "3. " 처럼 번호를 매겨서 아주 깔끔하게 정리할 것.
-        5. 내용을 작성 할 때 그 내용에 대한 근거를 포함해서 작성 할 것.
         
         [분석 포인트]
-        1. 지수 흐름 분석 및 한국 주요 섹터 방향성과 그 근거에 대해서 상세하게 분석 (반도체, 니케이, 대만 지수 흐름 포함)
-        2. 환율 및 금리가 한국 주식시장 외국인 수급에 미칠 파급력과 그 근거에 대해서 상세하게 분석
-        3. VIX, CNN 공포탐욕지수 및 연준 유동성(순유동성, TGA, 역레포) 기반 글로벌 자금 환경을 진단하고 향후 증시 영향을 근거와 함께 상세하게 분석
+        1. 지수 흐름 분석 및 한국 주요 섹터 방향성 (반도체, 니케이, 대만 지수 흐름 포함)
+        2. 환율 및 금리가 외국인 수급에 미칠 파급력
+        3. VIX, CNN 공포탐욕지수 및 연준 유동성(순유동성, TGA, 역레포) 기반 글로벌 자금 환경 진단
         
         [오늘의 데이터]
         S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -311,9 +308,10 @@ HTML_TEMPLATE = """
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .news-item { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; }
         .news-link { color: #1d4ed8; text-decoration: none; }
-        .news-date { font-size: 0.9rem; color: #6b7280; }
-        .cal-item { font-size: 1.1rem; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-        .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+        .news-link:hover { text-decoration: underline; }
+        .news-date { font-size: 0.9rem; color: #6b7280; display: block; margin-top: 4px; }
+        .cal-item { font-size: 1.1rem; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+        .cal-item:last-child { border-bottom: none; }
         
         /* 플로팅 챗봇 스타일 */
         .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background-color: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.2s; user-select: none; }
@@ -337,7 +335,6 @@ HTML_TEMPLATE = """
         @media (max-width: 768px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
-            .dual-grid { grid-template-columns: 1fr; }
             .chatbot-window { right: 5vw; width: 90vw; bottom: 90px; }
             .chatbot-fab { bottom: 20px; right: 20px; width: 55px; height: 55px; font-size: 1.5rem; }
         }
@@ -442,25 +439,56 @@ HTML_TEMPLATE = """
 
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+
+    <!-- 진짜 실시간 주가 티커 위젯 (페이지 머무는 동안 실시간 변동) -->
+    <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-ticker-tape.js" async>
+      {
+      "symbols": [
+        { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" },
+        { "proName": "FOREXCOM:NSXUSD", "title": "나스닥 100" },
+        { "proName": "NASDAQ:NVDA", "title": "엔비디아" },
+        { "proName": "NASDAQ:AAPL", "title": "애플" },
+        { "proName": "NASDAQ:MSFT", "title": "마이크로소프트" },
+        { "proName": "NASDAQ:TSLA", "title": "테슬라" },
+        { "proName": "KRX:005930", "title": "삼성전자" }
+      ],
+      "showSymbolLogo": true,
+      "isTransparent": false,
+      "displayMode": "adaptive",
+      "colorTheme": "light",
+      "locale": "kr"
+    }
+      </script>
+    </div>
     
     <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
         <span>✨ 🤖 AI 오늘의 증시 브리핑</span>
         <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
     </div>
     
-    <div class="list-box" id="ai-section-content">
+    <div class="list-box" id="ai-section-content" style="margin-bottom: 40px;">
         <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">{{ data.ai_summary }}</p>
     </div>
 
-    <div class="dual-grid" style="margin-bottom: 40px;">
-        <div>
-            <div class="section-title" style="margin-top:0;">📰 경제 뉴스</div>
-            <div class="list-box">{% for item in data.news %}<div class="news-item"><a href="{{ item.link }}" target="_blank" class="news-link">{{ item.title }}</a><br><span class="news-date">({{ item.date }})</span></div>{% endfor %}</div>
+    <!-- 경제 지표 (가로 100% 폭으로 배치) -->
+    <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
+    <div class="list-box" style="margin-bottom: 30px;">
+        {% for event in data.calendar %}
+        <div class="cal-item">{{ event.title }}</div>
+        {% endfor %}
+    </div>
+
+    <!-- 경제 뉴스 (지표 아래 가로 100% 폭으로 배치) -->
+    <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스</div>
+    <div class="list-box" style="margin-bottom: 40px;">
+        {% for item in data.news %}
+        <div class="news-item">
+            <a href="{{ item.link }}" target="_blank" class="news-link">{{ item.title }}</a>
+            <span class="news-date">({{ item.date }})</span>
         </div>
-        <div>
-            <div class="section-title" style="margin-top:0;">📅 경제 지표</div>
-            <div class="list-box">{% for event in data.calendar %}<div class="cal-item">{{ event.title }}</div>{% endfor %}</div>
-        </div>
+        {% endfor %}
     </div>
 
     <div class="section-title">📈 1. 주요 지수</div>
@@ -540,25 +568,24 @@ HTML_TEMPLATE = """
             const summaryText = document.getElementById('ai-summary-text').innerText;
             
             const newsNodes = document.querySelectorAll('.news-item');
-            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\\n/g, ' ')).join('\\n- ');
+            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\n/g, ' ')).join('\n- ');
             
             const calNodes = document.querySelectorAll('.cal-item');
-            const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
 
-            // 엄격한 할루시네이션 방지 및 번호 매기기 규칙
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 바탕으로 사용자의 질문에 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 및 작성 규칙★]
 1. 답변 시 스스로 정보를 지어내거나 추측성 주가 예측을 절대 하지 마세요.
-​2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
+2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
 3. 제공된 데이터로 확인할 수 없는 내용은 무리해서 답변하지 말고 "현재 제공된 데이터로는 확인이 어렵습니다"라고 단호하게 답변하세요.
 4. 마크다운 기호를 쓰지 말고, 여러 내용을 안내할 때는 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
-- 오늘의 증시 요약: \\n${summaryText}\\n
-- 최신 경제 뉴스: \\n- ${newsList}\\n
-- 주요 경제 지표: \\n- ${calList}\\n
+- 오늘의 증시 요약: \n${summaryText}\n
+- 최신 경제 뉴스: \n- ${newsList}\n
+- 주요 경제 지표: \n- ${calList}\n
 
 위 규칙을 인지했다면 즉시 분석 답변을 시작할 준비가 되었다고만 짧게 응답하세요.`;
             
@@ -574,7 +601,6 @@ HTML_TEMPLATE = """
         appendMessage('ai', '팩트 기반 분석 중...', loadingId);
 
         try {
-            // 원본 3.5 모델 먼저 시도
             let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -583,7 +609,6 @@ HTML_TEMPLATE = """
             
             let data = await response.json();
             
-            // 3.5가 과부하/에러일 경우 3.1로 자동 Fallback
             if (!response.ok) {
                 console.warn("3.5-flash-lite 에러 발생, 3.1-flash-lite로 자동 전환하여 재시도합니다.", data.error);
                 
@@ -616,14 +641,14 @@ HTML_TEMPLATE = """
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
+        if (msgDiv) msgDiv.innerHTML = text.replace(/\n/g, '<br>');
     }
     
     document.getElementById('chat-input').addEventListener('keypress', e => { 
