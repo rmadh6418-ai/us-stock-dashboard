@@ -191,28 +191,37 @@ def get_ai_summary(data):
         
         prompt = f"""
         [분석 기준 날짜: {today_str}]
-        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 및 전세계 매크로 데이터, 미국정치, 미국경제, 전 세계 지정학적 리스크, 국제유가를 심층 분석하여, 오늘 아침 한국 증시(코스피/코스닥) 개장을 준비하는 투자자들이 반드시 알아야 할 '핵심 인사이트와 시장 전망'을 도출해주세요.
+        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 및 전세계 매크로 데이터, 미국정치, 경제지표, 국제유가를 심층 분석하여, 한국 증시 개장을 준비하는 투자자를 위한 핵심 시장 전망을 도출해주세요.
 
+        [★엄격한 작성 규칙 - 할루시네이션(정보 왜곡) 절대 금지★]
+        1. 오직 제공된 [오늘의 데이터]만을 기반으로 사실 관계를 확인하여 작성할 것.
+        2. 근거 없는 수치, 지어낸 미래 주가 예측, 제공되지 않은 뉴스 내용은 절대 포함하지 말 것.
+        3. 마크다운 특수기호(*, #, -, _ 등)를 단 하나도 사용하지 말고, 오직 줄바꿈과 띄어쓰기만 활용한 가독성 좋은 아주 깔끔한 평문(Plain Text)으로 작성할 것.
+        
         [분석 포인트]
-        1. 지수 흐름: 분석 날짜 기준 S&P 500과 나스닥 지수를 분석하고 한국 증시의 주요 섹터(반도체, 수출주 등)에 미칠 방향성
-        2. 매크로 및 환율: 미국채 금리와 원/달러 환율 변동이 국내 증시 외국인 수급에 미칠 파급력
-        3. 투심 및 유동성: VIX, 공포탐욕지수, 연준 순유동성(Net Liquidity) 및 역레포(ON RRP) 추이를 바탕으로 한 글로벌 자금 환경 진단
-        4. 정치, 경제 및 지정학적 리스크, 국제유가 : 분석 날짜 기준 S&P 500과 나스닥이 어떤 이유에서 상승과 하락하였는지 분석
-        5. 미국 주요 경제지표 : 분석 날짜 기준으로 발표 예정인 미국 주요 경제지표에 따라 국내 증시의 영향에 대한 분석
+        1. 지수 흐름 분석 및 한국 주요 섹터 방향성
+        2. 환율 및 금리가 외국인 수급에 미칠 파급력
+        3. VIX 및 연준 순유동성 기반 글로벌 자금 환경
         
         [오늘의 데이터]
-        - S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
-        - 나스닥 100: {data['indices'].get('나스닥 100', {}).get('value')}
-        - 미국채 10년물 금리: {data['macros'].get('미국채 10년물', {}).get('value')}%
-        - 원/달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
-        - VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
-        - WTI유: {data['commodities'].get('WTI유', {}).get('value')}달러
-        - 연준 순유동성: {fed_net}
+        S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
+        나스닥 100: {data['indices'].get('나스닥 100', {}).get('value')}
+        미국채 10년물 금리: {data['macros'].get('미국채 10년물', {}).get('value')}%
+        원달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
+        VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
+        WTI유: {data['commodities'].get('WTI유', {}).get('value')}달러
+        연준 순유동성: {fed_net}
         """
+        
+        # 모델 원본 유지
         for model_name in ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash']:
             try:
                 response = genai.GenerativeModel(model_name).generate_content(prompt)
-                return response.text.strip()
+                # 기호 2차 필터링
+                clean_text = response.text.replace('*', '').replace('#', '').replace('_', '').replace('+', '').replace('-', '')
+                # 빈 줄 정리
+                clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text)
+                return clean_text.strip()
             except:
                 time.sleep(2)
         return "⚠️ AI 분석 실패"
@@ -273,28 +282,31 @@ HTML_TEMPLATE = """
         .cal-item { font-size: 1.1rem; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
         .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
         
-        /* 챗봇 UI 스타일 개선 (채팅창 높이 확장) */
-        .chat-container { margin-top: 20px; background: #f9fafb; border-radius: 10px; padding: 15px; border: 1px solid #e5e7eb; }
-        .chat-history { max-height: 500px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; scroll-behavior: smooth; }
-        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; }
+        /* 플로팅 챗봇 스타일 */
+        .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background-color: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.2s; user-select: none; }
+        .chatbot-fab:hover { transform: scale(1.05); }
+        .chatbot-fab:active { transform: scale(0.95); }
+        
+        .chatbot-window { position: fixed; bottom: 110px; right: 30px; width: 400px; max-width: 90vw; background: #ffffff; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 999; border: 1px solid #e5e7eb; overflow: hidden; }
+        .chatbot-header { background: #111827; color: white; padding: 18px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .chatbot-close { cursor: pointer; font-size: 1.2rem; }
+        
+        .chat-history { height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
+        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .chat-msg.ai { background: #e5e7eb; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
-        .chat-input-area { display: flex; gap: 10px; }
-        .chat-input-area input { flex: 1; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
+        .chat-msg.ai { background: #ffffff; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
         
-        .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.1s, transform 0.1s; }
-        .chat-input-area button:hover { background: #1f2937; }
-        .chat-input-area button:active { transform: scale(0.95); background: #374151; }
-        
-        .ai-toggle-title { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
-        .ai-toggle-title:hover { opacity: 0.8; }
-        #ai-section-content { transition: all 0.3s ease; }
+        .chat-input-area { display: flex; padding: 15px; background: white; border-top: 1px solid #e5e7eb; gap: 10px; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
+        .chat-input-area button { padding: 12px 18px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.1s; }
+        .chat-input-area button:hover { background: #2563eb; }
 
         @media (max-width: 768px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
-            .dual-grid { grid-template-columns: 1fr; } .chat-input-area { flex-direction: column; }
-            .chat-history { max-height: 400px; }
+            .dual-grid { grid-template-columns: 1fr; }
+            .chatbot-window { right: 5vw; width: 90vw; bottom: 90px; }
+            .chatbot-fab { bottom: 20px; right: 20px; width: 55px; height: 55px; font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -306,6 +318,27 @@ HTML_TEMPLATE = """
         <input type="password" id="pw-input" placeholder="비밀번호를 입력하세요" style="width: 100%; box-sizing: border-box; padding: 12px; font-size: 1.1rem; border: 1.5px solid #d1d5db; border-radius: 8px; margin-bottom: 15px; outline: none; text-align: center;">
         <button onclick="checkPassword()" style="width: 100%; padding: 12px; font-size: 1.1rem; background-color: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">입장하기</button>
         <p id="pw-error" style="color: #ef4444; margin-top: 15px; font-weight: 600; display: none;">비밀번호가 틀렸습니다.</p>
+    </div>
+</div>
+
+<!-- 우측 하단 플로팅 챗봇 아이콘 및 윈도우 -->
+<div class="chatbot-fab" onclick="toggleChatbot()">💬</div>
+
+<div class="chatbot-window" id="chatbot-window">
+    <div class="chatbot-header">
+        <span>🤖 AI 증시 심층 분석</span>
+        <span class="chatbot-close" onclick="toggleChatbot()">✖</span>
+    </div>
+    <div id="chat-history" class="chat-history">
+        <div class="chat-msg ai">
+            안녕하세요! 경제 시황과 리스크를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
+            오늘의 증시 방향성, 최신 뉴스 해설, 거시 경제 트렌드에 대해 질문해주세요.<br>
+            <span style="font-size: 0.9em; color: #6b7280;">(최초 1회 브라우저에 API 키 설정이 필요합니다.)</span>
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="질문을 입력하세요...">
+        <button onclick="sendChatMessage()">전송</button>
     </div>
 </div>
 
@@ -324,9 +357,20 @@ HTML_TEMPLATE = """
             sessionStorage.setItem('isUnlocked', 'true');
         } else document.getElementById('pw-error').style.display = 'block';
     }
+    
     window.onload = function() {
         if (sessionStorage.getItem('isUnlocked') === 'true') document.getElementById('lock-screen').style.display = 'none';
         document.getElementById('pw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPassword(); });
+    }
+    
+    function toggleChatbot() {
+        const win = document.getElementById('chatbot-window');
+        if (win.style.display === 'none' || win.style.display === '') {
+            win.style.display = 'flex';
+            document.getElementById('chat-input').focus();
+        } else {
+            win.style.display = 'none';
+        }
     }
     
     function toggleAiSection() {
@@ -365,27 +409,12 @@ HTML_TEMPLATE = """
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
     
     <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
-        <span>✨ 🤖 AI 오늘의 증시 3줄 요약 & 심층 챗봇</span>
+        <span>✨ 🤖 AI 오늘의 증시 브리핑 (기호 제거 버전)</span>
         <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
     </div>
     
     <div class="list-box" id="ai-section-content">
-        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8;">{{ data.ai_summary }}</p>
-        <hr style="border: 0; height: 1px; background: #d1d5db; margin: 25px 0;">
-        <h3 style="margin: 0 0 12px 0;">💬 AI 경제 심층 분석 챗봇</h3>
-        <div class="chat-container">
-            <div id="chat-history" class="chat-history">
-                <div class="chat-msg ai">
-                    안녕하세요! 저는 거시경제, 증시 시황, 정치/경제 이슈를 심층 분석하는 AI 챗봇입니다.<br><br>
-                    오늘의 증시 방향성, 최신 뉴스에 대한 견해, 주요 지표의 의미 등을 자유롭게 질문해주세요.<br>
-                    <span style="font-size: 0.9em; color: #6b7280;">(최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</span>
-                </div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="증시 전망, 뉴스 해설, 정치 이슈 등을 질문해보세요...">
-                <button onclick="sendChatMessage()">질문하기</button>
-            </div>
-        </div>
+        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">{{ data.ai_summary }}</p>
     </div>
 
     <div class="dual-grid" style="margin-bottom: 40px;">
@@ -445,7 +474,7 @@ HTML_TEMPLATE = """
 
         let apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) {
-            apiKey = prompt("AI 채팅을 사용하려면 Gemini API 키를 입력해주세요.\\n(키는 서버에 전송되지 않고 현재 기기(브라우저)에만 안전하게 저장됩니다.)");
+            apiKey = prompt("AI 채팅을 사용하려면 Gemini API 키를 입력해주세요.\\n(키는 브라우저에만 안전하게 저장됩니다.)");
             if (!apiKey) return;
             localStorage.setItem('gemini_api_key', apiKey.trim());
         }
@@ -459,30 +488,24 @@ HTML_TEMPLATE = """
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
 
-            // [핵심 변경] 프롬프트 엔지니어링을 통한 AI 페르소나 및 할루시네이션 억제 부여
-            const initialPrompt = `당신은 세계 최고 수준의 거시경제, 금융, 미국 정치 리스크 분석을 수행하는 'AI 경제 챗봇'입니다. 
-아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 완벽히 숙지하고, 사용자와 깊이 있는 대화를 나누세요.
+            // 엄격한 할루시네이션 방지 프롬프트 세팅
+            const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
+아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 바탕으로 사용자의 질문에 답하세요.
 
-[챗봇 주요 역할]
-1. 주요 뉴스 요약 및 사건 이면의 심층 분석
-2. 향후 증시 방향성 및 글로벌 경제 트렌드 전망
-3. 주요 정치/지정학적 이슈가 금융 시장에 미치는 파급력 분석
-4. 거시경제 지표 해석 및 리스크 관리 조언
-
-[⚠️ 할루시네이션(정보 왜곡) 방지 엄격 원칙]
-- 제공된 데이터와 역사적으로 검증된 경제/정치적 사실에만 기반하여 정확히 답변하세요.
-- 최신 실시간 정보 중 스스로 검증할 수 없거나 알 수 없는 미래 예측에 대해서는 반드시 "현재 확보된 데이터로는 정확한 확인이 어렵습니다"라고 명확히 밝히세요.
-- 근거 없는 수치를 지어내거나 단정적인 주가 예측을 하지 마세요. 팩트와 논리를 바탕으로 다양한 시나리오를 설명하세요.
+[★할루시네이션(정보 왜곡) 절대 차단 규칙★]
+1. 답변 시 스스로 정보를 지어내거나 추측성 주가 예측을 절대 하지 마세요.
+2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
+3. 제공된 데이터로 확인할 수 없는 내용은 무리해서 답변하지 말고 "현재 제공된 데이터로는 확인이 어렵습니다"라고 단호하게 답변하세요.
 
 [현재 시장 기준 데이터]
 - 오늘의 증시 요약: \\n${summaryText}\\n
 - 최신 경제 뉴스: \\n- ${newsList}\\n
 - 주요 경제 지표: \\n- ${calList}\\n
 
-위 정보와 역할, 원칙을 완벽히 이해했다면 사용자에게 답변을 시작할 준비가 되었다고만 짧게 대답하세요.`;
+위 규칙을 인지했다면 즉시 분석 답변을 시작할 준비가 되었다고만 짧게 응답하세요.`;
             
             chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 입력해주신 오늘의 증시 요약, 경제 뉴스, 주요 지표 및 저의 분석 원칙(할루시네이션 방지 등)을 모두 완벽히 숙지했습니다. 증시 방향성, 거시 경제 트렌드, 정치적 이슈 등 어떤 질문이든 객관적 사실에 기반하여 깊이 있고 정확하게 답변해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 할루시네이션 방지 규칙을 숙지했습니다. 팩트 기반의 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
         }
 
         appendMessage('user', message);
@@ -490,9 +513,10 @@ HTML_TEMPLATE = """
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
         
         const loadingId = 'msg-' + Date.now();
-        appendMessage('ai', '분석 중...', loadingId);
+        appendMessage('ai', '팩트 기반 분석 중...', loadingId);
 
         try {
+            // 원본 모델 요청 URL 사용
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -512,8 +536,7 @@ HTML_TEMPLATE = """
         } catch (error) {
             console.error("API 통신 에러:", error);
             chatHistory.pop(); 
-            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 잘못되었거나 오류가 발생했습니다. 브라우저 캐시를 지우거나 새로고침하여 키를 다시 입력해주세요.`);
-            localStorage.removeItem('gemini_api_key'); 
+            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>API 키가 잘못되었거나 잠시 지연이 발생했습니다. 새로고침 후 다시 시도해주세요.`);
         }
     }
     
@@ -522,14 +545,14 @@ HTML_TEMPLATE = """
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>').replace(/\\n/g, '<br>');
+        if (msgDiv) msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
     }
     
     document.getElementById('chat-input').addEventListener('keypress', e => { 
