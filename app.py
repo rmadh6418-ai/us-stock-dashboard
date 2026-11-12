@@ -273,21 +273,19 @@ HTML_TEMPLATE = """
         .cal-item { font-size: 1.1rem; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
         .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
         
-        /* 채팅 UI 스타일 */
+        /* 챗봇 UI 스타일 개선 (채팅창 높이 확장) */
         .chat-container { margin-top: 20px; background: #f9fafb; border-radius: 10px; padding: 15px; border: 1px solid #e5e7eb; }
-        .chat-history { max-height: 350px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; }
-        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.5; }
+        .chat-history { max-height: 500px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; scroll-behavior: smooth; }
+        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; }
         .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .chat-msg.ai { background: #e5e7eb; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
         .chat-input-area { display: flex; gap: 10px; }
         .chat-input-area input { flex: 1; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
         
-        /* 버튼 눌림 효과 추가 */
         .chat-input-area button { padding: 12px 24px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.1s, transform 0.1s; }
         .chat-input-area button:hover { background: #1f2937; }
         .chat-input-area button:active { transform: scale(0.95); background: #374151; }
         
-        /* 토글 애니메이션을 위한 클래스 */
         .ai-toggle-title { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
         .ai-toggle-title:hover { opacity: 0.8; }
         #ai-section-content { transition: all 0.3s ease; }
@@ -296,6 +294,7 @@ HTML_TEMPLATE = """
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
             .dual-grid { grid-template-columns: 1fr; } .chat-input-area { flex-direction: column; }
+            .chat-history { max-height: 400px; }
         }
     </style>
 </head>
@@ -330,7 +329,6 @@ HTML_TEMPLATE = """
         document.getElementById('pw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPassword(); });
     }
     
-    // AI 섹션 토글 기능
     function toggleAiSection() {
         const content = document.getElementById('ai-section-content');
         const icon = document.getElementById('ai-toggle-icon');
@@ -366,23 +364,25 @@ HTML_TEMPLATE = """
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
     
-    <!-- AI 토글 제목 영역 -->
     <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
-        <span>✨ 🤖 AI 오늘의 증시 3줄 요약</span>
+        <span>✨ 🤖 AI 오늘의 증시 3줄 요약 & 심층 챗봇</span>
         <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
     </div>
     
-    <!-- AI 내용 영역 (토글 대상) -->
     <div class="list-box" id="ai-section-content">
         <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 600; line-height: 1.8;">{{ data.ai_summary }}</p>
         <hr style="border: 0; height: 1px; background: #d1d5db; margin: 25px 0;">
-        <h3 style="margin: 0 0 12px 0;">💬 AI와 시황 대화하기</h3>
+        <h3 style="margin: 0 0 12px 0;">💬 AI 경제 심층 분석 챗봇</h3>
         <div class="chat-container">
             <div id="chat-history" class="chat-history">
-                <div class="chat-msg ai">오늘의 증시 요약, 최신 뉴스, 경제 지표 내용을 바탕으로 질문해주세요. (최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</div>
+                <div class="chat-msg ai">
+                    안녕하세요! 저는 거시경제, 증시 시황, 정치/경제 이슈를 심층 분석하는 AI 챗봇입니다.<br><br>
+                    오늘의 증시 방향성, 최신 뉴스에 대한 견해, 주요 지표의 의미 등을 자유롭게 질문해주세요.<br>
+                    <span style="font-size: 0.9em; color: #6b7280;">(최초 이용 시 브라우저에 API 키 설정이 필요합니다.)</span>
+                </div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="질문을 입력하세요...">
+                <input type="text" id="chat-input" placeholder="증시 전망, 뉴스 해설, 정치 이슈 등을 질문해보세요...">
                 <button onclick="sendChatMessage()">질문하기</button>
             </div>
         </div>
@@ -459,10 +459,30 @@ HTML_TEMPLATE = """
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
 
-            const initialPrompt = `[오늘의 증시 요약]\\n${summaryText}\\n\\n[최신 경제 뉴스]\\n- ${newsList}\\n\\n[이번 주 주요 경제 지표]\\n- ${calList}\\n\\n위의 정보들을 모두 종합해서 내 질문에 대답해줘.`;
+            // [핵심 변경] 프롬프트 엔지니어링을 통한 AI 페르소나 및 할루시네이션 억제 부여
+            const initialPrompt = `당신은 세계 최고 수준의 거시경제, 금융, 미국 정치 리스크 분석을 수행하는 'AI 경제 챗봇'입니다. 
+아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 완벽히 숙지하고, 사용자와 깊이 있는 대화를 나누세요.
+
+[챗봇 주요 역할]
+1. 주요 뉴스 요약 및 사건 이면의 심층 분석
+2. 향후 증시 방향성 및 글로벌 경제 트렌드 전망
+3. 주요 정치/지정학적 이슈가 금융 시장에 미치는 파급력 분석
+4. 거시경제 지표 해석 및 리스크 관리 조언
+
+[⚠️ 할루시네이션(정보 왜곡) 방지 엄격 원칙]
+- 제공된 데이터와 역사적으로 검증된 경제/정치적 사실에만 기반하여 정확히 답변하세요.
+- 최신 실시간 정보 중 스스로 검증할 수 없거나 알 수 없는 미래 예측에 대해서는 반드시 "현재 확보된 데이터로는 정확한 확인이 어렵습니다"라고 명확히 밝히세요.
+- 근거 없는 수치를 지어내거나 단정적인 주가 예측을 하지 마세요. 팩트와 논리를 바탕으로 다양한 시나리오를 설명하세요.
+
+[현재 시장 기준 데이터]
+- 오늘의 증시 요약: \\n${summaryText}\\n
+- 최신 경제 뉴스: \\n- ${newsList}\\n
+- 주요 경제 지표: \\n- ${calList}\\n
+
+위 정보와 역할, 원칙을 완벽히 이해했다면 사용자에게 답변을 시작할 준비가 되었다고만 짧게 대답하세요.`;
             
             chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 오늘의 증시 요약, 최신 경제 뉴스, 주요 경제 지표 일정을 모두 확인했습니다. 질문해주시면 답변해 드리겠습니다." }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 입력해주신 오늘의 증시 요약, 경제 뉴스, 주요 지표 및 저의 분석 원칙(할루시네이션 방지 등)을 모두 완벽히 숙지했습니다. 증시 방향성, 거시 경제 트렌드, 정치적 이슈 등 어떤 질문이든 객관적 사실에 기반하여 깊이 있고 정확하게 답변해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
         }
 
         appendMessage('user', message);
@@ -470,7 +490,7 @@ HTML_TEMPLATE = """
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
         
         const loadingId = 'msg-' + Date.now();
-        appendMessage('ai', '생각 중...', loadingId);
+        appendMessage('ai', '분석 중...', loadingId);
 
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
