@@ -15,7 +15,7 @@ import google.generativeai as genai
 import os
 import xml.etree.ElementTree as ET
 import re
-import concurrent.futures  # 멀티스레딩(속도 최적화)을 위한 라이브러리 추가
+import concurrent.futures
 
 # 뉴스 본문 스크래핑을 위한 라이브러리
 try:
@@ -158,7 +158,6 @@ def get_fed_liquidity():
     except:
         return None
 
-# 개별 뉴스 항목을 비동기(멀티스레드)로 처리하기 위한 분리된 함수
 def process_single_news(item):
     try:
         dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
@@ -190,8 +189,6 @@ def get_google_news():
     try:
         feed = feedparser.parse(url)
         items = feed.entries[:15]
-        
-        # 15개의 뉴스를 동시에 크롤링하여 시간 단축
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
             news = list(executor.map(process_single_news, items))
         return news
@@ -255,13 +252,7 @@ def get_ai_summary(data):
         [★엄격한 작성 규칙 - 할루시네이션(정보 왜곡) 절대 금지★]
         1. 오직 제공된 [오늘의 데이터]만을 기반으로 사실 관계를 확인하여 작성할 것.
         2. 근거 없는 수치, 지어낸 미래 주가 예측, 제공되지 않은 뉴스 내용은 절대 포함하지 말 것.
-        3. 마크다운 특수기호(*, #, -, _ 등)를 단 하나도 사용하지 말고, 오직 줄바꿈과 띄어쓰기만 활용할 것.
-        4. 내용 요약 시 각 문단 앞에 반드시 "1. ", "2. ", "3. " 처럼 번호를 매겨서 아주 깔끔하게 정리할 것.
-        
-        [분석 포인트]
-        1. 지수 흐름 분석 및 한국 주요 섹터 방향성 (반도체, 니케이, 대만 지수 흐름 포함)
-        2. 환율 및 금리가 외국인 수급에 미칠 파급력
-        3. VIX, CNN 공포탐욕지수 및 연준 유동성(순유동성, TGA, 역레포) 기반 글로벌 자금 환경 진단
+        3. 마크다운 특수기호(*, #, -, _ 등) 단 하나도 사용하지 말고 오직 줄바꿈과 번호 매기기(1., 2. 등)만 활용할 것.
         
         [오늘의 데이터]
         S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
@@ -297,7 +288,6 @@ def get_dashboard_data():
     if 'data' in CACHE and time.time() - CACHE['time'] < 600: return CACHE['data']
     data = {}
     
-    # 💥 핵심 최적화: 모든 데이터 수집을 동시에 실행 (속도 비약적 향상)
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         f_indices = executor.submit(fetch_yfinance_data, {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'})
         f_macros = executor.submit(fetch_yfinance_data, {'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'})
@@ -351,7 +341,13 @@ HTML_TEMPLATE = """
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; padding-bottom: env(safe-area-inset-bottom); }
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
-        .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; }
+        
+        /* 헤더(제목+버튼) 정렬 래퍼 */
+        .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px 0; position: relative; }
+        .header-title { font-size: 2.2rem; font-weight: 900; margin: 0; text-align: center; flex: 1; }
+        .refresh-btn { padding: 10px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background 0.2s; position: absolute; right: 0; display: flex; align-items: center; gap: 6px; }
+        .refresh-btn:hover { background-color: #2563eb; }
+        
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
         
@@ -387,7 +383,7 @@ HTML_TEMPLATE = """
         .chatbot-header { background: #111827; color: white; padding: 18px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .chatbot-close { cursor: pointer; font-size: 1.2rem; }
         
-        .chat-history { height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
+        .chat-history { position: relative; height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
         .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .chat-msg.ai { background: #ffffff; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
@@ -402,6 +398,8 @@ HTML_TEMPLATE = """
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
             .chatbot-window { right: 5vw; width: 90vw; bottom: 90px; }
             .chatbot-fab { bottom: 20px; right: 20px; width: 55px; height: 55px; font-size: 1.5rem; }
+            .refresh-btn { position: relative; width: 100%; justify-content: center; margin-top: 10px; }
+            .header-wrapper { flex-direction: column; align-items: stretch; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -455,7 +453,9 @@ HTML_TEMPLATE = """
     
     window.onload = function() {
         if (sessionStorage.getItem('isUnlocked') === 'true') document.getElementById('lock-screen').style.display = 'none';
-        document.getElementById('pw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPassword(); });
+        document.getElementById('pw-input').addEventListener('keydown', function (e) { 
+            if (e.key === 'Enter' && !e.isComposing) checkPassword(); 
+        });
     }
     
     function toggleChatbot() {
@@ -503,7 +503,11 @@ HTML_TEMPLATE = """
 {% endmacro %}
 
 <div class="container">
-    <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+    <!-- 헤더 영역 (제목 + 새로고침 버튼 래퍼) -->
+    <div class="header-wrapper">
+        <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+        <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
+    </div>
 
     <!-- 실시간 주가 티커 위젯 -->
     <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -545,7 +549,7 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
-    <!-- 경제 뉴스 (15개 스크롤 지원 + 챗봇용 본문 숨김 속성) -->
+    <!-- 경제 뉴스 -->
     <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
     <div class="list-box news-container" style="margin-bottom: 40px;">
         {% for item in data.news %}
@@ -634,13 +638,13 @@ HTML_TEMPLATE = """
             
             const newsNodes = document.querySelectorAll('.news-item');
             const newsList = Array.from(newsNodes).map((node, index) => {
-                const title = node.querySelector('.news-link').innerText.replace(/\n/g, ' ');
+                const title = node.querySelector('.news-link').innerText.replace(/\\n/g, ' ');
                 const content = node.getAttribute('data-content') || "본문 요약 정보 없음";
-                return `[뉴스 ${index + 1}] 제목: ${title}\n핵심내용(기사 원문): ${content}`;
-            }).join('\n\n');
+                return `[뉴스 ${index + 1}] 제목: ${title}\\n핵심내용(기사 원문): ${content}`;
+            }).join('\\n\\n');
             
             const calNodes = document.querySelectorAll('.cal-item');
-            const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
 
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
@@ -651,9 +655,9 @@ HTML_TEMPLATE = """
 3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
-- 오늘의 증시 요약: \n${summaryText}\n
-- 최신 경제 뉴스 (기사 본문 요약 15개): \n${newsList}\n
-- 주요 경제 지표: \n- ${calList}\n
+- 오늘의 증시 요약: \\n${summaryText}\\n
+- 최신 경제 뉴스 (기사 본문 요약 15개): \\n${newsList}\\n
+- 주요 경제 지표: \\n- ${calList}\\n
 
 위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
             
@@ -678,19 +682,13 @@ HTML_TEMPLATE = """
             let data = await response.json();
             
             if (!response.ok) {
-                console.warn("3.5-flash-lite 에러 발생, 3.1-flash-lite로 자동 전환하여 재시도합니다.", data.error);
-                
                 response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ contents: chatHistory })
                 });
-                
                 data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
-                }
+                if (!response.ok) throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
             }
 
             const replyText = data.candidates[0].content.parts[0].text;
@@ -709,18 +707,32 @@ HTML_TEMPLATE = """
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
+        
+        // 처음 메시지를 붙일 때는 일단 최하단으로 스크롤 (사용자 입력 직후)
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
+        const historyEl = document.getElementById('chat-history');
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        
+        if (msgDiv) {
+            msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
+            // 답변 내용이 완성된 후, 해당 메시지의 맨 위(상단)에 시선이 닿도록 스크롤 위치 보정!
+            historyEl.scrollTo({
+                top: msgDiv.offsetTop - 15,
+                behavior: 'smooth'
+            });
+        }
     }
     
-    document.getElementById('chat-input').addEventListener('keypress', e => { 
-        if (e.key === 'Enter') sendChatMessage(); 
+    document.getElementById('chat-input').addEventListener('keydown', e => { 
+        if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            sendChatMessage(); 
+        }
     });
 </script>
 </body>
