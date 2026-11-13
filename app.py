@@ -31,6 +31,7 @@ except AttributeError:
 else:
     ssl._create_default_https_context = _create_unverified_https_context
 
+# CNN, 경제지표 전용 스크래퍼
 scraper = cloudscraper.create_scraper(
     browser={
         'browser': 'chrome',
@@ -158,6 +159,7 @@ def get_fed_liquidity():
     except:
         return None
 
+# 뉴스 스크래핑 초고속 최적화 (무한 대기 원천 차단)
 def process_single_news(item):
     try:
         dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
@@ -166,20 +168,24 @@ def process_single_news(item):
         date_str = ""
     
     content_preview = ""
+    
+    # 1. 안전 장치: RSS 요약이 있으면 일단 담아둠
+    if hasattr(item, 'summary'):
+        content_preview = re.sub('<[^<]+>', '', item.summary)
+        
+    # 2. 아주 짧은 1.5초 타임아웃으로 일반 requests 접속 시도 (cloudscraper 사용 안함)
     try:
-        res = scraper.get(item.link, timeout=2)
-        try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        res = requests.get(item.link, headers=headers, timeout=1.5, allow_redirects=True)
+        if res.status_code == 200:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(res.content, 'html.parser')
             paragraphs = soup.find_all('p')
             raw_text = " ".join([p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20])
-            content_preview = raw_text[:800]
-        except:
-            clean_text = re.sub(r'<[^>]+>', ' ', res.text)
-            content_preview = re.sub(r'\s+', ' ', clean_text)[:800]
+            if raw_text:
+                content_preview = raw_text[:800]
     except:
-        if hasattr(item, 'summary'):
-            content_preview = re.sub('<[^<]+>', '', item.summary)
+        pass # 에러나거나 1.5초 넘어가면 미련없이 기본 RSS 요약 사용 (무한로딩 방지)
             
     content_preview = content_preview.replace('"', "'").replace('\n', ' ')
     return {'title': item.title, 'link': item.link, 'date': date_str, 'content': content_preview}
