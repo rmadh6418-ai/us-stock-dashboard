@@ -3,289 +3,1756 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>실시간 미국 증시 대시보드</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <meta name="theme-color" content="#f3f4f6">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; }
-        .container { max-width: 1600px; margin: 0 auto; }
-        .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px; position: relative; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; padding-bottom: env(safe-area-inset-bottom); }
+        .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
+        
+        /* 헤더 영역 */
+        .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px 0; position: relative; }
         .header-title { font-size: 2.2rem; font-weight: 900; margin: 0; text-align: center; flex: 1; }
-        .refresh-btn { padding: 10px 16px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; position: absolute; right: 0; }
-        .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .list-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .refresh-btn { padding: 10px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background 0.2s; position: absolute; right: 0; display: flex; align-items: center; gap: 6px; }
+        .refresh-btn:hover { background-color: #2563eb; }
         
+        .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
+        
+        /* 카드 디자인 */
+        .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; height: 100%; box-sizing: border-box; border: 2px solid transparent; transition: transform 0.2s ease; }
+        .card-link:hover .card { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
+        .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
+        .card-value { font-size: 2.1rem; font-weight: 900; margin-bottom: 5px; }
+        .card-delta { font-size: 1.1rem; font-weight: 700; display: flex; justify-content: center; gap: 5px; }
+        .up { color: #dc2626; } .down { color: #2563eb; } .flat { color: #6b7280; }
+        
+        .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        /* 뉴스 스크롤 */
         .news-container { max-height: 450px; overflow-y: auto; padding-right: 10px; }
-        .news-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0; }
-        .news-link { color: #1d4ed8; text-decoration: none; font-weight: bold; font-size: 1.1rem; }
+        .news-container::-webkit-scrollbar { width: 8px; }
+        .news-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .news-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         
-        .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer; z-index: 1000; }
-        .chatbot-window { position: fixed; bottom: 110px; right: 30px; width: 400px; background: white; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 999; border: 1px solid #e5e7eb; overflow: hidden; }
-        .chatbot-header { background: #111827; color: white; padding: 18px; font-weight: bold; display: flex; justify-content: space-between; }
-        .chat-history { height: 450px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
-        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; }
-        .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; }
-        .chat-msg.ai { background: white; color: #1f2937; align-self: flex-start; border: 1px solid #e5e7eb; }
+        .news-item { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0; }
+        .news-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .news-link { color: #1d4ed8; text-decoration: none; }
+        .news-link:hover { text-decoration: underline; }
+        .news-date { font-size: 0.9rem; color: #6b7280; display: block; margin-top: 4px; }
+        
+        .cal-item { font-size: 1.1rem; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+        .cal-item:last-child { border-bottom: none; }
+        
+        /* 챗봇 스타일 */
+        .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background-color: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.2s; user-select: none; }
+        .chatbot-fab:hover { transform: scale(1.05); }
+        .chatbot-fab:active { transform: scale(0.95); }
+        
+        .chatbot-window { position: fixed; bottom: 110px; right: 30px; width: 400px; max-width: 90vw; background: #ffffff; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 999; border: 1px solid #e5e7eb; overflow: hidden; }
+        .chatbot-header { background: #111827; color: white; padding: 18px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .chatbot-close { cursor: pointer; font-size: 1.2rem; }
+        
+        .chat-history { position: relative; height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
+        .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-msg.ai { background: #ffffff; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
+        
         .chat-input-area { display: flex; padding: 15px; background: white; border-top: 1px solid #e5e7eb; gap: 10px; }
-        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; }
-        .chat-input-area button { padding: 12px 18px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
+        .chat-input-area button { padding: 12px 18px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.1s; }
+        .chat-input-area button:hover { background: #2563eb; }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .card { padding: 12px; } .card-value { font-size: 1.5rem; }
+            .chatbot-window { right: 5vw; width: 90vw; bottom: 90px; }
+            .chatbot-fab { bottom: 20px; right: 20px; width: 55px; height: 55px; font-size: 1.5rem; }
+            .refresh-btn { position: relative; width: 100%; justify-content: center; margin-top: 10px; }
+            .header-wrapper { flex-direction: column; align-items: stretch; margin-bottom: 20px; }
+        }
     </style>
 </head>
 <body>
+<!-- 잠금화면 -->
+<div id="lock-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f3f4f6; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: #111827; font-weight: 800;">🔒 대시보드 잠금</h2>
+        <input type="password" id="pw-input" placeholder="비밀번호를 입력하세요" style="width: 100%; box-sizing: border-box; padding: 12px; font-size: 1.1rem; border: 1.5px solid #d1d5db; border-radius: 8px; margin-bottom: 15px; outline: none; text-align: center;">
+        <button onclick="checkPassword()" style="width: 100%; padding: 12px; font-size: 1.1rem; background-color: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">입장하기</button>
+        <p id="pw-error" style="color: #ef4444; margin-top: 15px; font-weight: 600; display: none;">비밀번호가 틀렸습니다.</p>
+    </div>
+</div>
 
+<!-- 우측 하단 플로팅 챗봇 아이콘 및 윈도우 -->
 <div class="chatbot-fab" onclick="toggleChatbot()">💬</div>
+
 <div class="chatbot-window" id="chatbot-window">
-    <div class="chatbot-header"><span>🤖 AI 증시 분석</span><span style="cursor:pointer;" onclick="toggleChatbot()">✖</span></div>
-    <div id="chat-history" class="chat-history"><div class="chat-msg ai">질문을 입력해주세요.</div></div>
+    <div class="chatbot-header">
+        <span>🤖 AI 증시 심층 분석</span>
+        <span class="chatbot-close" onclick="toggleChatbot()">✖</span>
+    </div>
+    <div id="chat-history" class="chat-history">
+        <div class="chat-msg ai">
+            안녕하세요! 경제 시황과 리스크를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
+            오늘의 증시 방향성, 스크랩된 15개 최신 기사 본문 요약, 거시 경제 트렌드에 대해 질문해주세요.<br>
+            <span style="font-size: 0.9em; color: #6b7280;">(최초 1회 브라우저에 API 키 설정이 필요합니다.)</span>
+        </div>
+    </div>
     <div class="chat-input-area">
-        <input type="text" id="chat-input" placeholder="질문 입력..."><button onclick="sendChatMessage()">전송</button>
-    </div>
-</div>
-
-
-
-<div class="container">
-    <div class="header-wrapper">
-        <div class="header-title">📊 미국 증시 대시보드</div>
-        <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
-    </div>
-
-    <!-- 1. 최상단 실시간 티커 -->
-    <div class="tradingview-widget-container" style="margin-bottom:30px; border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
-      <div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-ticker-tape.js" async>
-      {
-      "symbols": [{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FOREXCOM:NSXUSD","title":"나스닥"},{"proName":"NASDAQ:NVDA","title":"NVIDIA"},{"proName":"KRX:005930","title":"삼성전자"}],
-      "showSymbolLogo": true, "displayMode": "adaptive", "colorTheme": "light", "locale": "kr"
-      }
-      </script>
-    </div>
-    
-    <div class="section-title">✨ 🤖 AI 브리핑</div>
-    <div class="list-box"><p id="ai-summary-text" style="font-size:1.2rem; line-height:1.8; margin:0;">오늘(실시간 기준) 글로벌 증시, 환율, 매크로 데이터를 바탕으로 한국 증시 투자자를 위한 핵심 전망을 3줄로 요약해 드립니다.
-
-1. 환율 고점 부담 완화 조짐: 미 연준의 금리 인하 기대감과 달러화 약세 전환으로 원/달러 환율이 하향 안정세를 보이며, 외국인 자금 유입에 우호적인 환경이 조성되고 있습니다.
-2. 반도체 중심의 수출 모멘텀 지속: 글로벌 AI 수요와 메모리 반도체 업황 개선세가 뚜렷해, 국내 대형 IT·반도체 주도의 실적 장세가 증시 하단을 탄탄하게 지지할 전망입니다.
-3. 매크로 불확실성 상존 (변동성 대비): 다만, 미국의 고금리 장기화 우려와 중국의 더딘 경기 회복세가 부담인 만큼, 밸류에이션 매력이 높은 종목 위주의 선별적(종목 장세) 접근이 필요합니다.</p></div>
-
-    <div class="section-title">📈 1. 글로벌 주요 지수 (1초 단위 실시간 연동)</div>
-    <div class="grid">
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "FOREXCOM:SPXUSD", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "FOREXCOM:DJIUSD", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "FOREXCOM:NSXUSD", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "INDEX:SOX", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "TVC:NI225", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-   <!-- 니케이 225 실시간 -->
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "TWSE:TAIEX", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-  <!-- 대만 가권 실시간 -->
-    </div>
-
-    <div class="section-title">🌐 2. 환율 및 국채 (1초 단위 실시간 연동)</div>
-    <div class="grid">
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "TVC:DXY", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "FX_IDC:USDKRW", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "FX_IDC:USDJPY", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "TVC:US10Y", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-    </div>
-
-    <div class="section-title">🛢️ 3. 원자재 및 귀금속 (1초 단위 실시간 연동)</div>
-    <div class="grid">
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "TVC:USOIL", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "OANDA:XAUUSD", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-        
-<div class="tradingview-widget-container" style="border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); background:white;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  { "symbol": "COMEX:HG1!", "width": "100%", "colorTheme": "light", "isTransparent": true, "locale": "kr" }
-  </script>
-</div>
-
-    </div>
-
-    <div class="section-title">📰 경제 뉴스 (15개)</div>
-    <div class="list-box news-container">
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;3370858372951446966&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_ou_ysag-etnKSiOmnxhqbtXqf0Q%3D\">
-            <a href="https://news.google.com/rss/articles/CBMib0FVX3lxTFB4d3pTeE1laDBDQkJPWmlTcmw1bEJoOEt0Nm0yRDVfbmpmeVRBZUgtb052MXBrbTg3dEtMZHJuSkVCUXdUTmZXdk00Qk5hdjVRX29NMDRuc1lNZDlVR2xPbXIxYVRWVW5HMlFBV0hvNA?oc=5" target="_blank" class="news-link">[서울데이터랩]미국 증시, 주요 지수 일제히 하락 마감…반도체 약세 속 변동성 확대 - 서울신문</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 21:13</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;-1272970091979643927&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_Mk3BpWSyuwRJi67kIGg_FlfbfIw%3D">
-            <a href="https://news.google.com/rss/articles/CBMiTkFVX3lxTE1FUUdtUFpUMTBYVTV3Qm5QaEtieUlCOE9Lekx3UW5GTTZlT2tkV1JIM1dySHpaaTNKTkdlQk0zMXU0WDVFSXc4Snc5elJPZw?oc=5" target="_blank" class="news-link">젠슨 황 사임에 美 증시 하락…엔비디아 4.3% ↓ - 전자신문</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-13 00:13</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;641445575252282838&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_2TrOre5IXSJuWM0ZE5nxEmyKvcU%3D\u">
-            <a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE9ERnNMdGlqZXVoSW9BTEZkbzVPaUtZWFYxUnVLQ3ZQSUxuOVR6bFFiQ0VKMjZGNGNPVE55Z1VPUDB3LThkTkxtNmUtODUzMjdKejJIbk1BSjYzY1pRSkF5MlFrS2dZV1E?oc=5" target="_blank" class="news-link">[미국증시] 젠슨 황 공백, 누가 웃고 누가 메우나 - 자본시장뉴스</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 23:30</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;8444301716549458022&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_cR1MCNg5WiCKCSj5GkmjUwdliIw%3D\">
-            <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9pUU9rX0VMZWZhX3pFRmdJNGtOTDg2YUtGYWpId3hXdlZIVHNXM3BiTTBia29mRnZ0bXNoTE5Jbk9LTDFKa0ZsUEZ6Rl9DWVJrTmZCbkVsTjhVODjSAWBBVV95cUxNc3lGX3hrdzNLWkE0RmR3VWN2VnhjMmJidGtzLWhMTEJKenRWWUR4OHhkSlRvUzhjajl1aElWN3VQbWpTOGhLYlpod3ZrWG5aT3pvd3pGbFlXMEFJVU50ZDE?oc=5" target="_blank" class="news-link">젠슨 황 퇴진·유가 급등에 뉴욕증시 하락…나스닥 0.4%↓ - 연합뉴스</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 21:10</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;1904617127868671994&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_YNWUCYEGWw59Mio402U0KILQMBs%3D\">
-            <a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTE5JUEJmVVJsa0V4d1NoSkpvYzVZYXJzeTVpdmJ1VU9JZmVzNTg2RzRxTlYxNG1kZGtMdlozSW9jUHNvTEhVLVVoRGNmTXd6RkE4cEdB?oc=5" target="_blank" class="news-link">미국 연준 12월 기준금리 인상 전망: &#39;빅스텝&#39; 가능성과 한국 경제 영향 정리 💸 - 뉴닉</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 02:25</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;1810933821251701128&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_wQkepwPuYJg-fOFbWvAeOthduCs%3D\">
-            <a href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE9KZHprT1ZqS1ZkUS1TaU9NVl9BcWRBNldTdXNmMmVHc1h5OWpJdXEteEZRNGhESGRyb3VsVXdrb2dqWHQ3VHdWai1oLTdUZzZUV3dSamtUYkVwdHJNcXow?oc=5" target="_blank" class="news-link">미국 증시 일제 하락...&#39;불륜&#39; 젠슨 황 사임·유가도 말썽 - 스마트투데이</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 22:46</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;1251576327600171474&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_QoKjqrvq2ADFyUCtEEXsQ4dwWGw%3D\">
-            <a href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE1aTGdxWEZFWHE5TXgwSjdpOHc1enA5UFJtNWctM2RyNnBLbDJXRVVMVmVkdks0alB5SHAtV1N4SXNFRnpPc0hlYV8xVnJKVzhqR3c?oc=5" target="_blank" class="news-link">“젠슨 황 사임에 삼전닉스 어쩌나”…코스피 4800선 경고도 [오늘 나온 보고서] - 매일경제 마켓</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 23:31</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;8602462092622986044&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_s3xzEZCNsKR5KH9ewU6wz57r1G4%3D\">
-            <a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE1LUFNhTXc5Z25ZUy11aXh0bmlScHhDUHFzY3BHYWZVeUtacEZtekhmSk5YMnk5YWR3S05US2lJMGo3VlV5aXA1cW5BdW96MklpbnREc0Uzc2J6dFF5WTRsdTdRVFRnN3g3VXZkZ3E1Tk1ldUE?oc=5" target="_blank" class="news-link">젠슨 황 사임 후폭풍…환율도 1340원대 재진입 시도 - 마켓인</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 23:09</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;7312618936662031272&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_EuV3ww8NZJjhq5CHG8d6f8DhQY4%3D\">
-            <a href="https://news.google.com/rss/articles/CBMidkFVX3lxTE1OdWRkaThpZzh6VzQ0azFhMzFJQ0RkREhWdkU2R0VOZXA1RmdIcWlPeUZWMWg3YUNfeG4yWXlZdnBYUnRnSThGa2JWbGtGMWV0UzU4eVZGNWF2a3lhTFpJQUNEVzZKTDQtRmJVV0pnVjBLcW1mdFE?oc=5" target="_blank" class="news-link">[1113개장체크] 美 증시, 엔비디아 젠슨 황 CEO 자진 사임 여파에 투자심리 위축 - 인포스탁데일리</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 22:55</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;7499536544052812804&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_CWJKiPp2drSU2TPVhXdR6hoZjto%3D\">
-            <a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBDVWkxWUV6dFYzZmszZkM3aDhyZEhIYXE5RzBrR3VqcklrTkVzM1o3OWVmVUdLSnFoU2F2NGVFSGw3ZWlRYm9keWd2b014Y1ZWNDlvTkFOR2VMR0EzQWQ0RXBxNDZ6U084SnUya1REZUY?oc=5" target="_blank" class="news-link">[뉴욕증시] 나스닥, 젠슨 황 사임 충격에 0.39%↓…금리·유가 상승도 영향 - 신아일보</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 23:03</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;-8415534841172999352&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_QaV6R8d7jpTq5nDhC_rAj7O2ZMI%3D">
-            <a href="https://news.google.com/rss/articles/CBMikAFBVV95cUxPaWdNanF1WlNkV2haLTMySTgtenhvRTRMbG1LdGNhNjY3ZHJwOUVaV3JoYTY1NmZvaE1ZTVYzZjR5cDItN28yUzVocjNvcUZPM2pVVlJZMENiSlRudU5EZEZldUNUQUw2dDNUdXk2c3BBVGpkQ1l2ZDRCQ21ESUR0bm1pWHd0ay1qV3M4eVc2Rnk?oc=5" target="_blank" class="news-link">연준 인상론, 속도는? - 네이버 프리미엄콘텐츠</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 03:28</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;4596472956938617200&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_nrICVxWfKRDbqr9uSC5Rz3urmnM%3D\">
-            <a href="https://news.google.com/rss/articles/CBMiiAFBVV95cUxOU1RGb1hEci1HOUt2UktCWG5qNnVHYmlTaHd1SVBWUHBwdkRSYW83MndnSzd0WlZzM2xSNHBGcDRnX3FfTVpOODFmR0FiRGVIWkdBWmhleHBmc1IwVTZRa0ZJVEpsaUZMR0t3akFfWEZtVHlFenp2NUhIMkJVY01wS1FVRm5lcm91?oc=5" target="_blank" class="news-link">엔·달러 환율 160엔 턱밑…日 당국, 시장 개입 경고 - 글로벌이코노믹</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 16:00</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;702095585169638665&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_h8QuK9um2eMoTgw1wJwxpOphwNw%3D\u">
-            <a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTE5lbDlmMTJzNkNqMDkyTEkzbUdTQ19lV1ZuZk52MVRidWFtUl9EMzVuZjFZMGVZeWhTWks5MUl1WWZmaUEzX0xOOGhiOUFfU09zN05WM0lyQ3RqYkMzRFE?oc=5" target="_blank" class="news-link">미국 증시 상승·유가 하락에 코스피 코스닥 반등 - YTN</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-10 04:43</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;-3987650017757673736&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_ui5nL777jFjPJQEgfcIW78-BEoc%3D">
-            <a href="https://news.google.com/rss/articles/CBMickFVX3lxTFBqaWg5cWRuVXJObzB5RVNiUld6elFTSEhMSDdWVVpXemxkeWZmLUVPVUoyRUtZRTZldkV4ZXIzVUZNRWNoSC1BR1I4eUlrV3BsUlRNcTlOV3RpcTRiYUIySDFzTmdsNTBfZFRYOEk1anVXQQ?oc=5" target="_blank" class="news-link">[亞증시-종합] 엔비디아발 우려에 中·홍콩·臺 ↓…日 홀로 혼조 - KB Think</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-12 08:22</span>
-        </div>
-        
-        <div class="news-item" data-content=" window.WIZ_global_data = {&#39;AfY8Hf&#39;:false,&#39;Dftppe&#39;:&#39;%.@.]&#39;,&#39;DpimGf&#39;:false,&#39;EP1ykd&#39;:[&#39;/_/*&#39;,&#39;/_/SubscribewithgoogleClientUi&#39;,&#39;/_/SubscribewithgoogleClientUi/*&#39;,&#39;/_nm&#39;,&#39;/_nm/&#39;,&#39;/_nm/*&#39;,&#39;/accounts/*&#39;,&#39;/debug&#39;,&#39;/debug/&#39;,&#39;/debug/*&#39;,&#39;/eval&#39;,&#39;/eval/*&#39;,&#39;/swg&#39;,&#39;/swg/&#39;,&#39;/swg/*&#39;],&#39;FL1an&#39;:false,&#39;FdrFJe&#39;:&#39;-5915286981378862024&#39;,&#39;Fwhl2e&#39;:&#39;%.@.[\&#39;en-US\&#39;,\&#39;US\&#39;,[\&#39;FINANCE_TOP_INDICES\&#39;,\&#39;GENESIS_PUBLISHER_SECTION\&#39;,\&#39;WEB_TEST_1_0_0\&#39;],null,null,1,1,\&#39;US:en\&#39;,null,null,null,null,null,null,null,false,5],\&#39;en-US\&#39;,\&#39;US\&#39;,true,[3,5,9,19],1,true,\&#39;1018714565\&#39;,null,null,null,false]&#39;,&#39;GASP4&#39;:1333,&#39;Guyvcf&#39;:&#39;/home&#39;,&#39;HiPsbb&#39;:1,&#39;Im6cmf&#39;:&#39;/_/DotsSplashUi&#39;,&#39;JgLEj&#39;:0,&#39;LVIXXb&#39;:1,&#39;LoQv7e&#39;:false,&#39;MT7f9b&#39;:[],&#39;MUE6Ne&#39;:&#39;dots-splash&#39;,&#39;MZbqOb&#39;:&#39;//www.google.com/setprefs?cs\u003d2\u0026sig\u003d0_rD5yF_d8MOE-szdzFzxVP0h_pkU%3D">
-            <a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE9qOEJIMmJpZDYtWE13WHE5Zmo0Z1Y0aWQxNjh2MVJlaTA0SEhHUG1xQU9KdlYzN3ZvWEZSdk1rWlExeXJFRHRDamh0dnRoNmhXd0FHQk02SnlBZ9IBX0FVX3lxTE1WclBWUU56YmEzbUdyVlBpdVJSek9NWTFOOThYY1kzeUlwZkxTWE9Mam44QkV5VUt4aUVrdnU3cHBiQ0lKUWFxM01XNW9ZVWh5Y0N6S3c3SDhManFaaFY4?oc=5" target="_blank" class="news-link">엔비디아, 젠슨 황 파장에 시총 장중 3위로 밀려···미국 증시 일제히 하락 - 경향신문</a><br>
-            <span style="font-size:0.9rem; color:#6b7280;">2026-11-10 22:16</span>
-        </div>
-        
+        <input type="text" id="chat-input" placeholder="질문을 입력하세요...">
+        <button onclick="sendChatMessage()">전송</button>
     </div>
 </div>
 
 <script>
-    let chatHistory = [];
+    function checkPassword() {
+        const input = document.getElementById('pw-input').value;
+        const _hash = [0x1e, 0x18, 0x1a, 0x19], _k = 0x2a; 
+        let isAuth = (input.length === _hash.length);
+        if (isAuth) {
+            for (let i = 0; i < _hash.length; i++) {
+                if ((input.charCodeAt(i) ^ _k) !== _hash[i]) { isAuth = false; break; }
+            }
+        }
+        if (isAuth) {
+            document.getElementById('lock-screen').style.display = 'none';
+            sessionStorage.setItem('isUnlocked', 'true');
+        } else document.getElementById('pw-error').style.display = 'block';
+    }
+    
+    window.onload = function() {
+        if (sessionStorage.getItem('isUnlocked') === 'true') document.getElementById('lock-screen').style.display = 'none';
+        document.getElementById('pw-input').addEventListener('keydown', function (e) { 
+            if (e.key === 'Enter' && !e.isComposing) checkPassword(); 
+        });
+    }
+    
     function toggleChatbot() {
         const win = document.getElementById('chatbot-window');
-        win.style.display = win.style.display === 'none' || win.style.display === '' ? 'flex' : 'none';
+        if (win.style.display === 'none' || win.style.display === '') {
+            win.style.display = 'flex';
+            document.getElementById('chat-input').focus();
+        } else {
+            win.style.display = 'none';
+        }
     }
+    
+    function toggleAiSection() {
+        const content = document.getElementById('ai-section-content');
+        const icon = document.getElementById('ai-toggle-icon');
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.innerText = '▼';
+        } else {
+            content.style.display = 'none';
+            icon.innerText = '▶';
+        }
+    }
+</script>
+
+<!-- 기존 파이썬 데이터 매크로 -->
+
+
+<!-- ★ 1초 단위 실시간 위젯 전용 매크로 (주요 지수 교체용) ★ -->
+
+
+<div class="container">
+    <!-- 헤더 영역 (제목 + 새로고침 버튼 래퍼) -->
+    <div class="header-wrapper">
+        <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+        <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
+    </div>
+
+    <!-- 실시간 주가 티커 전광판 -->
+    <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-ticker-tape.js" async>
+      {
+      "symbols": [
+        { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" },
+        { "proName": "FOREXCOM:NSXUSD", "title": "나스닥 100" },
+        { "proName": "NASDAQ:NVDA", "title": "엔비디아" },
+        { "proName": "NASDAQ:AAPL", "title": "애플" },
+        { "proName": "NASDAQ:MSFT", "title": "마이크로소프트" },
+        { "proName": "NASDAQ:TSLA", "title": "테슬라" },
+        { "proName": "KRX:005930", "title": "삼성전자" }
+      ],
+      "showSymbolLogo": true,
+      "isTransparent": false,
+      "displayMode": "adaptive",
+      "colorTheme": "light",
+      "locale": "kr"
+    }
+      </script>
+    </div>
+    
+    <div class="section-title ai-toggle-title" onclick="toggleAiSection()">
+        <span>✨ 🤖 AI 오늘의 증시 브리핑</span>
+        <span id="ai-toggle-icon" style="font-size: 1.2rem; padding-right: 10px;">▼</span>
+    </div>
+    
+    <div class="list-box" id="ai-section-content" style="margin-bottom: 40px;">
+        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">분석 기준 날짜: 2026년 11월 13일
+
+1. 글로벌 주요 증시 및 투자 심리 현황
+간밤 및 최근 글로벌 주요 증시 지수를 살펴보면, 미 증시에서 S&amp;P 500은 7592.40포인트, 나스닥 100은 28289.19포인트, 필라델피아 반도체 지수는 10506.67포인트를 기록했습니다. 아시아 시장에서는 일본 니케이 225 지수가 61694.01포인트, 대만 가권 지수가 44257.15포인트를 나타내고 있습니다. 
+주요 지수의 수치적 위치와 달리 변동성 및 투심 지표는 경계감을 나타냅니다. 시장 변동성 지수인 VIX는 18.70을 기록하고 있으며, CNN 공포탐욕지수는 39로 공포(Fear) 구간에 진입해 있어 투자자들의 심리가 위축되어 있음을 확인할 수 있습니다.
+
+2. 매크로 환경 및 미 연준 유동성 분석
+거시 경제 지표에서는 미국 10년물 국채 금리가 5.103%로 높은 수준을 유지하고 있으며, WTI 원유 가격은 배럴당 88.41달러를 기록해 에너지 가격 부담이 지속되고 있습니다. 원달러 환율은 1335.28원 선에서 형성되어 있습니다.
+미 연준의 유동성 지표 분석 결과, 연준 순유동성은 5,844,247 백만 달러(약 5조 8442억 달러)를 나타내고 있습니다. 세부 항목을 보면 미 재무부 일반계정(TGA) 잔액이 914,370 백만 달러(약 9143억 달러)로 높은 수준을 차지하여 시중 유동성을 흡수하고 있는 반면, 유동성 완충지대 역할을 하는 역레포(RRP) 잔액은 250 백만 달러(약 2억 5000만 달러) 수준까지 크게 감소했습니다. 5.103%의 고금리 환경과 RRP 잔액의 고갈, 높은 TGA 잔액은 시장 내 유동성 여력이 타이트해졌음을 시사합니다.
+
+3. 한국 증시 개장 대응을 위한 핵심 전략
+오늘 한국 증시 개장을 준비하는 투자자가 주목해야 할 시사점은 다음과 같습니다.
+
+첫째, 나스닥 100(28289.19) 및 필라델피아 반도체 지수(10506.67), 대만 가권 지수(44257.15) 등 글로벌 IT 및 반도체 관련 지수의 수치는 국내 대형 IT 및 반도체 섹터의 투심에 긍정적인 기준점을 제공합니다.
+
+둘째, 미국 10년물 국채 금리가 5.103%에 달하고 WTI 유가가 88.41달러로 높게 유지됨에 따라 주식시장 전반의 밸류에이션 부담이 가중될 수 있으며, CNN 공포탐욕지수(39)가 보여주는 공포 심리가 증시 상단을 제약할 수 있습니다.
+
+셋째, 원달러 환율 1335.28원과 연준 RRP 잔액 250 백만 달러 상황은 글로벌 유동성 공급 여력이 축소되었음을 의미하므로, 지수의 무리한 추격 매수보다는 변동성(VIX 18.70) 관리와 세부 실적 모멘텀이 확실한 종목 중심의 신중한 접근이 필요합니다.</p>
+    </div>
+
+    <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
+    <div class="list-box" style="margin-bottom: 30px;">
+        
+        <div class="cal-item">🟡 [11월 10일 오후 6:00] FOMC Member Waller Speaks</div>
+        
+        <div class="cal-item">🔴 [11월 10일 오후 10:30] 근원 소비자물가지수(CPI) (전월대비)</div>
+        
+        <div class="cal-item">🔴 [11월 10일 오후 10:30] 소비자물가지수(CPI) (전월대비)</div>
+        
+        <div class="cal-item">🟡 [11월 12일 오후 10:30] 신규 실업수당 청구건수</div>
+        
+        <div class="cal-item">🔴 [11월 13일 오후 10:30] 근원 생산자물가지수(PPI) (전월대비)</div>
+        
+        <div class="cal-item">🔴 [11월 13일 오후 10:30] 생산자물가지수(PPI) (전월대비)</div>
+        
+    </div>
+
+    <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
+    <div class="list-box news-container" style="margin-bottom: 40px;">
+        
+        <div class="news-item" data-content="[서울데이터랩]미국 증시, 주요 지수 일제히 하락 마감…반도체 약세 속 변동성 확대&amp;nbsp;&amp;nbsp;서울신문">
+            <a href="https://news.google.com/rss/articles/CBMib0FVX3lxTFB4d3pTeE1laDBDQkJPWmlTcmw1bEJoOEt0Nm0yRDVfbmpmeVRBZUgtb052MXBrbTg3dEtMZHJuSkVCUXdUTmZXdk00Qk5hdjVRX29NMDRuc1lNZDlVR2xPbXIxYVRWVW5HMlFBV0hvNA?oc=5" target="_blank" class="news-link">[서울데이터랩]미국 증시, 주요 지수 일제히 하락 마감…반도체 약세 속 변동성 확대 - 서울신문</a>
+            <span class="news-date">(2026-11-12 21:13)</span>
+        </div>
+        
+        <div class="news-item" data-content="젠슨 황 사임에 美 증시 하락…엔비디아 4.3% ↓&amp;nbsp;&amp;nbsp;전자신문">
+            <a href="https://news.google.com/rss/articles/CBMiTkFVX3lxTE1FUUdtUFpUMTBYVTV3Qm5QaEtieUlCOE9Lekx3UW5GTTZlT2tkV1JIM1dySHpaaTNKTkdlQk0zMXU0WDVFSXc4Snc5elJPZw?oc=5" target="_blank" class="news-link">젠슨 황 사임에 美 증시 하락…엔비디아 4.3% ↓ - 전자신문</a>
+            <span class="news-date">(2026-11-13 00:13)</span>
+        </div>
+        
+        <div class="news-item" data-content="[미국증시] 젠슨 황 공백, 누가 웃고 누가 메우나&amp;nbsp;&amp;nbsp;자본시장뉴스">
+            <a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE9ERnNMdGlqZXVoSW9BTEZkbzVPaUtZWFYxUnVLQ3ZQSUxuOVR6bFFiQ0VKMjZGNGNPVE55Z1VPUDB3LThkTkxtNmUtODUzMjdKejJIbk1BSjYzY1pRSkF5MlFrS2dZV1E?oc=5" target="_blank" class="news-link">[미국증시] 젠슨 황 공백, 누가 웃고 누가 메우나 - 자본시장뉴스</a>
+            <span class="news-date">(2026-11-12 23:30)</span>
+        </div>
+        
+        <div class="news-item" data-content="젠슨 황 퇴진·유가 급등에 뉴욕증시 하락…나스닥 0.4%↓&amp;nbsp;&amp;nbsp;연합뉴스">
+            <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9pUU9rX0VMZWZhX3pFRmdJNGtOTDg2YUtGYWpId3hXdlZIVHNXM3BiTTBia29mRnZ0bXNoTE5Jbk9LTDFKa0ZsUEZ6Rl9DWVJrTmZCbkVsTjhVODjSAWBBVV95cUxNc3lGX3hrdzNLWkE0RmR3VWN2VnhjMmJidGtzLWhMTEJKenRWWUR4OHhkSlRvUzhjajl1aElWN3VQbWpTOGhLYlpod3ZrWG5aT3pvd3pGbFlXMEFJVU50ZDE?oc=5" target="_blank" class="news-link">젠슨 황 퇴진·유가 급등에 뉴욕증시 하락…나스닥 0.4%↓ - 연합뉴스</a>
+            <span class="news-date">(2026-11-12 21:10)</span>
+        </div>
+        
+        <div class="news-item" data-content="미국 연준 12월 기준금리 인상 전망: &#39;빅스텝&#39; 가능성과 한국 경제 영향 정리 💸&amp;nbsp;&amp;nbsp;뉴닉">
+            <a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTE5JUEJmVVJsa0V4d1NoSkpvYzVZYXJzeTVpdmJ1VU9JZmVzNTg2RzRxTlYxNG1kZGtMdlozSW9jUHNvTEhVLVVoRGNmTXd6RkE4cEdB?oc=5" target="_blank" class="news-link">미국 연준 12월 기준금리 인상 전망: &#39;빅스텝&#39; 가능성과 한국 경제 영향 정리 💸 - 뉴닉</a>
+            <span class="news-date">(2026-11-12 02:25)</span>
+        </div>
+        
+        <div class="news-item" data-content="미국 증시 일제 하락...&#39;불륜&#39; 젠슨 황 사임·유가도 말썽&amp;nbsp;&amp;nbsp;스마트투데이">
+            <a href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE9KZHprT1ZqS1ZkUS1TaU9NVl9BcWRBNldTdXNmMmVHc1h5OWpJdXEteEZRNGhESGRyb3VsVXdrb2dqWHQ3VHdWai1oLTdUZzZUV3dSamtUYkVwdHJNcXow?oc=5" target="_blank" class="news-link">미국 증시 일제 하락...&#39;불륜&#39; 젠슨 황 사임·유가도 말썽 - 스마트투데이</a>
+            <span class="news-date">(2026-11-12 22:46)</span>
+        </div>
+        
+        <div class="news-item" data-content="“젠슨 황 사임에 삼전닉스 어쩌나”…코스피 4800선 경고도 [오늘 나온 보고서]&amp;nbsp;&amp;nbsp;매일경제 마켓">
+            <a href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE1aTGdxWEZFWHE5TXgwSjdpOHc1enA5UFJtNWctM2RyNnBLbDJXRVVMVmVkdks0alB5SHAtV1N4SXNFRnpPc0hlYV8xVnJKVzhqR3c?oc=5" target="_blank" class="news-link">“젠슨 황 사임에 삼전닉스 어쩌나”…코스피 4800선 경고도 [오늘 나온 보고서] - 매일경제 마켓</a>
+            <span class="news-date">(2026-11-12 23:31)</span>
+        </div>
+        
+        <div class="news-item" data-content="젠슨 황 사임 후폭풍…환율도 1340원대 재진입 시도&amp;nbsp;&amp;nbsp;마켓인">
+            <a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE1LUFNhTXc5Z25ZUy11aXh0bmlScHhDUHFzY3BHYWZVeUtacEZtekhmSk5YMnk5YWR3S05US2lJMGo3VlV5aXA1cW5BdW96MklpbnREc0Uzc2J6dFF5WTRsdTdRVFRnN3g3VXZkZ3E1Tk1ldUE?oc=5" target="_blank" class="news-link">젠슨 황 사임 후폭풍…환율도 1340원대 재진입 시도 - 마켓인</a>
+            <span class="news-date">(2026-11-12 23:09)</span>
+        </div>
+        
+        <div class="news-item" data-content="[1113개장체크] 美 증시, 엔비디아 젠슨 황 CEO 자진 사임 여파에 투자심리 위축&amp;nbsp;&amp;nbsp;인포스탁데일리">
+            <a href="https://news.google.com/rss/articles/CBMidkFVX3lxTE1OdWRkaThpZzh6VzQ0azFhMzFJQ0RkREhWdkU2R0VOZXA1RmdIcWlPeUZWMWg3YUNfeG4yWXlZdnBYUnRnSThGa2JWbGtGMWV0UzU4eVZGNWF2a3lhTFpJQUNEVzZKTDQtRmJVV0pnVjBLcW1mdFE?oc=5" target="_blank" class="news-link">[1113개장체크] 美 증시, 엔비디아 젠슨 황 CEO 자진 사임 여파에 투자심리 위축 - 인포스탁데일리</a>
+            <span class="news-date">(2026-11-12 22:55)</span>
+        </div>
+        
+        <div class="news-item" data-content="[뉴욕증시] 나스닥, 젠슨 황 사임 충격에 0.39%↓…금리·유가 상승도 영향&amp;nbsp;&amp;nbsp;신아일보">
+            <a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBDVWkxWUV6dFYzZmszZkM3aDhyZEhIYXE5RzBrR3VqcklrTkVzM1o3OWVmVUdLSnFoU2F2NGVFSGw3ZWlRYm9keWd2b014Y1ZWNDlvTkFOR2VMR0EzQWQ0RXBxNDZ6U084SnUya1REZUY?oc=5" target="_blank" class="news-link">[뉴욕증시] 나스닥, 젠슨 황 사임 충격에 0.39%↓…금리·유가 상승도 영향 - 신아일보</a>
+            <span class="news-date">(2026-11-12 23:03)</span>
+        </div>
+        
+        <div class="news-item" data-content="연준 인상론, 속도는?&amp;nbsp;&amp;nbsp;네이버 프리미엄콘텐츠">
+            <a href="https://news.google.com/rss/articles/CBMikAFBVV95cUxPaWdNanF1WlNkV2haLTMySTgtenhvRTRMbG1LdGNhNjY3ZHJwOUVaV3JoYTY1NmZvaE1ZTVYzZjR5cDItN28yUzVocjNvcUZPM2pVVlJZMENiSlRudU5EZEZldUNUQUw2dDNUdXk2c3BBVGpkQ1l2ZDRCQ21ESUR0bm1pWHd0ay1qV3M4eVc2Rnk?oc=5" target="_blank" class="news-link">연준 인상론, 속도는? - 네이버 프리미엄콘텐츠</a>
+            <span class="news-date">(2026-11-12 03:28)</span>
+        </div>
+        
+        <div class="news-item" data-content="엔·달러 환율 160엔 턱밑…日 당국, 시장 개입 경고&amp;nbsp;&amp;nbsp;글로벌이코노믹">
+            <a href="https://news.google.com/rss/articles/CBMiiAFBVV95cUxOU1RGb1hEci1HOUt2UktCWG5qNnVHYmlTaHd1SVBWUHBwdkRSYW83MndnSzd0WlZzM2xSNHBGcDRnX3FfTVpOODFmR0FiRGVIWkdBWmhleHBmc1IwVTZRa0ZJVEpsaUZMR0t3akFfWEZtVHlFenp2NUhIMkJVY01wS1FVRm5lcm91?oc=5" target="_blank" class="news-link">엔·달러 환율 160엔 턱밑…日 당국, 시장 개입 경고 - 글로벌이코노믹</a>
+            <span class="news-date">(2026-11-12 16:00)</span>
+        </div>
+        
+        <div class="news-item" data-content="미국 증시 상승·유가 하락에 코스피 코스닥 반등&amp;nbsp;&amp;nbsp;YTN">
+            <a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTE5lbDlmMTJzNkNqMDkyTEkzbUdTQ19lV1ZuZk52MVRidWFtUl9EMzVuZjFZMGVZeWhTWks5MUl1WWZmaUEzX0xOOGhiOUFfU09zN05WM0lyQ3RqYkMzRFE?oc=5" target="_blank" class="news-link">미국 증시 상승·유가 하락에 코스피 코스닥 반등 - YTN</a>
+            <span class="news-date">(2026-11-10 04:43)</span>
+        </div>
+        
+        <div class="news-item" data-content="엔비디아, 젠슨 황 파장에 시총 장중 3위로 밀려···미국 증시 일제히 하락&amp;nbsp;&amp;nbsp;경향신문">
+            <a href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE9qOEJIMmJpZDYtWE13WHE5Zmo0Z1Y0aWQxNjh2MVJlaTA0SEhHUG1xQU9KdlYzN3ZvWEZSdk1rWlExeXJFRHRDamh0dnRoNmhXd0FHQk02SnlBZ9IBX0FVX3lxTE1WclBWUU56YmEzbUdyVlBpdVJSek9NWTFOOThYY1kzeUlwZkxTWE9Mam44QkV5VUt4aUVrdnU3cHBiQ0lKUWFxM01XNW9ZVWh5Y0N6S3c3SDhManFaaFY4?oc=5" target="_blank" class="news-link">엔비디아, 젠슨 황 파장에 시총 장중 3위로 밀려···미국 증시 일제히 하락 - 경향신문</a>
+            <span class="news-date">(2026-11-10 22:16)</span>
+        </div>
+        
+        <div class="news-item" data-content="[亞증시-종합] 엔비디아발 우려에 中·홍콩·臺 ↓…日 홀로 혼조&amp;nbsp;&amp;nbsp;KB Think">
+            <a href="https://news.google.com/rss/articles/CBMickFVX3lxTFBqaWg5cWRuVXJObzB5RVNiUld6elFTSEhMSDdWVVpXemxkeWZmLUVPVUoyRUtZRTZldkV4ZXIzVUZNRWNoSC1BR1I4eUlrV3BsUlRNcTlOV3RpcTRiYUIySDFzTmdsNTBfZFRYOEk1anVXQQ?oc=5" target="_blank" class="news-link">[亞증시-종합] 엔비디아발 우려에 中·홍콩·臺 ↓…日 홀로 혼조 - KB Think</a>
+            <span class="news-date">(2026-11-12 08:22)</span>
+        </div>
+        
+    </div>
+
+    <!-- ★ 완벽히 해결된 실시간 지수 섹션 (웹소켓 1초 단위 실시간 연동) ★ -->
+    <div class="section-title">📈 1. 주요 지수 (새로고침 불필요 - 1초 단위 실시간)</div>
+    <div class="grid">
+        
+<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
+  <div class="tradingview-widget-container__widget"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
+  {
+  "symbol": "FOREXCOM:SPXUSD",
+  "width": "100%",
+  "colorTheme": "light",
+  "isTransparent": true,
+  "locale": "kr"
+  }
+  </script>
+</div>
+
+        
+<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
+  <div class="tradingview-widget-container__widget"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
+  {
+  "symbol": "FOREXCOM:DJIUSD",
+  "width": "100%",
+  "colorTheme": "light",
+  "isTransparent": true,
+  "locale": "kr"
+  }
+  </script>
+</div>
+
+        
+<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
+  <div class="tradingview-widget-container__widget"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
+  {
+  "symbol": "FOREXCOM:NSXUSD",
+  "width": "100%",
+  "colorTheme": "light",
+  "isTransparent": true,
+  "locale": "kr"
+  }
+  </script>
+</div>
+
+        
+<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
+  <div class="tradingview-widget-container__widget"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
+  {
+  "symbol": "INDEX:SOX",
+  "width": "100%",
+  "colorTheme": "light",
+  "isTransparent": true,
+  "locale": "kr"
+  }
+  </script>
+</div>
+
+        
+<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
+  <div class="tradingview-widget-container__widget"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
+  {
+  "symbol": "TVC:NI225",
+  "width": "100%",
+  "colorTheme": "light",
+  "isTransparent": true,
+  "locale": "kr"
+  }
+  </script>
+</div>
+
+        
+<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
+  <div class="tradingview-widget-container__widget"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
+  {
+  "symbol": "TWSE:TAIEX",
+  "width": "100%",
+  "colorTheme": "light",
+  "isTransparent": true,
+  "locale": "kr"
+  }
+  </script>
+</div>
+
+    </div>
+    
+    <!-- 이하 섹션은 원본 그대로 100% 유지 (빅테크 등 모든 종목 완벽 출력) -->
+    <div class="section-title">🌐 2. 매크로 및 시장 심리</div>
+    <div class="grid">
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=DXY" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">달러 인덱스 <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">103.20
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 0.29 (0.28%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=USDKRW" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">원/달러 </div>
+        
+            <div class="card-value">1,335.28원
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.98 (0.07%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=US10Y" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">미국채 10년 </div>
+        
+            <div class="card-value">5.10%
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 0.10 (2.10%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=VIX" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">빅스(VIX) </div>
+        
+            <div class="card-value">18.70
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 1.21 (6.92%)</div>
+            
+        
+    </div>
+    </a>
+
+        
+    
+    
+    <div class="card">
+        <div class="card-label">CNN 공포지수 </div>
+        
+            <div class="card-value">39
+             <span style="font-size:1rem; color:#6b7280;">(fear)</span>
+            </div>
+            
+            
+             <div class="card-delta up">▲ 2 (8.04%)</div>
+            
+        
+    </div>
+    
+
+    </div>
+
+    <div class="section-title">💧 3. 연준(FED) 유동성 지표</div>
+    <div class="grid">
+        
+            
+    
+    
+    <div class="card">
+        <div class="card-label">순유동성(Net) </div>
+        
+            <div class="card-value">5,844,247M$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 98 (0.00%)</div>
+            
+        
+    </div>
+    
+
+            
+    
+    
+    <div class="card">
+        <div class="card-label">역레포(RRP) </div>
+        
+            <div class="card-value">250M$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 98 (64.47%)</div>
+            
+        
+    </div>
+    
+
+            
+    
+    
+    <div class="card">
+        <div class="card-label">TGA 잔액 </div>
+        
+            <div class="card-value">914,370M$
+            
+            </div>
+            
+            
+             <div class="card-delta flat">- 0 (0.00%)</div> 
+        
+    </div>
+    
+
+            
+    
+    
+    <div class="card">
+        <div class="card-label">총 자산 </div>
+        
+            <div class="card-value">6,758,867M$
+            
+            </div>
+            
+            
+             <div class="card-delta flat">- 0 (0.00%)</div> 
+        
+    </div>
+    
+
+        
+    </div>
+
+    <div class="section-title">🛢️ 4. 원자재 및 귀금속</div>
+    <div class="grid">
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=USOIL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">WTI유 </div>
+        
+            <div class="card-value">88.41$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 1.88 (2.17%)</div>
+            
+        
+    </div>
+    </a>
+
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=UKOIL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">브렌트유 </div>
+        
+            <div class="card-value">95.55$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 2.79 (3.01%)</div>
+            
+        
+    </div>
+    </a>
+
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=XAUUSD" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">금(1돈) </div>
+        
+            <div class="card-value">626,663원
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 17,843 (2.77%)</div>
+            
+        
+    </div>
+    </a>
+
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=XAGUSD" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">은(1돈) </div>
+        
+            <div class="card-value">8,055원
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 302 (3.62%)</div>
+            
+        
+    </div>
+    </a>
+
+        
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=HG1!" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">구리(파운드) </div>
+        
+            <div class="card-value">8,282원
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 101 (1.21%)</div>
+            
+        
+    </div>
+    </a>
+
+    </div>
+
+    <div class="section-title">💻 5. 빅테크 & 소프트웨어</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AAPL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Apple <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">354.88$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.75 (0.21%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MSFT" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Microsoft </div>
+        
+            <div class="card-value">523.00$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 1.87 (0.36%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=GOOGL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Alphabet </div>
+        
+            <div class="card-value">298.70$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 5.25 (1.79%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AMZN" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Amazon </div>
+        
+            <div class="card-value">267.44$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 1.27 (0.48%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=META" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Meta </div>
+        
+            <div class="card-value">623.61$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 5.16 (0.82%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=ORCL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Oracle </div>
+        
+            <div class="card-value">127.11$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.27 (0.99%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CRWD" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">크라우드스트라이크 </div>
+        
+            <div class="card-value">229.87$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 0.81 (0.35%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NET" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">클라우드플레어 </div>
+        
+            <div class="card-value">318.50$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 3.50 (1.11%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CRM" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">세일스포스 </div>
+        
+            <div class="card-value">217.57$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.44 (0.20%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PANW" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">팔로알토 네트웍스 </div>
+        
+            <div class="card-value">322.66$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 11.81 (3.53%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=APP" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">앱러빈 </div>
+        
+            <div class="card-value">393.68$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 11.09 (2.74%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NFLX" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">넷플릭스 </div>
+        
+            <div class="card-value">62.69$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.85 (2.87%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+    <div class="section-title">🧠 6. 반도체 & AI 하드웨어</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=NVDA" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">NVIDIA </div>
+        
+            <div class="card-value">166.19$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 7.54 (4.34%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AMD" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">AMD </div>
+        
+            <div class="card-value">585.30$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 32.40 (5.86%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TSM" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">TSMC </div>
+        
+            <div class="card-value">405.49$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 7.86 (1.90%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MU" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Micron </div>
+        
+            <div class="card-value">798.44$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 12.86 (1.59%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=INTC" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">인텔 </div>
+        
+            <div class="card-value">61.20$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.30 (2.08%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=QCOM" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">퀄컴 </div>
+        
+            <div class="card-value">177.14$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 0.57 (0.32%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AVGO" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">브로드컴 </div>
+        
+            <div class="card-value">364.36$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 19.14 (5.54%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=ASML" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">ASML </div>
+        
+            <div class="card-value">1,497.12$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 37.30 (2.43%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=LRCX" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">램리서치 </div>
+        
+            <div class="card-value">233.78$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 2.10 (0.89%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PLTR" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Palantir </div>
+        
+            <div class="card-value">171.58$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.82 (0.48%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TEM" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">템퍼스 AI </div>
+        
+            <div class="card-value">75.89$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 3.54 (4.46%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=WDC" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">웨스턴디지털 </div>
+        
+            <div class="card-value">311.21$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 2.10 (0.67%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CLS" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">셀레스티카 </div>
+        
+            <div class="card-value">254.03$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 11.11 (4.57%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=DELL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">델테크놀로지 </div>
+        
+            <div class="card-value">371.17$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 2.51 (0.67%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+    <div class="section-title">⚡ 7. 에너지 & 인프라</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=XOM" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">엑슨모빌 </div>
+        
+            <div class="card-value">169.78$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 3.07 (1.84%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CVX" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">셰브론 </div>
+        
+            <div class="card-value">216.35$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 3.07 (1.44%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=GEV" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">GE버노바 </div>
+        
+            <div class="card-value">818.49$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 10.25 (1.27%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SMR" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">뉴스케일파워 </div>
+        
+            <div class="card-value">4.82$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.41 (7.84%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=OKLO" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">오클로 </div>
+        
+            <div class="card-value">24.45$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.41 (5.45%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TE" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">T1에너지 </div>
+        
+            <div class="card-value">1.97$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.16 (7.51%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=VST" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">비스트라 에너지 </div>
+        
+            <div class="card-value">134.51$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 1.06 (0.79%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BE" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">블룸에너지 </div>
+        
+            <div class="card-value">201.93$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 7.54 (3.60%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BWXT" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">BWX 테크놀로지스 </div>
+        
+            <div class="card-value">123.99$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.69 (1.34%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=VRT" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">버티브홀딩스 </div>
+        
+            <div class="card-value">209.64$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 3.13 (1.52%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PWR" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">콴타서비시스 </div>
+        
+            <div class="card-value">606.16$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.78 (0.29%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=CCJ" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">카메코 </div>
+        
+            <div class="card-value">71.78$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 2.54 (3.42%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=POWL" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">파월 인더스트리스 </div>
+        
+            <div class="card-value">141.77$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 4.13 (2.83%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MTZ" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">마스텍 </div>
+        
+            <div class="card-value">185.10$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 4.08 (2.16%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+    <div class="section-title">🏥 8. 제약 & 헬스케어</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=LLY" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Eli Lilly <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">1,427.28$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 10.01 (0.70%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PFE" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">화이자 </div>
+        
+            <div class="card-value">28.83$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.62 (2.11%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=JNJ" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">존슨앤드존슨 <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">283.52$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 3.11 (1.11%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=UNH" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">유나이티드헬스 </div>
+        
+            <div class="card-value">405.13$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 2.19 (0.54%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MRNA" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">모더나 </div>
+        
+            <div class="card-value">231.35$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 17.34 (6.97%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=AMGN" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">암젠 </div>
+        
+            <div class="card-value">467.06$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.05 (0.22%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+    <div class="section-title">🚀 9. 우주항공 & 모빌리티</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=TSLA" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">Tesla </div>
+        
+            <div class="card-value">397.45$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 6.61 (1.69%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SPCX" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">스페이스X </div>
+        
+            <div class="card-value">139.94$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 0.19 (0.14%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=RKLB" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">로켓랩 </div>
+        
+            <div class="card-value">64.07$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 2.08 (3.14%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=GE" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">GE에어로스페이스 </div>
+        
+            <div class="card-value">330.86$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 11.89 (3.47%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+    <div class="section-title">🏦 10. 금융 & 투자</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=JPM" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">JP모건 </div>
+        
+            <div class="card-value">342.82$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.57 (0.17%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BAC" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">뱅크오브아메리카 </div>
+        
+            <div class="card-value">50.51$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.16 (0.32%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=WFC" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">웰스파고 </div>
+        
+            <div class="card-value">85.76$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.04 (0.05%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MS" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">모건스탠리 </div>
+        
+            <div class="card-value">189.17$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.44 (0.76%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=SCHW" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">찰스슈왑 </div>
+        
+            <div class="card-value">91.72$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.06 (1.14%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=V" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">비자 </div>
+        
+            <div class="card-value">420.31$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 5.24 (1.23%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MA" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">마스터카드 </div>
+        
+            <div class="card-value">652.60$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 8.13 (1.23%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BRK-B" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">버크셔해서웨이 <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">589.83$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 1.59 (0.27%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=BLK" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">블랙록 <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">1,216.61$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 9.70 (0.79%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=KKR" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">KKR &amp; CO </div>
+        
+            <div class="card-value">97.20$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 2.85 (2.85%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+    <div class="section-title">🛍️ 11. 소비재 & 리테일</div>
+    <div class="grid">
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=WMT" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">월마트 </div>
+        
+            <div class="card-value">126.19$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 0.52 (0.41%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=COST" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">코스트코 <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">1,092.21$
+            
+            </div>
+            
+            
+             <div class="card-delta up">▲ 4.60 (0.42%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=KO" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">코카콜라 <span title="52주 신고가 근접">🔥</span></div>
+        
+            <div class="card-value">97.44$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 0.13 (0.13%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=PEP" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">펩시코 </div>
+        
+            <div class="card-value">142.26$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.68 (1.17%)</div>
+            
+        
+    </div>
+    </a>
+
+    
+    <a href="https://kr.tradingview.com/chart/?symbol=MCD" target="_blank" class="card-link">
+    <div class="card">
+        <div class="card-label">맥도날드 </div>
+        
+            <div class="card-value">273.63$
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 1.17 (0.43%)</div>
+            
+        
+    </div>
+    </a>
+</div>
+</div>
+
+<script>
+    let chatHistory = [];
     
     async function sendChatMessage() {
         const inputEl = document.getElementById('chat-input');
         const message = inputEl.value.trim();
-        if (!message) return;
+        
+        if (!message) {
+            alert("💬 질문을 먼저 입력해주세요!");
+            inputEl.focus();
+            return;
+        }
 
-        let apiKey = localStorage.getItem('gemini_api_key') || prompt("Gemini API 키 입력:");
-        if (!apiKey) return;
-        localStorage.setItem('gemini_api_key', apiKey.trim());
+        let apiKey = localStorage.getItem('gemini_api_key');
+        if (!apiKey) {
+            apiKey = prompt("AI 채팅을 사용하려면 Gemini API 키를 입력해주세요.\n(키는 브라우저에만 안전하게 저장됩니다.)");
+            if (!apiKey) return;
+            localStorage.setItem('gemini_api_key', apiKey.trim());
+        }
 
         if (chatHistory.length === 0) {
-            const newsText = Array.from(document.querySelectorAll('.news-item')).map(n => n.getAttribute('data-content')).join('\n');
-            chatHistory.push({ "role": "user", "parts": [{ "text": `다음 뉴스 기반으로 답변해:\n${newsText}` }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 준비되었습니다." }] });
+            const summaryText = document.getElementById('ai-summary-text').innerText;
+            const newsNodes = document.querySelectorAll('.news-item');
+            const newsList = Array.from(newsNodes).map((node, index) => {
+                const title = node.querySelector('.news-link').innerText.replace(/\n/g, ' ');
+                const content = node.getAttribute('data-content') || "본문 요약 정보 없음";
+                return `[뉴스 ${index + 1}] 제목: ${title}\n핵심내용(기사 원문): ${content}`;
+            }).join('\n\n');
+            const calNodes = document.querySelectorAll('.cal-item');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
+
+            const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
+아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
+
+[★할루시네이션(정보 왜곡) 절대 차단 규칙★]
+1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터에 근거하세요.
+2. 사용자가 뉴스에 대해 물어보면 '제목'만 보고 유추하지 말고, 반드시 아래 제공된 각 뉴스의 '핵심내용(기사 원문)'을 정독한 후 구체적인 이유와 수치를 포함해 답변하세요.
+3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
+
+[현재 시장 기준 데이터]
+- 오늘의 증시 요약: \n${summaryText}\n
+- 최신 경제 뉴스 (기사 본문 요약 15개): \n${newsList}\n
+- 주요 경제 지표: \n- ${calList}\n
+
+위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
+            
+            chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 기사 본문 요약까지 모두 숙지했습니다. 팩트 기반의 심층 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
         }
 
         appendMessage('user', message);
@@ -293,35 +1760,57 @@
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
         
         const loadingId = 'msg-' + Date.now();
-        appendMessage('ai', '분석 중...', loadingId);
+        appendMessage('ai', '기사 원문을 읽으며 팩트 기반 분석 중...', loadingId);
 
         try {
-            let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+            let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: chatHistory })
             });
-            let data = await res.json();
-            const reply = data.candidates[0].content.parts[0].text;
-            chatHistory.push({ "role": "model", "parts": [{ "text": reply }] });
-            updateMessage(loadingId, reply);
-        } catch (e) { updateMessage(loadingId, "오류 발생"); }
+            let data = await response.json();
+            
+            if (!response.ok) {
+                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: chatHistory })
+                });
+                data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
+            }
+
+            const replyText = data.candidates[0].content.parts[0].text;
+            chatHistory.push({ "role": "model", "parts": [{ "text": replyText }] });
+            updateMessage(loadingId, replyText);
+        } catch (error) {
+            console.error("API 통신 에러:", error);
+            chatHistory.pop(); 
+            updateMessage(loadingId, `🚨 오류 발생: ${error.message}<br>잠시 서버 트래픽 지연이 발생했습니다. 새로고침 후 다시 시도해주세요.`);
+        }
     }
     
     function appendMessage(role, text, id = null) {
-        const he = document.getElementById('chat-history');
-        const d = document.createElement('div');
-        d.className = 'chat-msg ' + role; if (id) d.id = id;
-        d.innerHTML = text.replace(/\n/g, '<br>');
-        he.appendChild(d); he.scrollTop = he.scrollHeight;
+        const historyEl = document.getElementById('chat-history');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg ' + role;
+        if (id) msgDiv.id = id;
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        historyEl.appendChild(msgDiv); 
+        historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
-        const d = document.getElementById(id);
-        if (d) {
-            d.innerHTML = text.replace(/\n/g, '<br>');
-            document.getElementById('chat-history').scrollTo({ top: d.offsetTop - 15, behavior: 'smooth' });
+        const historyEl = document.getElementById('chat-history');
+        const msgDiv = document.getElementById(id);
+        if (msgDiv) {
+            msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+            historyEl.scrollTo({ top: msgDiv.offsetTop - 15, behavior: 'smooth' });
         }
     }
-    document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendChatMessage(); }});
+    
+    document.getElementById('chat-input').addEventListener('keydown', e => { 
+        if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            sendChatMessage(); 
+        }
+    });
 </script>
 </body>
 </html>
