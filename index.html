@@ -10,7 +10,13 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; padding-bottom: env(safe-area-inset-bottom); }
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
-        .header-title { text-align: center; font-size: 2.2rem; font-weight: 900; margin: 20px 0 30px 0; }
+        
+        /* 헤더(제목+버튼) 정렬 래퍼 */
+        .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px 0; position: relative; }
+        .header-title { font-size: 2.2rem; font-weight: 900; margin: 0; text-align: center; flex: 1; }
+        .refresh-btn { padding: 10px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background 0.2s; position: absolute; right: 0; display: flex; align-items: center; gap: 6px; }
+        .refresh-btn:hover { background-color: #2563eb; }
+        
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
         
@@ -46,7 +52,7 @@
         .chatbot-header { background: #111827; color: white; padding: 18px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .chatbot-close { cursor: pointer; font-size: 1.2rem; }
         
-        .chat-history { height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
+        .chat-history { position: relative; height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
         .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .chat-msg.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .chat-msg.ai { background: #ffffff; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
@@ -61,6 +67,8 @@
             .card { padding: 12px; } .card-value { font-size: 1.5rem; }
             .chatbot-window { right: 5vw; width: 90vw; bottom: 90px; }
             .chatbot-fab { bottom: 20px; right: 20px; width: 55px; height: 55px; font-size: 1.5rem; }
+            .refresh-btn { position: relative; width: 100%; justify-content: center; margin-top: 10px; }
+            .header-wrapper { flex-direction: column; align-items: stretch; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -114,7 +122,9 @@
     
     window.onload = function() {
         if (sessionStorage.getItem('isUnlocked') === 'true') document.getElementById('lock-screen').style.display = 'none';
-        document.getElementById('pw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPassword(); });
+        document.getElementById('pw-input').addEventListener('keydown', function (e) { 
+            if (e.key === 'Enter' && !e.isComposing) checkPassword(); 
+        });
     }
     
     function toggleChatbot() {
@@ -143,7 +153,11 @@
 
 
 <div class="container">
-    <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+    <!-- 헤더 영역 (제목 + 새로고침 버튼 래퍼) -->
+    <div class="header-wrapper">
+        <div class="header-title">📊 실시간 미국 증시 대시보드</div>
+        <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
+    </div>
 
     <!-- 실시간 주가 티커 위젯 -->
     <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -174,16 +188,26 @@
     </div>
     
     <div class="list-box" id="ai-section-content" style="margin-bottom: 40px;">
-        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">2026년 11월 13일 기준 글로벌 매크로 환경 및 국내 증시 개장 전 핵심 분석 보고서입니다.
+        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">분석 기준 날짜: 2026년 11월 13일
 
-1. 지수 흐름 분석 및 국내 주요 섹터 방향성
-나스닥 100 지수가 28289.19를 기록하였고 필라델피아 반도체 지수는 10506.67을 나타내고 있습니다. 아시아 시장인 일본 니케이 225 지수는 61248.59, 대만 가권 지수는 44257.15로 고점을 유지하고 있습니다. 필라델피아 반도체 지수가 10000선을 상회하고 대만 및 일본 지수가 강세를 보임에 따라, 국내 증시의 반도체 및 대형 IT 기술주 섹터는 긍정적인 모멘텀을 받을 것으로 전망됩니다.
+거시경제 및 금융 시장 심층 분석 리포트
 
-2. 환율 및 금리가 외국인 수급에 미칠 파급력
-미국채 10년물 금리가 5.103퍼센트 수준으로 높은 수준을 형성하고 있으며 WTI 유가도 88.77달러를 기록 중입니다. 고금리 지속은 글로벌 투자 자금의 유동성을 제약할 수 있는 요소이나, 원달러 환율은 1335.98원으로 1330원 대에서 유지되고 있습니다. 5퍼센트 대의 미국채 금리는 외국인 수급 유입을 제한하는 요소로 작용할 수 있지만, 안정적인 환율 흐름이 급격한 외국인 매도세를 일부 완화해 줄 것으로 분석됩니다.
+1. 주요 글로벌 시장 지표 현황
+1.1. 미국 주요 증시 지수: S&amp;P 500 지수는 7592.40포인트, 나스닥 100 지수는 28289.19포인트, 필라델피아 반도체 지수는 10506.67포인트를 기록했습니다.
+1.2. 아시아 주요 증시 지수: 일본 니케이 225 지수는 61582.61포인트, 대만 가권 지수는 44257.15포인트를 나타냈습니다.
+1.3. 금리 및 환율 지표: 미국채 10년물 금리는 5.103%를 기록 중이며, 원달러 환율은 1336.28원입니다.
+1.4. 변동성 및 시장 심리 지수: VIX 지수는 18.70을 기록했으며, CNN 공포탐욕지수는 39점으로 공포(Fear) 단계를 나타내고 있습니다.
+1.5. 원자재 및 중앙은행 유동성 지표: WTI 국제유가는 배럴당 88.64달러입니다. 연준 순유동성은 5조 8442억 4700만 달러, 역레포(RRP) 잔액은 2억 5000만 달러, TGA 잔액은 9143억 7000만 달러로 집계되었습니다.
 
-3. 변동성 지표 및 연준 유동성 기반 글로벌 자금 환경 진단
-VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fear) 단계를 나타내며 시장 투자심리가 위축되어 있음을 보여줍니다. 연준 순유동성은 5844247 백만 달러를 기록한 가운데, 역레포(RRP) 잔액은 250 백만 달러까지 축소되었고 TGA 잔액은 914370 백만 달러가 쌓여 있습니다. 역레포 잔액의 감소는 유동성 완충력이 낮아졌음을 의미하며 높은 TGA 잔액은 시중 유동성을 흡수하고 있어 글로벌 자금 환경이 빡빡해진 상태입니다. 따라서 투자자는 개장 후 리스크 관리에 유의하며 신중한 접근이 필요합니다.</p>
+2. 매크로 환경 및 유동성 심층 분석
+2.1. 고금리와 유가 상승 압력: 미국채 10년물 금리가 5.103%의 높은 수준을 보이고 있으며, WTI 유가 또한 배럴당 88.64달러로 상승해 있어 글로벌 자산 시장 전반에 자금 조달 비용 증가와 물가 상승 부담을 동시에 부여하고 있습니다.
+2.2. 연준 유동성 구조의 변화: 연준 순유동성은 약 5조 8442억 달러를 유지하고 있으나, 시장의 유동성 완충 지대 역할을 하는 역레포 잔액이 2억 5000만 달러 수준까지 낮아졌습니다. 반면 TGA 잔액은 9143억 7000만 달러로 높은 수준을 유지하고 있어 시중 유동성 흡수 요인으로 작용하고 있습니다.
+2.3. 투자자 심리 위축: CNN 공포탐욕지수가 39점으로 공포 영역에 위치하고 VIX 지수가 18.70을 기록함에 따라, 시장 참가자들의 위험 자산 선호 심리가 경계 모드로 전환되어 있음을 확인할 수 있습니다.
+
+3. 한국 증시 개장 전망 및 투자 전략
+3.1. 환율 및 외인 수급 영향: 원달러 환율이 1336.28원으로 형성되어 있고 미 국채 금리가 5.103%에 달함에 따라, 국내 증시에서 외국인 자금의 수급 변동성이 확대될 수 있습니다.
+3.2. 반도체 및 주요 섹터 영향: 필라델피아 반도체 지수가 10506.67포인트, 대만 가권 지수가 44257.15포인트를 기록함에 따라 글로벌 IT 및 반도체 공급망 관련 지표의 위치를 참고한 세부 섹터별 대응이 필요합니다.
+3.3. 최종 투자 전략: 5.103% 수준의 국채 금리와 88.64달러의 유가 부담, 그리고 공포 단계(39)에 진입한 투자 심리를 고려할 때, 한국 증시 개장 직후에는 공격적인 매수보다는 고금리와 원자재 가격 변동성에 대비한 리스크 관리가 최우선시되어야 합니다.</p>
     </div>
 
     <!-- 경제 지표 -->
@@ -204,7 +228,7 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
         
     </div>
 
-    <!-- 경제 뉴스 (15개 스크롤 지원 + 챗봇용 본문 숨김 속성) -->
+    <!-- 경제 뉴스 -->
     <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
     <div class="list-box news-container" style="margin-bottom: 40px;">
         
@@ -244,6 +268,11 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
         </div>
         
         <div class="news-item" data-content="">
+            <a href="https://news.google.com/rss/articles/CBMidkFVX3lxTE1OdWRkaThpZzh6VzQ0azFhMzFJQ0RkREhWdkU2R0VOZXA1RmdIcWlPeUZWMWg3YUNfeG4yWXlZdnBYUnRnSThGa2JWbGtGMWV0UzU4eVZGNWF2a3lhTFpJQUNEVzZKTDQtRmJVV0pnVjBLcW1mdFE?oc=5" target="_blank" class="news-link">[1113개장체크] 美 증시, 엔비디아 젠슨 황 CEO 자진 사임 여파에 투자심리 위축 - 인포스탁데일리</a>
+            <span class="news-date">(2026-11-12 22:55)</span>
+        </div>
+        
+        <div class="news-item" data-content="">
             <a href="https://news.google.com/rss/articles/CBMikAFBVV95cUxPaWdNanF1WlNkV2haLTMySTgtenhvRTRMbG1LdGNhNjY3ZHJwOUVaV3JoYTY1NmZvaE1ZTVYzZjR5cDItN28yUzVocjNvcUZPM2pVVlJZMENiSlRudU5EZEZldUNUQUw2dDNUdXk2c3BBVGpkQ1l2ZDRCQ21ESUR0bm1pWHd0ay1qV3M4eVc2Rnk?oc=5" target="_blank" class="news-link">연준 인상론, 속도는? - 네이버 프리미엄콘텐츠</a>
             <span class="news-date">(2026-11-12 03:28)</span>
         </div>
@@ -278,11 +307,6 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
             <span class="news-date">(2026-11-10 22:16)</span>
         </div>
         
-        <div class="news-item" data-content="">
-            <a href="https://news.google.com/rss/articles/CBMia0FVX3lxTFBEdlFWNFBnSzg5NWJ4ZENwWll5Q29fNWszU1VjWnYwczlfbG1QM0VybnVZUjY5Z3VUNEtFU0F1aHdnTDlJeFlCUGMzZG9mNnRsd196eG43RmlQUVA0RnlvVkVJWkZPT05tOS1V?oc=5" target="_blank" class="news-link">미국 연준 월러 이사 ‘빅스텝’ 거론…“12월 50bp 인상도 고려” - KBS 뉴스</a>
-            <span class="news-date">(2026-11-10 16:11)</span>
-        </div>
-        
     </div>
 
     <div class="section-title">📈 1. 주요 지수</div>
@@ -293,7 +317,13 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">S&amp;P 500 </div>
         
-            <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
+            <div class="card-value">7,592.40
+            
+            </div>
+            
+            
+             <div class="card-delta down">▼ 26.98 (0.35%)</div>
+            
         
     </div>
     </a>
@@ -355,12 +385,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">니케이 225 </div>
         
-            <div class="card-value">61,248.59
+            <div class="card-value">61,582.61
             
             </div>
             
             
-             <div class="card-delta up">▲ 789.01 (1.31%)</div>
+             <div class="card-delta up">▲ 334.02 (0.55%)</div>
             
         
     </div>
@@ -409,12 +439,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">원/달러 </div>
         
-            <div class="card-value">1,335.98원
+            <div class="card-value">1,336.28원
             
             </div>
             
             
-             <div class="card-delta down">▼ 0.28 (0.02%)</div>
+             <div class="card-delta up">▲ 0.02 (0.00%)</div>
             
         
     </div>
@@ -551,12 +581,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">WTI유 </div>
         
-            <div class="card-value">88.77$
+            <div class="card-value">88.64$
             
             </div>
             
             
-             <div class="card-delta up">▲ 2.24 (2.59%)</div>
+             <div class="card-delta up">▲ 2.11 (2.44%)</div>
             
         
     </div>
@@ -568,12 +598,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">브렌트유 </div>
         
-            <div class="card-value">95.85$
+            <div class="card-value">95.88$
             
             </div>
             
             
-             <div class="card-delta up">▲ 3.09 (3.33%)</div>
+             <div class="card-delta up">▲ 3.12 (3.36%)</div>
             
         
     </div>
@@ -585,12 +615,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">금(1돈) </div>
         
-            <div class="card-value">625,864원
+            <div class="card-value">627,036원
             
             </div>
             
             
-             <div class="card-delta down">▼ 18,642 (2.89%)</div>
+             <div class="card-delta down">▼ 17,470 (2.71%)</div>
             
         
     </div>
@@ -602,12 +632,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">은(1돈) </div>
         
-            <div class="card-value">8,063원
+            <div class="card-value">8,079원
             
             </div>
             
             
-             <div class="card-delta down">▼ 295 (3.53%)</div>
+             <div class="card-delta down">▼ 278 (3.34%)</div>
             
         
     </div>
@@ -619,12 +649,12 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
     <div class="card">
         <div class="card-label">구리(파운드) </div>
         
-            <div class="card-value">8,290원
+            <div class="card-value">8,291원
             
             </div>
             
             
-             <div class="card-delta down">▼ 93 (1.12%)</div>
+             <div class="card-delta down">▼ 92 (1.11%)</div>
             
         
     </div>
@@ -1713,18 +1743,13 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
             
             const newsNodes = document.querySelectorAll('.news-item');
             const newsList = Array.from(newsNodes).map((node, index) => {
-                const title = node.querySelector('.news-link').innerText.replace(/
-/g, ' ');
+                const title = node.querySelector('.news-link').innerText.replace(/\n/g, ' ');
                 const content = node.getAttribute('data-content') || "본문 요약 정보 없음";
-                return `[뉴스 ${index + 1}] 제목: ${title}
-핵심내용(기사 원문): ${content}`;
-            }).join('
-
-');
+                return `[뉴스 ${index + 1}] 제목: ${title}\n핵심내용(기사 원문): ${content}`;
+            }).join('\n\n');
             
             const calNodes = document.querySelectorAll('.cal-item');
-            const calList = Array.from(calNodes).map(node => node.innerText).join('
-- ');
+            const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
 
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
@@ -1735,15 +1760,9 @@ VIX 지수는 18.70을 기록하였고 CNN 공포탐욕지수는 39로 공포(Fe
 3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
-- 오늘의 증시 요약: 
-${summaryText}
-
-- 최신 경제 뉴스 (기사 본문 요약 15개): 
-${newsList}
-
-- 주요 경제 지표: 
-- ${calList}
-
+- 오늘의 증시 요약: \n${summaryText}\n
+- 최신 경제 뉴스 (기사 본문 요약 15개): \n${newsList}\n
+- 주요 경제 지표: \n- ${calList}\n
 
 위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
             
@@ -1768,19 +1787,13 @@ ${newsList}
             let data = await response.json();
             
             if (!response.ok) {
-                console.warn("3.5-flash-lite 에러 발생, 3.1-flash-lite로 자동 전환하여 재시도합니다.", data.error);
-                
                 response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ contents: chatHistory })
                 });
-                
                 data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
-                }
+                if (!response.ok) throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
             }
 
             const replyText = data.candidates[0].content.parts[0].text;
@@ -1799,20 +1812,32 @@ ${newsList}
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-msg ' + role;
         if (id) msgDiv.id = id;
-        msgDiv.innerHTML = text.replace(/
-/g, '<br>');
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
+        
+        // 처음 메시지를 붙일 때는 일단 최하단으로 스크롤 (사용자 입력 직후)
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
+        const historyEl = document.getElementById('chat-history');
         const msgDiv = document.getElementById(id);
-        if (msgDiv) msgDiv.innerHTML = text.replace(/
-/g, '<br>');
+        
+        if (msgDiv) {
+            msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+            // 답변 내용이 완성된 후, 해당 메시지의 맨 위(상단)에 시선이 닿도록 스크롤 위치 보정!
+            historyEl.scrollTo({
+                top: msgDiv.offsetTop - 15,
+                behavior: 'smooth'
+            });
+        }
     }
     
-    document.getElementById('chat-input').addEventListener('keypress', e => { 
-        if (e.key === 'Enter') sendChatMessage(); 
+    document.getElementById('chat-input').addEventListener('keydown', e => { 
+        if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            sendChatMessage(); 
+        }
     });
 </script>
 </body>
