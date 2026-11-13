@@ -31,6 +31,7 @@ except AttributeError:
 else:
     ssl._create_default_https_context = _create_unverified_https_context
 
+# CNN, 경제지표 전용 스크래퍼
 scraper = cloudscraper.create_scraper(
     browser={
         'browser': 'chrome',
@@ -77,7 +78,13 @@ def get_fear_and_greed():
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
         "Origin": "https://edition.cnn.com",
-        "Referer": "https://edition.cnn.com/"
+        "Referer": "https://edition.cnn.com/",
+        "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "cross-site"
     }
     try:
         res = scraper.get(url, headers=headers, timeout=10)
@@ -152,6 +159,7 @@ def get_fed_liquidity():
     except:
         return None
 
+# 뉴스 스크래핑 초고속 최적화 (무한 대기 원천 차단)
 def process_single_news(item):
     try:
         dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
@@ -160,9 +168,12 @@ def process_single_news(item):
         date_str = ""
     
     content_preview = ""
+    
+    # 1. 안전 장치: RSS 요약이 있으면 일단 담아둠
     if hasattr(item, 'summary'):
         content_preview = re.sub('<[^<]+>', '', item.summary)
         
+    # 2. 아주 짧은 1.5초 타임아웃으로 일반 requests 접속 시도 (cloudscraper 사용 안함)
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
         res = requests.get(item.link, headers=headers, timeout=1.5, allow_redirects=True)
@@ -174,7 +185,7 @@ def process_single_news(item):
             if raw_text:
                 content_preview = raw_text[:800]
     except:
-        pass
+        pass # 에러나거나 1.5초 넘어가면 미련없이 기본 RSS 요약 사용 (무한로딩 방지)
             
     content_preview = content_preview.replace('"', "'").replace('\n', ' ')
     return {'title': item.title, 'link': item.link, 'date': date_str, 'content': content_preview}
@@ -283,7 +294,6 @@ def get_dashboard_data():
     if 'data' in CACHE and time.time() - CACHE['time'] < 600: return CACHE['data']
     data = {}
     
-    # 누락되었던 개별 종목 데이터 완전 복구 (20개 스레드로 초고속 수집)
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         f_indices = executor.submit(fetch_yfinance_data, {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'})
         f_macros = executor.submit(fetch_yfinance_data, {'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'})
@@ -338,7 +348,7 @@ HTML_TEMPLATE = """
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; padding-bottom: env(safe-area-inset-bottom); }
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         
-        /* 헤더 영역 */
+        /* 헤더(제목+버튼) 정렬 래퍼 */
         .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px 0; position: relative; }
         .header-title { font-size: 2.2rem; font-weight: 900; margin: 0; text-align: center; flex: 1; }
         .refresh-btn { padding: 10px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background 0.2s; position: absolute; right: 0; display: flex; align-items: center; gap: 6px; }
@@ -347,7 +357,6 @@ HTML_TEMPLATE = """
         .section-title { font-size: 1.5rem; font-weight: 800; border-left: 6px solid #3b82f6; padding-left: 12px; margin: 30px 0 15px 0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
         
-        /* 카드 디자인 */
         .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
         .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; height: 100%; box-sizing: border-box; border: 2px solid transparent; transition: transform 0.2s ease; }
         .card-link:hover .card { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
@@ -358,7 +367,6 @@ HTML_TEMPLATE = """
         
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         
-        /* 뉴스 스크롤 */
         .news-container { max-height: 450px; overflow-y: auto; padding-right: 10px; }
         .news-container::-webkit-scrollbar { width: 8px; }
         .news-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
@@ -373,7 +381,6 @@ HTML_TEMPLATE = """
         .cal-item { font-size: 1.1rem; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
         .cal-item:last-child { border-bottom: none; }
         
-        /* 챗봇 스타일 */
         .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background-color: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.2s; user-select: none; }
         .chatbot-fab:hover { transform: scale(1.05); }
         .chatbot-fab:active { transform: scale(0.95); }
@@ -480,7 +487,6 @@ HTML_TEMPLATE = """
     }
 </script>
 
-<!-- 기존 파이썬 데이터 매크로 -->
 {% macro render_metric(label, data_obj, is_int=False, suffix='') %}
     {% set has_ticker = data_obj is mapping and data_obj.get('ticker') %}
     {% if has_ticker %}<a href="https://kr.tradingview.com/chart/?symbol={{ data_obj.ticker }}" target="_blank" class="card-link">{% endif %}
@@ -502,22 +508,6 @@ HTML_TEMPLATE = """
     {% if has_ticker %}</a>{% endif %}
 {% endmacro %}
 
-<!-- ★ 1초 단위 실시간 위젯 전용 매크로 (주요 지수 교체용) ★ -->
-{% macro render_tv_quote(symbol) %}
-<div class="tradingview-widget-container" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: 100%;">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-single-quote.js" async>
-  {
-  "symbol": "{{ symbol }}",
-  "width": "100%",
-  "colorTheme": "light",
-  "isTransparent": true,
-  "locale": "kr"
-  }
-  </script>
-</div>
-{% endmacro %}
-
 <div class="container">
     <!-- 헤더 영역 (제목 + 새로고침 버튼 래퍼) -->
     <div class="header-wrapper">
@@ -525,7 +515,7 @@ HTML_TEMPLATE = """
         <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
     </div>
 
-    <!-- 실시간 주가 티커 전광판 -->
+    <!-- 실시간 주가 티커 위젯 -->
     <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
       <div class="tradingview-widget-container__widget"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-ticker-tape.js" async>
@@ -557,6 +547,7 @@ HTML_TEMPLATE = """
         <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">{{ data.ai_summary }}</p>
     </div>
 
+    <!-- 경제 지표 -->
     <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
     <div class="list-box" style="margin-bottom: 30px;">
         {% for event in data.calendar %}
@@ -564,6 +555,7 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
+    <!-- 경제 뉴스 -->
     <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
     <div class="list-box news-container" style="margin-bottom: 40px;">
         {% for item in data.news %}
@@ -574,18 +566,16 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
-    <!-- ★ 완벽히 해결된 실시간 지수 섹션 (웹소켓 1초 단위 실시간 연동) ★ -->
-    <div class="section-title">📈 1. 주요 지수 (새로고침 불필요 - 1초 단위 실시간)</div>
+    <div class="section-title">📈 1. 주요 지수</div>
     <div class="grid">
-        {{ render_tv_quote('FOREXCOM:SPXUSD') }}
-        {{ render_tv_quote('FOREXCOM:DJIUSD') }}
-        {{ render_tv_quote('FOREXCOM:NSXUSD') }}
-        {{ render_tv_quote('INDEX:SOX') }}
-        {{ render_tv_quote('TVC:NI225') }}
-        {{ render_tv_quote('TWSE:TAIEX') }}
+        {{ render_metric('S&P 500', data.indices['S&P 500']) }}
+        {{ render_metric('다우존스', data.indices['다우존스']) }}
+        {{ render_metric('나스닥 100', data.indices['나스닥 100']) }}
+        {{ render_metric('반도체', data.indices['필라델피아 반도체']) }}
+        {{ render_metric('니케이 225', data.indices['니케이 225']) }}
+        {{ render_metric('대만 가권', data.indices['대만 가권']) }}
     </div>
     
-    <!-- 이하 섹션은 원본 그대로 100% 유지 (빅테크 등 모든 종목 완벽 출력) -->
     <div class="section-title">🌐 2. 매크로 및 시장 심리</div>
     <div class="grid">
         {{ render_metric('달러 인덱스', data.macros['달러 인덱스']) }}{{ render_metric('원/달러', data.macros['원/달러 환율'], False, '원') }}{{ render_metric('미국채 10년', data.macros['미국채 10년물'], False, '%') }}{{ render_metric('빅스(VIX)', data.macros['빅스(VIX)']) }}
@@ -651,12 +641,14 @@ HTML_TEMPLATE = """
 
         if (chatHistory.length === 0) {
             const summaryText = document.getElementById('ai-summary-text').innerText;
+            
             const newsNodes = document.querySelectorAll('.news-item');
             const newsList = Array.from(newsNodes).map((node, index) => {
                 const title = node.querySelector('.news-link').innerText.replace(/\\n/g, ' ');
                 const content = node.getAttribute('data-content') || "본문 요약 정보 없음";
                 return `[뉴스 ${index + 1}] 제목: ${title}\\n핵심내용(기사 원문): ${content}`;
             }).join('\\n\\n');
+            
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
 
@@ -688,13 +680,18 @@ HTML_TEMPLATE = """
 
         try {
             let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: chatHistory })
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ contents: chatHistory })
             });
+            
             let data = await response.json();
             
             if (!response.ok) {
                 response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: chatHistory })
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ contents: chatHistory })
                 });
                 data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || '알 수 없는 API 오류가 발생했습니다.');
@@ -703,6 +700,7 @@ HTML_TEMPLATE = """
             const replyText = data.candidates[0].content.parts[0].text;
             chatHistory.push({ "role": "model", "parts": [{ "text": replyText }] });
             updateMessage(loadingId, replyText);
+            
         } catch (error) {
             console.error("API 통신 에러:", error);
             chatHistory.pop(); 
@@ -717,15 +715,22 @@ HTML_TEMPLATE = """
         if (id) msgDiv.id = id;
         msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
+        
+        // 처음 메시지를 붙일 때는 일단 최하단으로 스크롤 (사용자 입력 직후)
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
     function updateMessage(id, text) {
         const historyEl = document.getElementById('chat-history');
         const msgDiv = document.getElementById(id);
+        
         if (msgDiv) {
             msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
-            historyEl.scrollTo({ top: msgDiv.offsetTop - 15, behavior: 'smooth' });
+            // 답변 내용이 완성된 후, 해당 메시지의 맨 위(상단)에 시선이 닿도록 스크롤 위치 보정!
+            historyEl.scrollTo({
+                top: msgDiv.offsetTop - 15,
+                behavior: 'smooth'
+            });
         }
     }
     
