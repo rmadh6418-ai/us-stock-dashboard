@@ -15,6 +15,13 @@ import google.generativeai as genai
 import os
 import xml.etree.ElementTree as ET
 import re
+import concurrent.futures  # 멀티스레딩(속도 최적화)을 위한 라이브러리 추가
+
+# 뉴스 본문 스크래핑을 위한 라이브러리
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    pass
 
 # --- SSL 우회 및 클라우드스크래퍼 설정 ---
 try:
@@ -24,7 +31,6 @@ except AttributeError:
 else:
     ssl._create_default_https_context = _create_unverified_https_context
 
-# 브라우저 지문을 실제 Windows 기반 Chrome과 동일하게 위장
 scraper = cloudscraper.create_scraper(
     browser={
         'browser': 'chrome',
@@ -66,7 +72,6 @@ def fetch_yfinance_data(tickers):
 
 def get_fear_and_greed():
     url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -80,7 +85,6 @@ def get_fear_and_greed():
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "cross-site"
     }
-    
     try:
         res = scraper.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
@@ -154,16 +158,45 @@ def get_fed_liquidity():
     except:
         return None
 
+# 개별 뉴스 항목을 비동기(멀티스레드)로 처리하기 위한 분리된 함수
+def process_single_news(item):
+    try:
+        dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
+        date_str = dt.strftime('%Y-%m-%d %H:%M')
+    except:
+        date_str = ""
+    
+    content_preview = ""
+    try:
+        res = scraper.get(item.link, timeout=2)
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(res.content, 'html.parser')
+            paragraphs = soup.find_all('p')
+            raw_text = " ".join([p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20])
+            content_preview = raw_text[:800]
+        except:
+            clean_text = re.sub(r'<[^>]+>', ' ', res.text)
+            content_preview = re.sub(r'\s+', ' ', clean_text)[:800]
+    except:
+        if hasattr(item, 'summary'):
+            content_preview = re.sub('<[^<]+>', '', item.summary)
+            
+    content_preview = content_preview.replace('"', "'").replace('\n', ' ')
+    return {'title': item.title, 'link': item.link, 'date': date_str, 'content': content_preview}
+
 def get_google_news():
     url = "https://news.google.com/rss/search?q=미국+증시+OR+연준+OR+빅테크+OR+환율&hl=ko&gl=KR&ceid=KR:ko"
     try:
         feed = feedparser.parse(url)
-        news = []
-        for item in feed.entries[:7]:
-            dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
-            news.append({'title': item.title, 'link': item.link, 'date': dt.strftime('%Y-%m-%d %H:%M')})
+        items = feed.entries[:15]
+        
+        # 15개의 뉴스를 동시에 크롤링하여 시간 단축
+        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+            news = list(executor.map(process_single_news, items))
         return news
-    except:
+    except Exception as e:
+        print("News Fetch Error:", e)
         return []
 
 def get_economic_calendar():
@@ -262,21 +295,46 @@ CACHE = {}
 
 def get_dashboard_data():
     if 'data' in CACHE and time.time() - CACHE['time'] < 600: return CACHE['data']
-    data = {
-        'indices': fetch_yfinance_data({'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'}),
-        'macros': fetch_yfinance_data({'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'}),
-        'cnn': get_fear_and_greed(),
-        'commodities': fetch_yfinance_data({'WTI유': 'CL=F', '브렌트유': 'BZ=F'}),
-        'copper': get_copper_krw_price(), 'silver': get_silver_don_price(), 'gold': get_gold_don_price(), 'fed': get_fed_liquidity(),
-        'tech_soft': fetch_yfinance_data({'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'Meta': 'META', 'Oracle': 'ORCL', '크라우드스트라이크': 'CRWD', '클라우드플레어': 'NET', '세일스포스': 'CRM', '팔로알토 네트웍스': 'PANW', '앱러빈': 'APP', '넷플릭스': 'NFLX'}),
-        'semi_ai': fetch_yfinance_data({'NVIDIA': 'NVDA', 'AMD': 'AMD', 'TSMC': 'TSM', 'Micron': 'MU', '인텔': 'INTC', '퀄컴': 'QCOM', '브로드컴': 'AVGO', 'ASML': 'ASML', '램리서치': 'LRCX', 'Palantir': 'PLTR', '템퍼스 AI': 'TEM', '웨스턴디지털': 'WDC', '셀레스티카': 'CLS', '델테크놀로지': 'DELL'}),
-        'energy_infra': fetch_yfinance_data({'엑슨모빌': 'XOM', '셰브론': 'CVX', 'GE버노바': 'GEV', '뉴스케일파워': 'SMR', '오클로': 'OKLO', 'T1에너지': 'TE', '비스트라 에너지': 'VST', '블룸에너지': 'BE', 'BWX 테크놀로지스': 'BWXT', '버티브홀딩스': 'VRT', '콴타서비시스': 'PWR', '카메코': 'CCJ', '파월 인더스트리스': 'POWL', '마스텍': 'MTZ'}),
-        'health': fetch_yfinance_data({'Eli Lilly': 'LLY', '화이자': 'PFE', '존슨앤드존슨': 'JNJ', '유나이티드헬스': 'UNH', '모더나': 'MRNA', '암젠': 'AMGN'}),
-        'space_mobility': fetch_yfinance_data({'Tesla': 'TSLA', '스페이스X': 'SPCX', '로켓랩': 'RKLB', 'GE에어로스페이스': 'GE'}),
-        'finance': fetch_yfinance_data({'JP모건': 'JPM', '뱅크오브아메리카': 'BAC', '웰스파고': 'WFC', '모건스탠리': 'MS', '찰스슈왑': 'SCHW', '비자': 'V', '마스터카드': 'MA', '버크셔해서웨이': 'BRK-B', '블랙록': 'BLK', 'KKR & CO': 'KKR'}),
-        'consumer': fetch_yfinance_data({'월마트': 'WMT', '코스트코': 'COST', '코카콜라': 'KO', '펩시코': 'PEP', '맥도날드': 'MCD'}),
-        'news': get_google_news(), 'calendar': get_economic_calendar()
-    }
+    data = {}
+    
+    # 💥 핵심 최적화: 모든 데이터 수집을 동시에 실행 (속도 비약적 향상)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        f_indices = executor.submit(fetch_yfinance_data, {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'})
+        f_macros = executor.submit(fetch_yfinance_data, {'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'})
+        f_cnn = executor.submit(get_fear_and_greed)
+        f_comm = executor.submit(fetch_yfinance_data, {'WTI유': 'CL=F', '브렌트유': 'BZ=F'})
+        f_cop = executor.submit(get_copper_krw_price)
+        f_sil = executor.submit(get_silver_don_price)
+        f_gol = executor.submit(get_gold_don_price)
+        f_fed = executor.submit(get_fed_liquidity)
+        f_tech = executor.submit(fetch_yfinance_data, {'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Alphabet': 'GOOGL', 'Amazon': 'AMZN', 'Meta': 'META', 'Oracle': 'ORCL', '크라우드스트라이크': 'CRWD', '클라우드플레어': 'NET', '세일스포스': 'CRM', '팔로알토 네트웍스': 'PANW', '앱러빈': 'APP', '넷플릭스': 'NFLX'})
+        f_semi = executor.submit(fetch_yfinance_data, {'NVIDIA': 'NVDA', 'AMD': 'AMD', 'TSMC': 'TSM', 'Micron': 'MU', '인텔': 'INTC', '퀄컴': 'QCOM', '브로드컴': 'AVGO', 'ASML': 'ASML', '램리서치': 'LRCX', 'Palantir': 'PLTR', '템퍼스 AI': 'TEM', '웨스턴디지털': 'WDC', '셀레스티카': 'CLS', '델테크놀로지': 'DELL'})
+        f_ener = executor.submit(fetch_yfinance_data, {'엑슨모빌': 'XOM', '셰브론': 'CVX', 'GE버노바': 'GEV', '뉴스케일파워': 'SMR', '오클로': 'OKLO', 'T1에너지': 'TE', '비스트라 에너지': 'VST', '블룸에너지': 'BE', 'BWX 테크놀로지스': 'BWXT', '버티브홀딩스': 'VRT', '콴타서비시스': 'PWR', '카메코': 'CCJ', '파월 인더스트리스': 'POWL', '마스텍': 'MTZ'})
+        f_heal = executor.submit(fetch_yfinance_data, {'Eli Lilly': 'LLY', '화이자': 'PFE', '존슨앤드존슨': 'JNJ', '유나이티드헬스': 'UNH', '모더나': 'MRNA', '암젠': 'AMGN'})
+        f_spac = executor.submit(fetch_yfinance_data, {'Tesla': 'TSLA', '스페이스X': 'SPCX', '로켓랩': 'RKLB', 'GE에어로스페이스': 'GE'})
+        f_fina = executor.submit(fetch_yfinance_data, {'JP모건': 'JPM', '뱅크오브아메리카': 'BAC', '웰스파고': 'WFC', '모건스탠리': 'MS', '찰스슈왑': 'SCHW', '비자': 'V', '마스터카드': 'MA', '버크셔해서웨이': 'BRK-B', '블랙록': 'BLK', 'KKR & CO': 'KKR'})
+        f_cons = executor.submit(fetch_yfinance_data, {'월마트': 'WMT', '코스트코': 'COST', '코카콜라': 'KO', '펩시코': 'PEP', '맥도날드': 'MCD'})
+        f_news = executor.submit(get_google_news)
+        f_cale = executor.submit(get_economic_calendar)
+        
+        data['indices'] = f_indices.result()
+        data['macros'] = f_macros.result()
+        data['cnn'] = f_cnn.result()
+        data['commodities'] = f_comm.result()
+        data['copper'] = f_cop.result()
+        data['silver'] = f_sil.result()
+        data['gold'] = f_gol.result()
+        data['fed'] = f_fed.result()
+        data['tech_soft'] = f_tech.result()
+        data['semi_ai'] = f_semi.result()
+        data['energy_infra'] = f_ener.result()
+        data['health'] = f_heal.result()
+        data['space_mobility'] = f_spac.result()
+        data['finance'] = f_fina.result()
+        data['consumer'] = f_cons.result()
+        data['news'] = f_news.result()
+        data['calendar'] = f_cale.result()
+        
     data['ai_summary'] = get_ai_summary(data)
     CACHE['data'], CACHE['time'] = data, time.time()
     return data
@@ -306,14 +364,21 @@ HTML_TEMPLATE = """
         .up { color: #dc2626; } .down { color: #2563eb; } .flat { color: #6b7280; }
         
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .news-item { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; }
+        
+        .news-container { max-height: 450px; overflow-y: auto; padding-right: 10px; }
+        .news-container::-webkit-scrollbar { width: 8px; }
+        .news-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .news-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        
+        .news-item { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0; }
+        .news-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .news-link { color: #1d4ed8; text-decoration: none; }
         .news-link:hover { text-decoration: underline; }
         .news-date { font-size: 0.9rem; color: #6b7280; display: block; margin-top: 4px; }
+        
         .cal-item { font-size: 1.1rem; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
         .cal-item:last-child { border-bottom: none; }
         
-        /* 플로팅 챗봇 스타일 */
         .chatbot-fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background-color: #111827; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.2s; user-select: none; }
         .chatbot-fab:hover { transform: scale(1.05); }
         .chatbot-fab:active { transform: scale(0.95); }
@@ -362,7 +427,7 @@ HTML_TEMPLATE = """
     <div id="chat-history" class="chat-history">
         <div class="chat-msg ai">
             안녕하세요! 경제 시황과 리스크를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
-            오늘의 증시 방향성, 최신 뉴스 해설, 거시 경제 트렌드에 대해 질문해주세요.<br>
+            오늘의 증시 방향성, 스크랩된 15개 최신 기사 본문 요약, 거시 경제 트렌드에 대해 질문해주세요.<br>
             <span style="font-size: 0.9em; color: #6b7280;">(최초 1회 브라우저에 API 키 설정이 필요합니다.)</span>
         </div>
     </div>
@@ -440,7 +505,7 @@ HTML_TEMPLATE = """
 <div class="container">
     <div class="header-title">📊 실시간 미국 증시 대시보드</div>
 
-    <!-- 진짜 실시간 주가 티커 위젯 (페이지 머무는 동안 실시간 변동) -->
+    <!-- 실시간 주가 티커 위젯 -->
     <div class="tradingview-widget-container" style="margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
       <div class="tradingview-widget-container__widget"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/tv-widget-ticker-tape.js" async>
@@ -472,7 +537,7 @@ HTML_TEMPLATE = """
         <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">{{ data.ai_summary }}</p>
     </div>
 
-    <!-- 경제 지표 (가로 100% 폭으로 배치) -->
+    <!-- 경제 지표 -->
     <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
     <div class="list-box" style="margin-bottom: 30px;">
         {% for event in data.calendar %}
@@ -480,11 +545,11 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
-    <!-- 경제 뉴스 (지표 아래 가로 100% 폭으로 배치) -->
-    <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스</div>
-    <div class="list-box" style="margin-bottom: 40px;">
+    <!-- 경제 뉴스 (15개 스크롤 지원 + 챗봇용 본문 숨김 속성) -->
+    <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
+    <div class="list-box news-container" style="margin-bottom: 40px;">
         {% for item in data.news %}
-        <div class="news-item">
+        <div class="news-item" data-content="{{ item.content }}">
             <a href="{{ item.link }}" target="_blank" class="news-link">{{ item.title }}</a>
             <span class="news-date">({{ item.date }})</span>
         </div>
@@ -568,29 +633,32 @@ HTML_TEMPLATE = """
             const summaryText = document.getElementById('ai-summary-text').innerText;
             
             const newsNodes = document.querySelectorAll('.news-item');
-            const newsList = Array.from(newsNodes).map(node => node.innerText.replace(/\n/g, ' ')).join('\n- ');
+            const newsList = Array.from(newsNodes).map((node, index) => {
+                const title = node.querySelector('.news-link').innerText.replace(/\n/g, ' ');
+                const content = node.getAttribute('data-content') || "본문 요약 정보 없음";
+                return `[뉴스 ${index + 1}] 제목: ${title}\n핵심내용(기사 원문): ${content}`;
+            }).join('\n\n');
             
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
 
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
-아래 제공된 [오늘의 증시 요약], [최신 경제 뉴스], [이번 주 주요 경제 지표] 데이터를 바탕으로 사용자의 질문에 답하세요.
+아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
 
-[★할루시네이션(정보 왜곡) 절대 차단 및 작성 규칙★]
-1. 답변 시 스스로 정보를 지어내거나 추측성 주가 예측을 절대 하지 마세요.
-2. 오직 제공된 데이터와 역사적, 거시경제적 팩트에 기반해서만 답변하세요.
-3. 제공된 데이터로 확인할 수 없는 내용은 무리해서 답변하지 말고 "현재 제공된 데이터로는 확인이 어렵습니다"라고 단호하게 답변하세요.
-4. 마크다운 기호를 쓰지 말고, 여러 내용을 안내할 때는 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
+[★할루시네이션(정보 왜곡) 절대 차단 규칙★]
+1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터에 근거하세요.
+2. 사용자가 뉴스에 대해 물어보면 '제목'만 보고 유추하지 말고, 반드시 아래 제공된 각 뉴스의 '핵심내용(기사 원문)'을 정독한 후 구체적인 이유와 수치를 포함해 답변하세요.
+3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
 - 오늘의 증시 요약: \n${summaryText}\n
-- 최신 경제 뉴스: \n- ${newsList}\n
+- 최신 경제 뉴스 (기사 본문 요약 15개): \n${newsList}\n
 - 주요 경제 지표: \n- ${calList}\n
 
-위 규칙을 인지했다면 즉시 분석 답변을 시작할 준비가 되었다고만 짧게 응답하세요.`;
+위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
             
             chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 할루시네이션 방지 규칙을 숙지했습니다. 팩트 기반의 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 기사 본문 요약까지 모두 숙지했습니다. 팩트 기반의 심층 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
         }
 
         appendMessage('user', message);
@@ -598,7 +666,7 @@ HTML_TEMPLATE = """
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
         
         const loadingId = 'msg-' + Date.now();
-        appendMessage('ai', '팩트 기반 분석 중...', loadingId);
+        appendMessage('ai', '기사 원문을 읽으며 팩트 기반 분석 중...', loadingId);
 
         try {
             let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
