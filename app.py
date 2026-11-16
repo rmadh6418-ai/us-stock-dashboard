@@ -54,21 +54,38 @@ def fetch_yfinance_data(tickers):
         tv_ticker = tv_mapping.get(ticker, ticker)
         try:
             hist = yf.Ticker(ticker).history(period="1y")
-            if 'Close' in hist.columns and len(hist) >= 2:
+            # 추세 판단을 위한 5일, 20일 이동평균선 계산
+            if 'Close' in hist.columns and len(hist) >= 20:
+                hist['MA5'] = hist['Close'].rolling(window=5).mean()
+                hist['MA20'] = hist['Close'].rolling(window=20).mean()
+                
                 close_prices = hist['Close'].dropna()
                 high_prices = hist['High'].dropna()
+                
                 if len(close_prices) >= 2:
                     current = float(close_prices.iloc[-1])
                     prev = float(close_prices.iloc[-2])
+                    ma5 = float(hist['MA5'].iloc[-1])
+                    ma20 = float(hist['MA20'].iloc[-1])
+                    
                     diff = current - prev
                     pct = (diff / prev) * 100 if prev != 0 else 0
                     fifty_two_week_high = float(high_prices.max())
                     near_52w_high = current >= (fifty_two_week_high * 0.97)
-                    data[name] = {'value': current, 'diff': diff, 'pct': pct, 'near_52w_high': near_52w_high, 'ticker': tv_ticker}
+                    
+                    # 차트 추세 로직: 현재가가 5일선 위 & 5일선이 20일선 위면 상승 (반대는 하락, 그 외 횡보)
+                    if current >= ma5 and ma5 >= ma20:
+                        trend = "상승추세 📈"
+                    elif current < ma5 and ma5 < ma20:
+                        trend = "하락추세 📉"
+                    else:
+                        trend = "횡보/혼조 ↔️"
+                        
+                    data[name] = {'value': current, 'diff': diff, 'pct': pct, 'near_52w_high': near_52w_high, 'ticker': tv_ticker, 'trend': trend}
                     continue
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음"}
         except:
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음"}
     return data
 
 def get_fear_and_greed():
@@ -169,11 +186,9 @@ def process_single_news(item):
     
     content_preview = ""
     
-    # 1. 안전 장치: RSS 요약이 있으면 일단 담아둠
     if hasattr(item, 'summary'):
         content_preview = re.sub('<[^<]+>', '', item.summary)
         
-    # 2. 아주 짧은 1.5초 타임아웃으로 일반 requests 접속 시도 (cloudscraper 사용 안함)
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
         res = requests.get(item.link, headers=headers, timeout=1.5, allow_redirects=True)
@@ -185,7 +200,7 @@ def process_single_news(item):
             if raw_text:
                 content_preview = raw_text[:800]
     except:
-        pass # 에러나거나 1.5초 넘어가면 미련없이 기본 RSS 요약 사용 (무한로딩 방지)
+        pass
             
     content_preview = content_preview.replace('"', "'").replace('\n', ' ')
     return {'title': item.title, 'link': item.link, 'date': date_str, 'content': content_preview}
@@ -251,23 +266,22 @@ def get_ai_summary(data):
         fed_tga = f"{int(data['fed']['TGA']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         cnn_score = f"{int(data['cnn']['value'])} ({data['cnn'].get('rating', '')})" if data.get('cnn') else "조회 불가"
         
+        # 지표별 차트 추세 문자열 생성 (AI 프롬프트 주입용)
+        indices_trend_info = "\n".join([f"  - {k}: {v.get('value')} (차트 추세: {v.get('trend', '알 수 없음')})" for k, v in data['indices'].items() if isinstance(v, dict) and v.get('value') != "N/A"])
+        
         prompt = f"""
         [분석 기준 날짜: {today_str}]
-        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 및 전세계 매크로 데이터, 미국정치, 경제지표, 국제유가를 심층 분석하여, 한국 증시 개장을 준비하는 투자자를 위한 핵심 시장 전망을 도출해주세요.
+        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 데이터(지수값 및 차트 추세 포함), 전세계 매크로 데이터, 경제지표, 국제유가를 심층 분석하여, 한국 증시 개장을 준비하는 투자자를 위한 핵심 시장 전망을 도출해주세요.
 
         [★엄격한 작성 규칙 - 할루시네이션(정보 왜곡) 절대 금지★]
-        1. 오직 제공된 [오늘의 데이터] 및 경제지표, 뉴스 그리고 당신(AI)이 가지고 있는 최신 정보들을 기반으로 사실 관계를 확인하여 작성할 것.
-        2. 근거 없는 수치, 지어낸 미래 주가 예측, 제공되지 않은 뉴스 내용은 절대 포함하지 말 것.
+        1. 오직 제공된 [오늘의 데이터]만을 기반으로 사실 관계를 확인하여 작성할 것.
+        2. 지수의 '차트 추세(상승추세, 하락추세, 횡보)' 데이터를 반드시 참고하여 현재 시장이 기술적으로 어떤 위치에 있는지 진단에 포함시킬 것.
         3. 마크다운 특수기호(*, #, -, _ 등) 단 하나도 사용하지 말고 오직 줄바꿈과 번호 매기기(1., 2. 등)만 활용할 것.
-        4. 데이터를 기반으로 한국 증시에 어떤 영향이 있을지 근거를 제시하고 앞으로의 주가 향방을 작성할 것. 
         
         [오늘의 데이터]
-        S&P 500: {data['indices'].get('S&P 500', {}).get('value')}
-        나스닥 100: {data['indices'].get('나스닥 100', {}).get('value')}
-        필라델피아 반도체: {data['indices'].get('필라델피아 반도체', {}).get('value')}
-        니케이 225: {data['indices'].get('니케이 225', {}).get('value')}
-        대만 가권: {data['indices'].get('대만 가권', {}).get('value')}
-        코스피 야간선물(EWY): {data['indices'].get('코스피 야간선물', {}).get('value')}
+        <주요 지수 및 차트 추세>
+        {indices_trend_info}
+        <매크로 지표>
         미국채 10년물 금리: {data['macros'].get('미국채 10년물', {}).get('value')}%
         원달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
         VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
@@ -297,7 +311,6 @@ def get_dashboard_data():
     data = {}
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        # 코스피 야간선물(EWY) 추가됨
         f_indices = executor.submit(fetch_yfinance_data, {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII', '코스피 야간선물': 'EWY'})
         f_macros = executor.submit(fetch_yfinance_data, {'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'})
         f_cnn = executor.submit(get_fear_and_greed)
@@ -351,7 +364,6 @@ HTML_TEMPLATE = """
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; padding-bottom: env(safe-area-inset-bottom); }
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         
-        /* 헤더(제목+버튼) 정렬 래퍼 */
         .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px 0; position: relative; }
         .header-title { font-size: 2.2rem; font-weight: 900; margin: 0; text-align: center; flex: 1; }
         .refresh-btn { padding: 10px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background 0.2s; position: absolute; right: 0; display: flex; align-items: center; gap: 6px; }
@@ -361,12 +373,13 @@ HTML_TEMPLATE = """
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
         
         .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
-        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; height: 100%; box-sizing: border-box; border: 2px solid transparent; transition: transform 0.2s ease; }
+        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; height: 100%; box-sizing: border-box; border: 2px solid transparent; transition: transform 0.2s ease; display: flex; flex-direction: column; justify-content: center;}
         .card-link:hover .card { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
         .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
         .card-value { font-size: 2.1rem; font-weight: 900; margin-bottom: 5px; }
         .card-delta { font-size: 1.1rem; font-weight: 700; display: flex; justify-content: center; gap: 5px; }
         .up { color: #dc2626; } .down { color: #2563eb; } .flat { color: #6b7280; }
+        .trend-badge { font-size: 0.95rem; font-weight: 600; padding: 4px 8px; background: #f1f5f9; border-radius: 6px; display: inline-block; margin-top: 10px; color: #475569; }
         
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         
@@ -423,18 +436,17 @@ HTML_TEMPLATE = """
     </div>
 </div>
 
-<!-- 우측 하단 플로팅 챗봇 아이콘 및 윈도우 -->
 <div class="chatbot-fab" onclick="toggleChatbot()">💬</div>
 
 <div class="chatbot-window" id="chatbot-window">
     <div class="chatbot-header">
-        <span>🤖 AI 증시 심층 분석</span>
+        <span>🤖 AI 차트 추세 & 증시 분석</span>
         <span class="chatbot-close" onclick="toggleChatbot()">✖</span>
     </div>
     <div id="chat-history" class="chat-history">
         <div class="chat-msg ai">
-            안녕하세요! 경제 시황과 리스크를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
-            오늘의 증시 방향성, 스크랩된 15개 최신 기사 본문 요약, 거시 경제 트렌드에 대해 질문해주세요.<br>
+            안녕하세요! 경제 시황과 차트 추세(기술적 흐름)를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
+            오늘의 증시 방향성, 각 지수의 상승/하락 차트 추세 판단, 스크랩된 15개 최신 기사 본문 요약에 대해 자유롭게 질문해주세요.<br>
             <span style="font-size: 0.9em; color: #6b7280;">(최초 1회 브라우저에 API 키 설정이 필요합니다.)</span>
         </div>
     </div>
@@ -504,6 +516,11 @@ HTML_TEMPLATE = """
             {% if data_obj.diff > 0 %} <div class="card-delta up">▲ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
             {% elif data_obj.diff < 0 %} <div class="card-delta down">▼ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
             {% else %} <div class="card-delta flat">- {{ diff_fmt }} (0.00%)</div> {% endif %}
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            {% if data_obj.get('trend') and data_obj.get('trend') != "알 수 없음" %}
+            <div><span class="trend-badge">{{ data_obj.trend }}</span></div>
+            {% endif %}
         {% else %}
             <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
         {% endif %}
@@ -512,7 +529,6 @@ HTML_TEMPLATE = """
 {% endmacro %}
 
 <div class="container">
-    <!-- 헤더 영역 (제목 + 새로고침 버튼 래퍼) -->
     <div class="header-wrapper">
         <div class="header-title">📊 실시간 미국 증시 대시보드</div>
         <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
@@ -550,7 +566,6 @@ HTML_TEMPLATE = """
         <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">{{ data.ai_summary }}</p>
     </div>
 
-    <!-- 경제 지표 -->
     <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
     <div class="list-box" style="margin-bottom: 30px;">
         {% for event in data.calendar %}
@@ -558,7 +573,6 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
-    <!-- 경제 뉴스 -->
     <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
     <div class="list-box news-container" style="margin-bottom: 40px;">
         {% for item in data.news %}
@@ -569,8 +583,7 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
-    <!-- 추가된 코스피 야간선물(EWY) 반영 영역 -->
-    <div class="section-title">📈 1. 주요 지수</div>
+    <div class="section-title">📈 1. 주요 지수 (차트 추세 포함)</div>
     <div class="grid">
         {{ render_metric('S&P 500', data.indices['S&P 500']) }}
         {{ render_metric('다우존스', data.indices['다우존스']) }}
@@ -656,24 +669,36 @@ HTML_TEMPLATE = """
             
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
+            
+            // UI에 그려진 지수들의 차트 추세를 크롤링하여 봇에게 함께 전달
+            let trendInfos = "";
+            document.querySelectorAll('.card').forEach(card => {
+                const label = card.querySelector('.card-label')?.innerText.replace('🔥', '').trim();
+                const trend = card.querySelector('.trend-badge')?.innerText;
+                if(label && trend) {
+                    trendInfos += `- ${label}: ${trend}\\n`;
+                }
+            });
 
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
 1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터에 근거하세요.
-​2. 사용자가 뉴스에 대해 물어보면 '제목'만 보고 유추하지 말고, 반드시 아래 제공된 각 뉴스의 '핵심내용(기사 원문)'을 정독한 후 구체적인 이유와 수치를 포함해 답변하세요.
-3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
+2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
+3. 뉴스를 물어보면 제목만 보지 말고 '핵심내용(기사 원문)'을 정독한 후 구체적인 수치와 이유를 들어 답변하세요.
+4. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
 - 오늘의 증시 요약: \\n${summaryText}\\n
+- 각 지수별 실시간 차트 추세 (5일선/20일선 기준): \\n${trendInfos}\\n
 - 최신 경제 뉴스 (기사 본문 요약 15개): \\n${newsList}\\n
 - 주요 경제 지표: \\n- ${calList}\\n
 
 위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
             
             chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 기사 본문 요약까지 모두 숙지했습니다. 팩트 기반의 심층 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 기사 본문 요약, 그리고 실시간 차트 추세(기술적 흐름) 정보까지 모두 숙지했습니다. 팩트 기반의 심층 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
         }
 
         appendMessage('user', message);
@@ -681,7 +706,7 @@ HTML_TEMPLATE = """
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
         
         const loadingId = 'msg-' + Date.now();
-        appendMessage('ai', '기사 원문을 읽으며 팩트 기반 분석 중...', loadingId);
+        appendMessage('ai', '실시간 차트 추세와 기사 원문을 바탕으로 분석 중...', loadingId);
 
         try {
             let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -721,7 +746,6 @@ HTML_TEMPLATE = """
         msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
         
-        // 처음 메시지를 붙일 때는 일단 최하단으로 스크롤 (사용자 입력 직후)
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
@@ -731,7 +755,6 @@ HTML_TEMPLATE = """
         
         if (msgDiv) {
             msgDiv.innerHTML = text.replace(/\\n/g, '<br>');
-            // 답변 내용이 완성된 후, 해당 메시지의 맨 위(상단)에 시선이 닿도록 스크롤 위치 보정!
             historyEl.scrollTo({
                 top: msgDiv.offsetTop - 15,
                 behavior: 'smooth'
