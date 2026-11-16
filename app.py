@@ -52,9 +52,11 @@ def fetch_yfinance_data(tickers):
     }
     for name, ticker in tickers.items():
         tv_ticker = tv_mapping.get(ticker, ticker)
+        safe_id = re.sub(r'[^a-zA-Z0-9]', '', tv_ticker) # SVG 그라데이션 ID용 안전한 문자열 생성
+        
         try:
             hist = yf.Ticker(ticker).history(period="1y")
-            # 추세 판단을 위한 5일, 20일 이동평균선 계산
+            
             if 'Close' in hist.columns and len(hist) >= 20:
                 hist['MA5'] = hist['Close'].rolling(window=5).mean()
                 hist['MA20'] = hist['Close'].rolling(window=20).mean()
@@ -73,7 +75,6 @@ def fetch_yfinance_data(tickers):
                     fifty_two_week_high = float(high_prices.max())
                     near_52w_high = current >= (fifty_two_week_high * 0.97)
                     
-                    # 차트 추세 로직: 현재가가 5일선 위 & 5일선이 20일선 위면 상승 (반대는 하락, 그 외 횡보)
                     if current >= ma5 and ma5 >= ma20:
                         trend = "상승추세 📈"
                     elif current < ma5 and ma5 < ma20:
@@ -81,28 +82,28 @@ def fetch_yfinance_data(tickers):
                     else:
                         trend = "횡보/혼조 ↔️"
                         
-                    # 미니 차트(스파크라인) 생성 (최근 20일 데이터 벡터 좌표 변환)
-                    recent_20 = close_prices.tail(20)
-                    min_val = recent_20.min()
-                    max_val = recent_20.max()
+                    # 3개월(약 60거래일) 미니 차트 좌표 변환
+                    recent_60 = close_prices.tail(60)
+                    min_val = recent_60.min()
+                    max_val = recent_60.max()
                     val_range = max_val - min_val if max_val != min_val else 1
                     pts = []
-                    n = len(recent_20)
-                    for i, val in enumerate(recent_20):
+                    n = len(recent_60)
+                    for i, val in enumerate(recent_60):
                         x = (i / (n - 1)) * 100
-                        y = 95 - ((val - min_val) / val_range) * 90 # 상하 5% 여백 확보
+                        y = 95 - ((val - min_val) / val_range) * 90 
                         pts.append(f"{x},{y:.2f}")
                     sparkline_points = " ".join(pts)
                         
                     data[name] = {
                         'value': current, 'diff': diff, 'pct': pct, 
                         'near_52w_high': near_52w_high, 'ticker': tv_ticker, 
-                        'trend': trend, 'sparkline': sparkline_points
+                        'trend': trend, 'sparkline': sparkline_points, 'safe_id': safe_id
                     }
                     continue
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음"}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음", 'safe_id': safe_id}
         except:
-            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음"}
+            data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음", 'safe_id': safe_id}
     return data
 
 def get_fear_and_greed():
@@ -537,11 +538,25 @@ HTML_TEMPLATE = """
             <div><span class="trend-badge">{{ data_obj.trend }}</span></div>
             {% endif %}
             
-            <!-- 추가된 실시간 20일 스파크라인 SVG 렌더링 부분 -->
+            <!-- 3개월 그라데이션 스파크라인 SVG 렌더링 부분 -->
             {% if data_obj.get('sparkline') %}
             <div style="margin-top: 15px; width: 100%; height: 40px; position: relative;">
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
-                    <polyline fill="none" stroke="{% if data_obj.diff > 0 %}#dc2626{% elif data_obj.diff < 0 %}#2563eb{% else %}#6b7280{% endif %}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{{ data_obj.sparkline }}"></polyline>
+                    <defs>
+                        <linearGradient id="grad_{{ data_obj.safe_id }}" x1="0%" y1="0%" x2="100%" y2="0%">
+                            {% if data_obj.diff > 0 %}
+                                <stop offset="0%" stop-color="#fca5a5" />
+                                <stop offset="100%" stop-color="#dc2626" />
+                            {% elif data_obj.diff < 0 %}
+                                <stop offset="0%" stop-color="#93c5fd" />
+                                <stop offset="100%" stop-color="#2563eb" />
+                            {% else %}
+                                <stop offset="0%" stop-color="#d1d5db" />
+                                <stop offset="100%" stop-color="#6b7280" />
+                            {% endif %}
+                        </linearGradient>
+                    </defs>
+                    <polyline fill="none" stroke="url(#grad_{{ data_obj.safe_id }})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{{ data_obj.sparkline }}"></polyline>
                 </svg>
             </div>
             {% endif %}
