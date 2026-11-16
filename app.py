@@ -266,6 +266,7 @@ def get_ai_summary(data):
         필라델피아 반도체: {data['indices'].get('필라델피아 반도체', {}).get('value')}
         니케이 225: {data['indices'].get('니케이 225', {}).get('value')}
         대만 가권: {data['indices'].get('대만 가권', {}).get('value')}
+        코스피 야간선물(EWY): {data['indices'].get('코스피 야간선물', {}).get('value')}
         미국채 10년물 금리: {data['macros'].get('미국채 10년물', {}).get('value')}%
         원달러 환율: {data['macros'].get('원/달러 환율', {}).get('value')}원
         VIX 지수: {data['macros'].get('빅스(VIX)', {}).get('value')}
@@ -295,7 +296,8 @@ def get_dashboard_data():
     data = {}
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        f_indices = executor.submit(fetch_yfinance_data, {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII'})
+        # 코스피 야간선물(EWY) 추가됨
+        f_indices = executor.submit(fetch_yfinance_data, {'S&P 500': '^GSPC', '다우존스': '^DJI', '나스닥 100': '^NDX', '필라델피아 반도체': '^SOX', '나스닥 생명공학': '^NBI', '니케이 225': '^N225', '대만 가권': '^TWII', '코스피 야간선물': 'EWY'})
         f_macros = executor.submit(fetch_yfinance_data, {'달러 인덱스': 'DX-Y.NYB', '원/달러 환율': 'KRW=X', '엔/달러 환율': 'JPY=X', '미국채 10년물': '^TNX', '미국채 30년물': '^TYX', '빅스(VIX)': '^VIX'})
         f_cnn = executor.submit(get_fear_and_greed)
         f_comm = executor.submit(fetch_yfinance_data, {'WTI유': 'CL=F', '브렌트유': 'BZ=F'})
@@ -566,6 +568,7 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
+    <!-- 추가된 코스피 야간선물(EWY) 반영 영역 -->
     <div class="section-title">📈 1. 주요 지수</div>
     <div class="grid">
         {{ render_metric('S&P 500', data.indices['S&P 500']) }}
@@ -574,6 +577,7 @@ HTML_TEMPLATE = """
         {{ render_metric('반도체', data.indices['필라델피아 반도체']) }}
         {{ render_metric('니케이 225', data.indices['니케이 225']) }}
         {{ render_metric('대만 가권', data.indices['대만 가권']) }}
+        {{ render_metric('코스피 야간(EWY)', data.indices['코스피 야간선물']) }}
     </div>
     
     <div class="section-title">🌐 2. 매크로 및 시장 심리</div>
@@ -657,7 +661,7 @@ HTML_TEMPLATE = """
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
 1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터에 근거하세요.
-2. 사용자가 뉴스에 대해 물어보면 '제목'만 보고 유추하지 말고, 반드시 아래 제공된 각 뉴스의 '핵심내용(기사 원문)'을 정독한 후 구체적인 이유와 수치를 포함해 답변하세요.
+​2. 사용자가 뉴스에 대해 물어보면 '제목'만 보고 유추하지 말고, 반드시 아래 제공된 각 뉴스의 '핵심내용(기사 원문)'을 정독한 후 구체적인 이유와 수치를 포함해 답변하세요.
 3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
