@@ -81,7 +81,24 @@ def fetch_yfinance_data(tickers):
                     else:
                         trend = "횡보/혼조 ↔️"
                         
-                    data[name] = {'value': current, 'diff': diff, 'pct': pct, 'near_52w_high': near_52w_high, 'ticker': tv_ticker, 'trend': trend}
+                    # 미니 차트(스파크라인) 생성 (최근 20일 데이터 벡터 좌표 변환)
+                    recent_20 = close_prices.tail(20)
+                    min_val = recent_20.min()
+                    max_val = recent_20.max()
+                    val_range = max_val - min_val if max_val != min_val else 1
+                    pts = []
+                    n = len(recent_20)
+                    for i, val in enumerate(recent_20):
+                        x = (i / (n - 1)) * 100
+                        y = 95 - ((val - min_val) / val_range) * 90 # 상하 5% 여백 확보
+                        pts.append(f"{x},{y:.2f}")
+                    sparkline_points = " ".join(pts)
+                        
+                    data[name] = {
+                        'value': current, 'diff': diff, 'pct': pct, 
+                        'near_52w_high': near_52w_high, 'ticker': tv_ticker, 
+                        'trend': trend, 'sparkline': sparkline_points
+                    }
                     continue
             data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음"}
         except:
@@ -176,7 +193,6 @@ def get_fed_liquidity():
     except:
         return None
 
-# 뉴스 스크래핑 초고속 최적화 (무한 대기 원천 차단)
 def process_single_news(item):
     try:
         dt = datetime.strptime(item.published, '%a, %d %b %Y %H:%M:%S %Z')
@@ -266,7 +282,6 @@ def get_ai_summary(data):
         fed_tga = f"{int(data['fed']['TGA']['value']):,} 백만 달러" if data.get('fed') else "조회 불가"
         cnn_score = f"{int(data['cnn']['value'])} ({data['cnn'].get('rating', '')})" if data.get('cnn') else "조회 불가"
         
-        # 지표별 차트 추세 문자열 생성 (AI 프롬프트 주입용)
         indices_trend_info = "\n".join([f"  - {k}: {v.get('value')} (차트 추세: {v.get('trend', '알 수 없음')})" for k, v in data['indices'].items() if isinstance(v, dict) and v.get('value') != "N/A"])
         
         prompt = f"""
@@ -274,7 +289,7 @@ def get_ai_summary(data):
         당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 데이터(지수값 및 차트 추세 포함), 전세계 매크로 데이터, 경제지표, 국제유가를 심층 분석하여, 한국 증시 개장을 준비하는 투자자를 위한 핵심 시장 전망을 도출해주세요.
 
         [★엄격한 작성 규칙 - 할루시네이션(정보 왜곡) 절대 금지★]
-        1. 오직 제공된 [오늘의 데이터] 및 경제지표, 뉴스 그리고 당신(AI)이 가지고 있는 최신 정보들을 기반으로 사실 관계를 확인하여 작성할 것.
+        1. 오직 제공된 [오늘의 데이터] 및 경제지표, 뉴스 그리고 당신(AI)이 가지고 있는 최신 정보 기반으로 사실 관계를 확인하여 작성할 것.
         2. 지수의 '차트 추세(상승추세, 하락추세, 횡보)' 데이터를 반드시 참고하여 현재 시장이 기술적으로 어떤 위치에 있는지 진단에 포함시킬 것.
         3. 마크다운 특수기호(*, #, -, _ 등) 단 하나도 사용하지 말고 오직 줄바꿈과 번호 매기기(1., 2. 등)만 활용할 것.
         4. 데이터를 기반으로 한국 증시에 어떤 영향이 있을지 근거를 제시하고 앞으로의 주가 향방을 작성할 것.
@@ -518,10 +533,19 @@ HTML_TEMPLATE = """
             {% elif data_obj.diff < 0 %} <div class="card-delta down">▼ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
             {% else %} <div class="card-delta flat">- {{ diff_fmt }} (0.00%)</div> {% endif %}
             
-            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
             {% if data_obj.get('trend') and data_obj.get('trend') != "알 수 없음" %}
             <div><span class="trend-badge">{{ data_obj.trend }}</span></div>
             {% endif %}
+            
+            <!-- 추가된 실시간 20일 스파크라인 SVG 렌더링 부분 -->
+            {% if data_obj.get('sparkline') %}
+            <div style="margin-top: 15px; width: 100%; height: 40px; position: relative;">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
+                    <polyline fill="none" stroke="{% if data_obj.diff > 0 %}#dc2626{% elif data_obj.diff < 0 %}#2563eb{% else %}#6b7280{% endif %}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{{ data_obj.sparkline }}"></polyline>
+                </svg>
+            </div>
+            {% endif %}
+            
         {% else %}
             <div class="card-value" style="font-size: 1.5rem; color:#9ca3af;">조회 불가</div>
         {% endif %}
@@ -584,7 +608,7 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
-    <div class="section-title">📈 1. 주요 지수 (차트 추세 포함)</div>
+    <div class="section-title">📈 1. 주요 지수</div>
     <div class="grid">
         {{ render_metric('S&P 500', data.indices['S&P 500']) }}
         {{ render_metric('다우존스', data.indices['다우존스']) }}
@@ -671,7 +695,6 @@ HTML_TEMPLATE = """
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
             
-            // UI에 그려진 지수들의 차트 추세를 크롤링하여 봇에게 함께 전달
             let trendInfos = "";
             document.querySelectorAll('.card').forEach(card => {
                 const label = card.querySelector('.card-label')?.innerText.replace('🔥', '').trim();
@@ -685,7 +708,7 @@ HTML_TEMPLATE = """
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
-1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터에 근거하세요.
+1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터와 당신(AI)이 가지고 있는 최신정보들을 기반으로 사실 관계를 확인하고 근거하세요.
 2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
 3. 뉴스를 물어보면 제목만 보지 말고 '핵심내용(기사 원문)'을 정독한 후 구체적인 수치와 이유를 들어 답변하세요.
 4. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
