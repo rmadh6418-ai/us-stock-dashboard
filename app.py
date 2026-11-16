@@ -82,23 +82,35 @@ def fetch_yfinance_data(tickers):
                     else:
                         trend = "횡보/혼조 ↔️"
                         
-                    # 3개월(약 60거래일) 미니 차트 좌표 변환
-                    recent_60 = close_prices.tail(60)
-                    min_val = recent_60.min()
-                    max_val = recent_60.max()
+                    # 1년(전체 거래일) 미니 차트 좌표 변환
+                    period_data = close_prices
+                    min_val = period_data.min()
+                    max_val = period_data.max()
                     val_range = max_val - min_val if max_val != min_val else 1
                     pts = []
-                    n = len(recent_60)
-                    for i, val in enumerate(recent_60):
+                    n = len(period_data)
+                    for i, val in enumerate(period_data):
                         x = (i / (n - 1)) * 100
                         y = 95 - ((val - min_val) / val_range) * 90 
                         pts.append(f"{x},{y:.2f}")
                     sparkline_points = " ".join(pts)
+                    
+                    # 최고점/최저점 위치(Index) 찾기
+                    min_idx = period_data.argmin()
+                    max_idx = period_data.argmax()
+                    
+                    # 마커 좌표 계산 (퍼센트 단위)
+                    min_x = (min_idx / (n - 1)) * 100
+                    min_y = 95 - ((period_data.iloc[min_idx] - min_val) / val_range) * 90
+                    
+                    max_x = (max_idx / (n - 1)) * 100
+                    max_y = 95 - ((period_data.iloc[max_idx] - min_val) / val_range) * 90
                         
                     data[name] = {
                         'value': current, 'diff': diff, 'pct': pct, 
                         'near_52w_high': near_52w_high, 'ticker': tv_ticker, 
-                        'trend': trend, 'sparkline': sparkline_points, 'safe_id': safe_id
+                        'trend': trend, 'sparkline': sparkline_points, 'safe_id': safe_id,
+                        'min_x': min_x, 'min_y': min_y, 'max_x': max_x, 'max_y': max_y
                     }
                     continue
             data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음", 'safe_id': safe_id}
@@ -538,9 +550,9 @@ HTML_TEMPLATE = """
             <div><span class="trend-badge">{{ data_obj.trend }}</span></div>
             {% endif %}
             
-            <!-- 3개월 그라데이션 스파크라인 SVG 렌더링 부분 -->
+            <!-- 1년 그라데이션 스파크라인 SVG 및 최고/최저 마커 렌더링 부분 -->
             {% if data_obj.get('sparkline') %}
-            <div style="margin-top: 15px; width: 100%; height: 40px; position: relative;">
+            <div style="margin-top: 20px; margin-bottom: 10px; width: 100%; height: 45px; position: relative;">
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
                     <defs>
                         <linearGradient id="grad_{{ data_obj.safe_id }}" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -558,6 +570,18 @@ HTML_TEMPLATE = """
                     </defs>
                     <polyline fill="none" stroke="url(#grad_{{ data_obj.safe_id }})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{{ data_obj.sparkline }}"></polyline>
                 </svg>
+                
+                <!-- 최저점 마커 (HTML 오버레이를 사용하여 비율이 늘어나지 않고 선명함) -->
+                <div style="position: absolute; left: {{ data_obj.min_x }}%; top: {{ data_obj.min_y }}%; transform: translate(-50%, -50%); pointer-events: none;">
+                    <div style="width: 6px; height: 6px; background: #2563eb; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff;"></div>
+                    <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #2563eb; font-weight: 800; white-space: nowrap;">최저</div>
+                </div>
+
+                <!-- 최고점 마커 (HTML 오버레이) -->
+                <div style="position: absolute; left: {{ data_obj.max_x }}%; top: {{ data_obj.max_y }}%; transform: translate(-50%, -50%); pointer-events: none;">
+                    <div style="width: 6px; height: 6px; background: #dc2626; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff;"></div>
+                    <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #dc2626; font-weight: 800; white-space: nowrap;">최고</div>
+                </div>
             </div>
             {% endif %}
             
@@ -724,7 +748,7 @@ HTML_TEMPLATE = """
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
 1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터와 당신(AI)이 가지고 있는 최신정보들을 기반으로 사실 관계를 확인하고 근거하세요.
-2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
+​2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
 3. 뉴스를 물어보면 제목만 보지 말고 '핵심내용(기사 원문)'을 정독한 후 구체적인 수치와 이유를 들어 답변하세요.
 4. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
