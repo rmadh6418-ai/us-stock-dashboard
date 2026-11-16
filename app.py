@@ -110,7 +110,8 @@ def fetch_yfinance_data(tickers):
                         'value': current, 'diff': diff, 'pct': pct, 
                         'near_52w_high': near_52w_high, 'ticker': tv_ticker, 
                         'trend': trend, 'sparkline': sparkline_points, 'safe_id': safe_id,
-                        'min_x': min_x, 'min_y': min_y, 'max_x': max_x, 'max_y': max_y
+                        'min_x': min_x, 'min_y': min_y, 'max_x': max_x, 'max_y': max_y,
+                        'min_val': float(min_val), 'max_val': float(max_val)
                     }
                     continue
             data[name] = {'value': "N/A", 'diff': 0, 'pct': 0, 'near_52w_high': False, 'ticker': tv_ticker, 'trend': "알 수 없음", 'safe_id': safe_id}
@@ -550,9 +551,9 @@ HTML_TEMPLATE = """
             <div><span class="trend-badge">{{ data_obj.trend }}</span></div>
             {% endif %}
             
-            <!-- 1년 그라데이션 스파크라인 SVG 및 최고/최저 마커 렌더링 부분 -->
+            <!-- 1년 그라데이션 스파크라인 SVG 및 최고/최저 마커 렌더링 부분 (수치 포함) -->
             {% if data_obj.get('sparkline') %}
-            <div style="margin-top: 20px; margin-bottom: 10px; width: 100%; height: 45px; position: relative;">
+            <div style="margin-top: 25px; margin-bottom: 10px; width: 100%; height: 45px; position: relative;">
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
                     <defs>
                         <linearGradient id="grad_{{ data_obj.safe_id }}" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -571,16 +572,20 @@ HTML_TEMPLATE = """
                     <polyline fill="none" stroke="url(#grad_{{ data_obj.safe_id }})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{{ data_obj.sparkline }}"></polyline>
                 </svg>
                 
-                <!-- 최저점 마커 (HTML 오버레이를 사용하여 비율이 늘어나지 않고 선명함) -->
-                <div style="position: absolute; left: {{ data_obj.min_x }}%; top: {{ data_obj.min_y }}%; transform: translate(-50%, -50%); pointer-events: none;">
-                    <div style="width: 6px; height: 6px; background: #2563eb; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff;"></div>
-                    <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #2563eb; font-weight: 800; white-space: nowrap;">최저</div>
+                <!-- 최저점 마커 (수치 포함, 가독성 향상 배경 적용) -->
+                <div style="position: absolute; left: {{ data_obj.min_x }}%; top: {{ data_obj.min_y }}%; transform: translate(-50%, -50%); pointer-events: none; z-index: 5;">
+                    <div style="width: 6px; height: 6px; background: #2563eb; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff; margin: 0 auto;"></div>
+                    <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #2563eb; font-weight: 800; white-space: nowrap; background: rgba(255, 255, 255, 0.85); padding: 2px 5px; border-radius: 4px; line-height: 1;">
+                        최저 {% if is_int %}{{ "{:,}".format(data_obj.min_val|int) }}{% else %}{{ "{:,.2f}".format(data_obj.min_val) }}{% endif %}
+                    </div>
                 </div>
 
-                <!-- 최고점 마커 (HTML 오버레이) -->
-                <div style="position: absolute; left: {{ data_obj.max_x }}%; top: {{ data_obj.max_y }}%; transform: translate(-50%, -50%); pointer-events: none;">
-                    <div style="width: 6px; height: 6px; background: #dc2626; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff;"></div>
-                    <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #dc2626; font-weight: 800; white-space: nowrap;">최고</div>
+                <!-- 최고점 마커 (수치 포함, 가독성 향상 배경 적용) -->
+                <div style="position: absolute; left: {{ data_obj.max_x }}%; top: {{ data_obj.max_y }}%; transform: translate(-50%, -50%); pointer-events: none; z-index: 5;">
+                    <div style="width: 6px; height: 6px; background: #dc2626; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff; margin: 0 auto;"></div>
+                    <div style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #dc2626; font-weight: 800; white-space: nowrap; background: rgba(255, 255, 255, 0.85); padding: 2px 5px; border-radius: 4px; line-height: 1;">
+                        최고 {% if is_int %}{{ "{:,}".format(data_obj.max_val|int) }}{% else %}{{ "{:,.2f}".format(data_obj.max_val) }}{% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
