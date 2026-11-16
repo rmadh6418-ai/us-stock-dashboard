@@ -11,7 +11,6 @@
         body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 10px; padding-bottom: env(safe-area-inset-bottom); }
         .container { max-width: 1600px; margin: 0 auto; padding: 10px; }
         
-        /* 헤더(제목+버튼) 정렬 래퍼 */
         .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px 0; position: relative; }
         .header-title { font-size: 2.2rem; font-weight: 900; margin: 0; text-align: center; flex: 1; }
         .refresh-btn { padding: 10px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background 0.2s; position: absolute; right: 0; display: flex; align-items: center; gap: 6px; }
@@ -21,12 +20,13 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: stretch; }
         
         .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
-        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; height: 100%; box-sizing: border-box; border: 2px solid transparent; transition: transform 0.2s ease; }
+        .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; height: 100%; box-sizing: border-box; border: 2px solid transparent; transition: transform 0.2s ease; display: flex; flex-direction: column; justify-content: center;}
         .card-link:hover .card { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
         .card-label { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-bottom: 8px; }
         .card-value { font-size: 2.1rem; font-weight: 900; margin-bottom: 5px; }
         .card-delta { font-size: 1.1rem; font-weight: 700; display: flex; justify-content: center; gap: 5px; }
         .up { color: #dc2626; } .down { color: #2563eb; } .flat { color: #6b7280; }
+        .trend-badge { font-size: 0.95rem; font-weight: 600; padding: 4px 8px; background: #f1f5f9; border-radius: 6px; display: inline-block; margin-top: 10px; color: #475569; }
         
         .list-box { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         
@@ -83,18 +83,17 @@
     </div>
 </div>
 
-<!-- 우측 하단 플로팅 챗봇 아이콘 및 윈도우 -->
 <div class="chatbot-fab" onclick="toggleChatbot()">💬</div>
 
 <div class="chatbot-window" id="chatbot-window">
     <div class="chatbot-header">
-        <span>🤖 AI 증시 심층 분석</span>
+        <span>🤖 AI 차트 추세 & 증시 분석</span>
         <span class="chatbot-close" onclick="toggleChatbot()">✖</span>
     </div>
     <div id="chat-history" class="chat-history">
         <div class="chat-msg ai">
-            안녕하세요! 경제 시황과 리스크를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
-            오늘의 증시 방향성, 스크랩된 15개 최신 기사 본문 요약, 거시 경제 트렌드에 대해 질문해주세요.<br>
+            안녕하세요! 경제 시황과 차트 추세(기술적 흐름)를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
+            오늘의 증시 방향성, 각 지수의 상승/하락 차트 추세 판단, 스크랩된 15개 최신 기사 본문 요약에 대해 자유롭게 질문해주세요.<br>
             <span style="font-size: 0.9em; color: #6b7280;">(최초 1회 브라우저에 API 키 설정이 필요합니다.)</span>
         </div>
     </div>
@@ -153,7 +152,6 @@
 
 
 <div class="container">
-    <!-- 헤더 영역 (제목 + 새로고침 버튼 래퍼) -->
     <div class="header-wrapper">
         <div class="header-title">📊 실시간 미국 증시 대시보드</div>
         <button class="refresh-btn" onclick="location.reload();">🔄 새로고침</button>
@@ -188,25 +186,28 @@
     </div>
     
     <div class="list-box" id="ai-section-content" style="margin-bottom: 40px;">
-        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">국내 증시 개장을 앞두고 거시경제 및 금융 데이터 기반의 핵심 시장 전망을 전달합니다.
+        <p id="ai-summary-text" style="white-space: pre-wrap; font-size: 1.2rem; font-weight: 500; line-height: 1.8;">분석 기준 날짜: 2026년 11월 16일
 
-1. 글로벌 거시경제 환경 및 리스크 요인 분석
-미국 국채 10년물 금리가 5.15% 수준에 도달하며 고금리 환경이 지속되고 있습니다. 이는 기술주 및 고밸류에이션 주식의 할인율 부담을 높이는 주요 원인으로 작용합니다. 국제유가 WTI는 배럴당 88.30달러로 인플레이션 재발 우려와 제조업 수입 비용 부담을 가중시키는 수치입니다. VIX 지수는 19.30으로 상승세를 나타내고 있으며, CNN 공포탐욕지수는 38로 공포(Fear) 구간에 진입하여 글로벌 투자자들의 위험 자산 선호 심리가 약화되었음을 보여줍니다.
+1. 간밤 미국 증시 및 기술적 추세 진단
+S&amp;P 500 지수는 7561.67을 기록하며 기술적으로 하락추세를 보이고 있습니다.
+나스닥 100 지수 역시 27943.74로 하락추세에 위치해 있으며, 국내 증시 반도체 업종과 연관성이 높은 필라델피아 반도체 지수가 10146.32로 하락추세를 나타내며 기술주 전반에 약세 흐름이 지속되고 있습니다.
+반면 다우존스 지수는 52347.55, 나스닥 생명공학 지수는 7211.27로 횡보 및 혼조 추세를 기록하고 있어, 지수별 기술적 차별화가 진행되는 모습입니다. 기술주 중심의 하락추세 진입이 증시 상단을 제한하는 진단이 가능합니다.
 
-2. 연준 유동성 상태 및 시장 자금 흐름 분석
-미 연준의 순유동성은 약 5조 8,441억 달러 수준을 기록하고 있습니다. 역레포(RRP) 잔액이 3억 2,500만 달러까지 크게 축소된 반면, 미 재무부 일반계정(TGA) 잔액은 약 9,143억 달러로 고점을 유지하고 있습니다. 이는 시중 유동성을 흡수하는 요인으로 작용하여 금융 시장 내 과도한 자금 유입을 제한하고 자금 여건을 경색시키는 유동성 압박 요소로 평가됩니다.
+2. 글로벌 매크로 환경 및 유동성 분석
+미국채 10년물 금리가 5.154% 수준으로 높게 형성되어 있으며, WTI 국제유가는 배럴당 88.26달러를 기록해 비용 부담이 지속되고 있습니다.
+시장 심리를 나타내는 VIX 지수는 19.30을 기록했고, CNN 공포탐욕지수는 38점으로 공포 단계에 진입해 있어 투자 심리가 위축된 상태입니다.
+연준의 순유동성은 5,844,172백만 달러인 가운데, 역레포(RRP) 잔액은 325백만 달러로 감소한 반면 TGA 잔액은 914,370백만 달러를 기록하여 유동성 환경이 경색된 흐름을 보여줍니다. 원달러 환율은 1334.34원 수준에서 형성되어 있습니다.
 
-3. 해외 주요 증시 및 반도체 지수 파급 효과
-미국 나스닥 100 지수(27,943.74)와 필라델피아 반도체 지수(10,146.32)는 강한 기초 체력을 유지하고 있습니다. 니케이 225(60,242.85) 및 대만 가권 지수(42,390.03) 등 아시아 주요 기술주 시장 또한 견조한 흐름을 나타내고 있습니다. 이는 글로벌 반도체 및 첨단 산업 섹터에 대한 장기적 수요가 여전히 견고함을 입증합니다. 코스피 야간선물(EWY) 지수는 142.78 수준을 기록하고 있습니다.
+3. 아시아 증시 및 야간선물 동향
+아시아 주요 증시의 기술적 추세 또한 약세를 가리키고 있습니다. 니케이 225 지수가 60300.44로 하락추세를 보이고 있으며, 대만 가권 지수 역시 42297.45로 하락추세에 놓여 있습니다.
+국내 증시의 사전 풍향계 역할을 하는 코스피 야간선물 지수는 142.78을 기록하며 하락추세를 나타내고 있어, 한국 증시 개장 직후 시가 형성 및 초반 흐름에 하방 압력으로 작용할 가능성이 높습니다.
 
-4. 한국 증시 영향 및 개장 주가 향방 전망
-원달러 환율은 1,334.23원으로 수출 기업들의 실적을 보전해 줄 수 있는 비교적 안정적인 수준을 유지하고 있습니다. 필라델피아 반도체 지수의 견조함에 따라 반도체 대형주 중심의 하방 지지력이 기대됩니다. 다만 높은 미 국채 금리(5.15%)와 높은 유가(88.30달러), 그리고 글로벌 유동성 축소 우려로 인해 코스피 및 코스닥 지수의 급격한 상방 돌파는 제한될 수 있습니다. 
-
-5. 결론 및 투자의견
-금일 한국 증시는 반도체 등 핵심 수출 섹터가 시장 하단을 지지하는 가운데, 고금리와 고유가에 민감한 고부채 기업이나 금리 민감주를 중심으로 매물 압박이 출회되는 차별화 장세가 펼쳐질 것으로 예상됩니다. 전반적인 공포 심리와 유동성 제한 환경을 감안할 때 지수 전체의 상승보다는 실적 가시성이 높고 밸류에이션 부담이 적은 종목 위주의 보수적인 대응이 유효할 것입니다.</p>
+4. 한국 증시 개장전 핵심 대응 전략
+첫째, 필라델피아 반도체 지수와 코스피 야간선물이 모두 하락추세를 보임에 따라, 국내 반도체 및 대형 기술주에 대한 시초가 변동성 확대에 유의해야 합니다.
+둘째, 미국채 10년물 금리 5.154%와 WTI 유가 88.26달러의 조합은 거시경제적 부담 요소이므로 현금 비중을 유지하는 보수적 접근이 필요합니다.
+셋째, 시장 전반이 하락추세에 있는 가운데 상대적으로 횡보 및 혼조 추세를 유지 중인 생명공학 및 방어적 섹터로의 수급 쏠림 현상이 나타나는지 관찰하는 전략이 유효합니다.</p>
     </div>
 
-    <!-- 경제 지표 -->
     <div class="section-title" style="margin-top:0;">📅 이번 주 경제 지표</div>
     <div class="list-box" style="margin-bottom: 30px;">
         
@@ -228,7 +229,6 @@
         
     </div>
 
-    <!-- 경제 뉴스 -->
     <div class="section-title" style="margin-top:0;">📰 최신 경제 뉴스 (15개)</div>
     <div class="list-box news-container" style="margin-bottom: 40px;">
         
@@ -252,19 +252,24 @@
             <span class="news-date">(2026-11-15 11:26)</span>
         </div>
         
+        <div class="news-item" data-content="LS일렉트릭, 美 빅테크에 1천300억원 규모 데이터센터 전력설비 공급&amp;nbsp;&amp;nbsp;KB Think">
+            <a href="https://news.google.com/rss/articles/CBMickFVX3lxTFBQZFpsVnlNc2xaT2g5a1p4SDJQRG92OVo3dll2QW5qcGtxXzJUc05tNEdRaWQ0SXVCUEVZSElpRUNYcTNtVDhoUVcyaGFpOUNuRWhfcXZ4V1M0TkpxOXR3Z19LMEkwZzY5Q3FlR3FPRnFNdw?oc=5" target="_blank" class="news-link">LS일렉트릭, 美 빅테크에 1천300억원 규모 데이터센터 전력설비 공급 - KB Think</a>
+            <span class="news-date">(2026-11-16 01:55)</span>
+        </div>
+        
         <div class="news-item" data-content="LS ELECTRIC, 빅테크 기업에 1300억원 규모 전력 인프라 공급한다&amp;nbsp;&amp;nbsp;에너지데일리">
             <a href="https://news.google.com/rss/articles/CBMickFVX3lxTE5oRE1JdWY4T2xEOHRPT2RNc3pqdTJ3bWsyQmN3RklhSUJCSkUtS3QtUklvR0IwMkU2QWhucEt1TWdYT2R5N181b1dmMk40VlowTjNjZHR3T1o4cTNORGhZa1NrUVh6Zmprdk1xNjU5UEMwUQ?oc=5" target="_blank" class="news-link">LS ELECTRIC, 빅테크 기업에 1300억원 규모 전력 인프라 공급한다 - 에너지데일리</a>
             <span class="news-date">(2026-11-16 00:19)</span>
         </div>
         
-        <div class="news-item" data-content="&#39;2027년 S&amp;amp;P500 9,500선 전망…미국 증시 우위 지속&#39;&amp;nbsp;&amp;nbsp;뉴스투데이">
-            <a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTFB1dUZHMUlESldvQXF5eUxqNW5KTWlFLWV6SXJjQkVxM2J3QWRUSW5abGZJbHpvY2pseEJsNkpsOUJHQy1NNFRNdk92djJMTGFQSEQ2NjI1X2IxMHJaTUE?oc=5" target="_blank" class="news-link">&#34;2027년 S&amp;P500 9,500선 전망…미국 증시 우위 지속&#34; - 뉴스투데이</a>
-            <span class="news-date">(2026-11-16 00:46)</span>
-        </div>
-        
         <div class="news-item" data-content="LS일렉트릭, 美 빅테크 기업 데이터센터 전력설비 수주…1300억 규모&amp;nbsp;&amp;nbsp;전자신문">
             <a href="https://news.google.com/rss/articles/CBMiTkFVX3lxTE5hakFxSE0zOGxqTVJIbTVSYk9Fb0puS0NHSXV6NmF2SlJvT24zdTEtMnRqVy1sX2RPdDRRendWbHE0SWs1c3JUREVOZ2RCQQ?oc=5" target="_blank" class="news-link">LS일렉트릭, 美 빅테크 기업 데이터센터 전력설비 수주…1300억 규모 - 전자신문</a>
             <span class="news-date">(2026-11-16 01:16)</span>
+        </div>
+        
+        <div class="news-item" data-content="&#39;2027년 S&amp;amp;P500 9,500선 전망…미국 증시 우위 지속&#39;&amp;nbsp;&amp;nbsp;뉴스투데이">
+            <a href="https://news.google.com/rss/articles/CBMiXkFVX3lxTFB1dUZHMUlESldvQXF5eUxqNW5KTWlFLWV6SXJjQkVxM2J3QWRUSW5abGZJbHpvY2pseEJsNkpsOUJHQy1NNFRNdk92djJMTGFQSEQ2NjI1X2IxMHJaTUE?oc=5" target="_blank" class="news-link">&#34;2027년 S&amp;P500 9,500선 전망…미국 증시 우위 지속&#34; - 뉴스투데이</a>
+            <span class="news-date">(2026-11-16 00:46)</span>
         </div>
         
         <div class="news-item" data-content="iM증권 &#39;이번주 환율 1320~1360원 전망, 미 국채금리 추가 상승 여부 주목&#39;&amp;nbsp;&amp;nbsp;비즈니스포스트">
@@ -282,6 +287,11 @@
             <span class="news-date">(2026-11-15 23:14)</span>
         </div>
         
+        <div class="news-item" data-content="LS일렉트릭, 美 빅테크 AI 데이터센터에 1300억 전력설비 공급&amp;nbsp;&amp;nbsp;글로벌이코노믹">
+            <a href="https://news.google.com/rss/articles/CBMihgFBVV95cUxQbjNJNkxQSHlRR2F5cmlYclo3bzIyVDZQRnRDRU1Ta1NYT0pGdWdCQmlmSVhJSnlmSmdKQ3lMVlA2aTA4eWY4M1B2aldvQkF2MjZTOUlqMDBJdzFPYndnRzhKZ18zN2poYlAtMGNZMllXTkJJU1NxQl85c1lTb0MxeGZHZUhCUQ?oc=5" target="_blank" class="news-link">LS일렉트릭, 美 빅테크 AI 데이터센터에 1300억 전력설비 공급 - 글로벌이코노믹</a>
+            <span class="news-date">(2026-11-16 01:53)</span>
+        </div>
+        
         <div class="news-item" data-content="골드만 &#39;내년 아시아증시 수익률 19%&#39;…한국은 &#39;비중확대&#39; 유지&amp;nbsp;&amp;nbsp;연합뉴스 한민족센터">
             <a href="https://news.google.com/rss/articles/CBMidEFVX3lxTE5uaXZDTy1DZkJyRVRuaS1WUFk3QjVla2VzX1dtaE5kdXgzQTNtZ3NORG9peVhoTldZZThwcXVXd0xCUzlJVnUyYUFTdFFYZGFCdURBdUlsd1dUcENOMk5nV0p1Q0xqQ3NpQklPUVp6bkVjZ3F6?oc=5" target="_blank" class="news-link">골드만 &#34;내년 아시아증시 수익률 19%&#34;…한국은 &#39;비중확대&#39; 유지 - 연합뉴스 한민족센터</a>
             <span class="news-date">(2026-11-15 23:19)</span>
@@ -292,25 +302,14 @@
             <span class="news-date">(2026-11-16 01:28)</span>
         </div>
         
-        <div class="news-item" data-content="[굿모닝 증시]韓, 이번주 엔비디아 실적·앤스로픽 IPO 영향 클 것&amp;nbsp;&amp;nbsp;아시아경제">
-            <a href="https://news.google.com/rss/articles/CBMiYkFVX3lxTFB5RXpxTzFTM3BaSDBXNWNuc0wxckpkZ0hnVGRiWHdhbkw4TFAwSE1HZjhYdWxRNE5oNXA0UXM2cVNBVlQteGpHcjk1MnhaRHYwS01WcS16Y1NfN1lZNVlEWmtn?oc=5" target="_blank" class="news-link">[굿모닝 증시]韓, 이번주 엔비디아 실적·앤스로픽 IPO 영향 클 것 - 아시아경제</a>
-            <span class="news-date">(2026-11-15 23:14)</span>
-        </div>
-        
-        <div class="news-item" data-content="美 증시서 한국 산업 ETF 잇단 상장···반도체 이어 뷰티까지&amp;nbsp;&amp;nbsp;서울파이낸스">
-            <a href="https://news.google.com/rss/articles/CBMiakFVX3lxTE5qRWh5N2FYQnRvUGM3VWN2cERTenkwazRMbGdpc01jUDJkM1JRMXBEUF9zVE1qT2dBQU8tckpkUnIyWG5ZVkZwa3JCZ3JTanN0LXQ0a3prbmMzcFZDd1dxMWV3T1hwVTZqamc?oc=5" target="_blank" class="news-link">美 증시서 한국 산업 ETF 잇단 상장···반도체 이어 뷰티까지 - 서울파이낸스</a>
-            <span class="news-date">(2026-11-16 01:13)</span>
-        </div>
-        
-        <div class="news-item" data-content="엔비디아 실적·앤트로픽 상장…AI주 운명 달린 한 주[이번주 美 증시는] - 머니투데이&amp;nbsp;&amp;nbsp;머니투데이">
-            <a href="https://news.google.com/rss/articles/CBMiaEFVX3lxTE94RUozbVJma3hLNUhiRzBjNHFqWTNZOEdIdV80U05fTDlESXlMRTJTTDdwQ1RaWG5Xc19DU2FFeEdsR1oyZ1BhTGJVaExLRzktU01YaWpFLWNxRHB1WWNTdDQ1cFlaTndf0gFuQVVfeXFMTTRXVVV0a3R1bGVZSjFMRVV0MHFRZHE3b3VTaFNjbW8ycWRlOUtZWW81eEFGamo2c0xNQ3ljRXFxeGlkcUxlWEt0UFVIdXgwQmc2Yno1bTJPX0U1aVpLRVNaOXc3b3d4bWZ5TDJMTXc?oc=5" target="_blank" class="news-link">엔비디아 실적·앤트로픽 상장…AI주 운명 달린 한 주[이번주 美 증시는] - 머니투데이 - 머니투데이</a>
-            <span class="news-date">(2026-11-15 20:35)</span>
+        <div class="news-item" data-content="[오늘의 증시]美 반도체주 급락·연준 &#39;고평가&#39; 경고…코스피, 또 하락하나&amp;nbsp;&amp;nbsp;뉴시스">
+            <a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE02OGl2QTVjZGRaZW44QkVPcnRFS3V3Mm1NY1lLLUpoTVJlQkRlaTVJZ3dDTkw0aVVHeWxvWVlrRl9ZV2Eyd1lCYkdFbDNMbkhJVDRnaTBHbTJORUpyZHhiRtIBeEFVX3lxTE1fWlVRaGRVNFowRi1yakt4elRJODgtaHZ4aTE4eXZIazM1VjVjRDhtb09rdGxXaDlRTnZseU1BbGhIa3hFaUo4T0lDam9VSkNnRGhoSDFkLWw5MGdzQTBMTlpNeWd2bGlycW5ybWROc0QzVnhIVGhXNw?oc=5" target="_blank" class="news-link">[오늘의 증시]美 반도체주 급락·연준 &#39;고평가&#39; 경고…코스피, 또 하락하나 - 뉴시스</a>
+            <span class="news-date">(2026-11-15 22:50)</span>
         </div>
         
     </div>
 
-    <!-- 추가된 코스피 야간선물(EWY) 반영 영역 -->
-    <div class="section-title">📈 1. 주요 지수</div>
+    <div class="section-title">📈 1. 주요 지수 (차트 추세 포함)</div>
     <div class="grid">
         
     
@@ -324,6 +323,11 @@
             
             
              <div class="card-delta down">▼ 30.73 (0.40%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -342,6 +346,11 @@
             
              <div class="card-delta up">▲ 50.46 (0.10%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -358,6 +367,11 @@
             
             
              <div class="card-delta down">▼ 345.45 (1.22%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -376,6 +390,11 @@
             
              <div class="card-delta down">▼ 360.35 (3.43%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -386,12 +405,17 @@
     <div class="card">
         <div class="card-label">니케이 225 </div>
         
-            <div class="card-value">60,242.85
+            <div class="card-value">60,300.44
             
             </div>
             
             
-             <div class="card-delta down">▼ 899.50 (1.47%)</div>
+             <div class="card-delta down">▼ 841.91 (1.38%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -403,12 +427,17 @@
     <div class="card">
         <div class="card-label">대만 가권 </div>
         
-            <div class="card-value">42,390.03
+            <div class="card-value">42,297.45
             
             </div>
             
             
-             <div class="card-delta down">▼ 1,285.09 (2.94%)</div>
+             <div class="card-delta down">▼ 1,377.67 (3.15%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -427,6 +456,11 @@
             
              <div class="card-delta down">▼ 2.60 (1.79%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -441,12 +475,17 @@
     <div class="card">
         <div class="card-label">달러 인덱스 <span title="52주 신고가 근접">🔥</span></div>
         
-            <div class="card-value">103.43
+            <div class="card-value">103.40
             
             </div>
             
             
-             <div class="card-delta up">▲ 0.02 (0.02%)</div>
+             <div class="card-delta down">▼ 0.01 (0.01%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
             
         
     </div>
@@ -457,12 +496,17 @@
     <div class="card">
         <div class="card-label">원/달러 </div>
         
-            <div class="card-value">1,334.23원
+            <div class="card-value">1,334.34원
             
             </div>
             
             
-             <div class="card-delta up">▲ 0.45 (0.03%)</div>
+             <div class="card-delta up">▲ 0.56 (0.04%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -480,6 +524,11 @@
             
              <div class="card-delta up">▲ 0.05 (1.00%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -495,6 +544,11 @@
             
             
              <div class="card-delta up">▲ 0.60 (3.21%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -512,6 +566,9 @@
             
             
              <div class="card-delta down">▼ 1 (3.08%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
             
         
     </div>
@@ -535,6 +592,9 @@
             
              <div class="card-delta down">▼ 75 (0.00%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
         
     </div>
     
@@ -552,6 +612,9 @@
             
              <div class="card-delta up">▲ 75 (30.00%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
         
     </div>
     
@@ -568,6 +631,9 @@
             
             
              <div class="card-delta flat">- 0 (0.00%)</div> 
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
         
     </div>
     
@@ -584,6 +650,9 @@
             
             
              <div class="card-delta flat">- 0 (0.00%)</div> 
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
         
     </div>
     
@@ -599,12 +668,17 @@
     <div class="card">
         <div class="card-label">WTI유 </div>
         
-            <div class="card-value">88.30$
+            <div class="card-value">88.26$
             
             </div>
             
             
-             <div class="card-delta down">▼ 0.26 (0.29%)</div>
+             <div class="card-delta down">▼ 0.30 (0.34%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -616,12 +690,17 @@
     <div class="card">
         <div class="card-label">브렌트유 </div>
         
-            <div class="card-value">95.27$
+            <div class="card-value">95.33$
             
             </div>
             
             
-             <div class="card-delta down">▼ 0.57 (0.59%)</div>
+             <div class="card-delta down">▼ 0.51 (0.53%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -633,12 +712,15 @@
     <div class="card">
         <div class="card-label">금(1돈) </div>
         
-            <div class="card-value">623,532원
+            <div class="card-value">624,227원
             
             </div>
             
             
-             <div class="card-delta down">▼ 1,413 (0.23%)</div>
+             <div class="card-delta down">▼ 718 (0.12%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
             
         
     </div>
@@ -655,7 +737,10 @@
             </div>
             
             
-             <div class="card-delta down">▼ 222 (2.82%)</div>
+             <div class="card-delta down">▼ 222 (2.83%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
             
         
     </div>
@@ -667,12 +752,15 @@
     <div class="card">
         <div class="card-label">구리(파운드) </div>
         
-            <div class="card-value">8,036원
+            <div class="card-value">8,043원
             
             </div>
             
             
-             <div class="card-delta down">▼ 72 (0.90%)</div>
+             <div class="card-delta down">▼ 65 (0.81%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
             
         
     </div>
@@ -694,6 +782,11 @@
             
              <div class="card-delta up">▲ 1.39 (0.39%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -709,6 +802,11 @@
             
             
              <div class="card-delta up">▲ 0.88 (0.17%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -726,6 +824,11 @@
             
              <div class="card-delta down">▼ 2.93 (0.98%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -741,6 +844,11 @@
             
             
              <div class="card-delta down">▼ 0.78 (0.29%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -758,6 +866,11 @@
             
              <div class="card-delta up">▲ 18.08 (2.90%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -773,6 +886,11 @@
             
             
              <div class="card-delta down">▼ 1.76 (1.38%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -790,6 +908,11 @@
             
              <div class="card-delta down">▼ 3.26 (1.42%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -805,6 +928,11 @@
             
             
              <div class="card-delta down">▼ 12.69 (3.98%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -822,6 +950,11 @@
             
              <div class="card-delta up">▲ 0.27 (0.12%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -837,6 +970,11 @@
             
             
              <div class="card-delta down">▼ 0.42 (0.13%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -854,6 +992,11 @@
             
              <div class="card-delta up">▲ 15.42 (3.92%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -869,6 +1012,11 @@
             
             
              <div class="card-delta down">▼ 0.54 (0.86%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -888,6 +1036,11 @@
             
              <div class="card-delta down">▼ 3.34 (2.01%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -903,6 +1056,11 @@
             
             
              <div class="card-delta down">▼ 51.24 (8.75%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -920,6 +1078,11 @@
             
              <div class="card-delta down">▼ 6.76 (1.67%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -935,6 +1098,11 @@
             
             
              <div class="card-delta down">▼ 20.13 (2.52%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -952,6 +1120,11 @@
             
              <div class="card-delta down">▼ 1.54 (2.52%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -967,6 +1140,11 @@
             
             
              <div class="card-delta down">▼ 4.67 (2.64%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -984,6 +1162,11 @@
             
              <div class="card-delta down">▼ 17.35 (4.76%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -999,6 +1182,11 @@
             
             
              <div class="card-delta down">▼ 1.96 (0.13%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1016,6 +1204,11 @@
             
              <div class="card-delta down">▼ 7.86 (3.36%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -1031,6 +1224,11 @@
             
             
              <div class="card-delta down">▼ 3.59 (2.09%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1048,6 +1246,11 @@
             
              <div class="card-delta down">▼ 4.29 (5.65%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -1063,6 +1266,11 @@
             
             
              <div class="card-delta down">▼ 15.56 (5.00%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1080,6 +1288,11 @@
             
              <div class="card-delta down">▼ 13.69 (5.39%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -1095,6 +1308,11 @@
             
             
              <div class="card-delta down">▼ 26.64 (7.18%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1114,6 +1332,11 @@
             
              <div class="card-delta up">▲ 0.81 (0.48%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -1129,6 +1352,11 @@
             
             
              <div class="card-delta up">▲ 3.54 (1.64%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1146,6 +1374,11 @@
             
              <div class="card-delta down">▼ 15.36 (1.88%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -1161,6 +1394,11 @@
             
             
              <div class="card-delta down">▼ 0.16 (3.32%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1178,6 +1416,11 @@
             
              <div class="card-delta down">▼ 0.53 (2.17%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -1193,6 +1436,11 @@
             
             
              <div class="card-delta down">▼ 0.06 (3.05%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1210,6 +1458,11 @@
             
              <div class="card-delta down">▼ 1.50 (1.12%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -1225,6 +1478,11 @@
             
             
              <div class="card-delta down">▼ 9.94 (4.92%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1242,6 +1500,11 @@
             
              <div class="card-delta down">▼ 1.02 (0.82%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
+            
         
     </div>
     </a>
@@ -1257,6 +1520,11 @@
             
             
              <div class="card-delta down">▼ 7.57 (3.61%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1274,6 +1542,11 @@
             
              <div class="card-delta down">▼ 4.15 (0.68%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1289,6 +1562,11 @@
             
             
              <div class="card-delta down">▼ 1.05 (1.46%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1306,6 +1584,11 @@
             
              <div class="card-delta up">▲ 0.95 (0.67%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -1321,6 +1604,11 @@
             
             
              <div class="card-delta down">▼ 2.32 (1.25%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1340,6 +1628,11 @@
             
              <div class="card-delta up">▲ 17.95 (1.26%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1355,6 +1648,11 @@
             
             
              <div class="card-delta up">▲ 0.06 (0.21%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1372,6 +1670,11 @@
             
              <div class="card-delta up">▲ 2.23 (0.79%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1387,6 +1690,11 @@
             
             
              <div class="card-delta up">▲ 2.33 (0.58%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1404,6 +1712,11 @@
             
              <div class="card-delta down">▼ 7.98 (3.45%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -1419,6 +1732,11 @@
             
             
              <div class="card-delta down">▼ 1.39 (0.30%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1438,6 +1756,11 @@
             
              <div class="card-delta down">▼ 7.23 (1.82%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1453,6 +1776,11 @@
             
             
              <div class="card-delta down">▼ 0.83 (0.59%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">하락추세 📉</span></div>
             
         
     </div>
@@ -1470,6 +1798,11 @@
             
              <div class="card-delta down">▼ 2.54 (3.96%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
+            
         
     </div>
     </a>
@@ -1485,6 +1818,11 @@
             
             
              <div class="card-delta up">▲ 0.95 (0.29%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1504,6 +1842,11 @@
             
              <div class="card-delta up">▲ 3.37 (0.98%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1519,6 +1862,11 @@
             
             
              <div class="card-delta up">▲ 0.51 (1.01%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
             
         
     </div>
@@ -1536,6 +1884,11 @@
             
              <div class="card-delta up">▲ 0.29 (0.34%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1551,6 +1904,11 @@
             
             
              <div class="card-delta up">▲ 1.48 (0.78%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
             
         
     </div>
@@ -1568,6 +1926,11 @@
             
              <div class="card-delta up">▲ 1.58 (1.73%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1583,6 +1946,11 @@
             
             
              <div class="card-delta up">▲ 5.45 (1.30%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
             
         
     </div>
@@ -1600,6 +1968,11 @@
             
              <div class="card-delta up">▲ 8.59 (1.32%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1615,6 +1988,11 @@
             
             
              <div class="card-delta up">▲ 3.11 (0.53%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
             
         
     </div>
@@ -1632,6 +2010,11 @@
             
              <div class="card-delta up">▲ 6.30 (0.52%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1647,6 +2030,11 @@
             
             
              <div class="card-delta up">▲ 0.85 (0.87%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1666,6 +2054,11 @@
             
              <div class="card-delta up">▲ 1.90 (1.51%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1681,6 +2074,11 @@
             
             
              <div class="card-delta up">▲ 14.00 (1.28%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
             
         
     </div>
@@ -1698,6 +2096,11 @@
             
              <div class="card-delta up">▲ 1.81 (1.86%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1714,6 +2117,11 @@
             
              <div class="card-delta up">▲ 3.18 (2.24%)</div>
             
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">상승추세 📈</span></div>
+            
         
     </div>
     </a>
@@ -1729,6 +2137,11 @@
             
             
              <div class="card-delta down">▼ 1.66 (0.61%)</div>
+            
+            
+            <!-- 추가된 차트 추세 뱃지 표시 부분 -->
+            
+            <div><span class="trend-badge">횡보/혼조 ↔️</span></div>
             
         
     </div>
@@ -1768,24 +2181,36 @@
             
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
+            
+            // UI에 그려진 지수들의 차트 추세를 크롤링하여 봇에게 함께 전달
+            let trendInfos = "";
+            document.querySelectorAll('.card').forEach(card => {
+                const label = card.querySelector('.card-label')?.innerText.replace('🔥', '').trim();
+                const trend = card.querySelector('.trend-badge')?.innerText;
+                if(label && trend) {
+                    trendInfos += `- ${label}: ${trend}\n`;
+                }
+            });
 
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
 1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터에 근거하세요.
-​2. 사용자가 뉴스에 대해 물어보면 '제목'만 보고 유추하지 말고, 반드시 아래 제공된 각 뉴스의 '핵심내용(기사 원문)'을 정독한 후 구체적인 이유와 수치를 포함해 답변하세요.
-3. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
+2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
+3. 뉴스를 물어보면 제목만 보지 말고 '핵심내용(기사 원문)'을 정독한 후 구체적인 수치와 이유를 들어 답변하세요.
+4. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
 - 오늘의 증시 요약: \n${summaryText}\n
+- 각 지수별 실시간 차트 추세 (5일선/20일선 기준): \n${trendInfos}\n
 - 최신 경제 뉴스 (기사 본문 요약 15개): \n${newsList}\n
 - 주요 경제 지표: \n- ${calList}\n
 
 위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
             
             chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
-            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 기사 본문 요약까지 모두 숙지했습니다. 팩트 기반의 심층 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
+            chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 데이터와 기사 본문 요약, 그리고 실시간 차트 추세(기술적 흐름) 정보까지 모두 숙지했습니다. 팩트 기반의 심층 분석을 제공해 드릴 준비가 되었습니다. 무엇이 궁금하신가요?" }] });
         }
 
         appendMessage('user', message);
@@ -1793,7 +2218,7 @@
         chatHistory.push({ "role": "user", "parts": [{ "text": message }] });
         
         const loadingId = 'msg-' + Date.now();
-        appendMessage('ai', '기사 원문을 읽으며 팩트 기반 분석 중...', loadingId);
+        appendMessage('ai', '실시간 차트 추세와 기사 원문을 바탕으로 분석 중...', loadingId);
 
         try {
             let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -1833,7 +2258,6 @@
         msgDiv.innerHTML = text.replace(/\n/g, '<br>');
         historyEl.appendChild(msgDiv); 
         
-        // 처음 메시지를 붙일 때는 일단 최하단으로 스크롤 (사용자 입력 직후)
         historyEl.scrollTop = historyEl.scrollHeight;
     }
     
@@ -1843,7 +2267,6 @@
         
         if (msgDiv) {
             msgDiv.innerHTML = text.replace(/\n/g, '<br>');
-            // 답변 내용이 완성된 후, 해당 메시지의 맨 위(상단)에 시선이 닿도록 스크롤 위치 보정!
             historyEl.scrollTo({
                 top: msgDiv.offsetTop - 15,
                 behavior: 'smooth'
