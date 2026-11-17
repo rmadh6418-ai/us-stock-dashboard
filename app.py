@@ -76,11 +76,11 @@ def fetch_yfinance_data(tickers):
                     near_52w_high = current >= (fifty_two_week_high * 0.97)
                     
                     if current >= ma5 and ma5 >= ma20:
-                        trend = "상승추세 📈"
+                        trend = "상승추세"
                     elif current < ma5 and ma5 < ma20:
-                        trend = "하락추세 📉"
+                        trend = "하락추세"
                     else:
-                        trend = "횡보/혼조 ↔️"
+                        trend = "횡보/혼조"
                         
                     # 1년(전체 거래일) 미니 차트 좌표 변환
                     period_data = close_prices
@@ -548,7 +548,8 @@ HTML_TEMPLATE = """
             {% else %} <div class="card-delta flat">- {{ diff_fmt }} (0.00%)</div> {% endif %}
             
             {% if data_obj.get('trend') and data_obj.get('trend') != "알 수 없음" %}
-            <div><span class="trend-badge">{{ data_obj.trend }}</span></div>
+            {% set trend_color = '#dc2626' if data_obj.trend == '상승추세' else ('#2563eb' if data_obj.trend == '하락추세' else '#475569') %}
+            <div><span class="trend-badge" style="color: {{ trend_color }};">{{ data_obj.trend }}</span></div>
             {% endif %}
             
             <!-- 1년 그라데이션 스파크라인 SVG 및 최고/최저 마커 렌더링 부분 (수치 포함) -->
