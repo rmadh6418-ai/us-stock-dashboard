@@ -300,13 +300,13 @@ def get_ai_summary(data):
         
         prompt = f"""
         [분석 기준 날짜: {today_str}]
-        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 데이터(지수값 및 차트 추세 포함), 전세계 매크로 데이터, 경제지표, 국제유가를 심층 분석하여, 한국 증시 개장을 준비하는 투자자를 위한 핵심 시장 전망을 도출해주세요.
+        당신은 전세계 0.1% 거시경제 및 금융 애널리스트입니다. 아래 제공된 간밤의 미국 증시 데이터(지수값 및 차트 추세 포함), 전세계 매크로 데이터, 경제지표, 국제유가를 심층 분석하여, 한국 증시 개장을 준비하는 투자자를 위한 핵심 시장 전망 도출해주세요.
 
         [★엄격한 작성 규칙 - 할루시네이션(정보 왜곡) 절대 금지★]
-        1. 오직 제공된 [오늘의 데이터] 및 경제지표, 뉴스 그리고 당신(AI)이 가지고 있는 최신 정보 기반으로 사실 관계를 확인하여 작성할 것.
-        2. 지수의 '차트 추세(상승추세, 하락추세, 횡보)' 데이터를 반드시 참고하여 현재 시장이 기술적으로 어떤 위치에 있는지 진단에 포함시킬 것.
-        3. 마크다운 특수기호(*, #, -, _ 등) 단 하나도 사용하지 말고 오직 줄바꿈과 번호 매기기(1., 2. 등)만 활용할 것.
-        4. 데이터를 기반으로 한국 증시에 어떤 영향이 있을지 근거를 제시하고 앞으로의 주가 향방을 작성할 것.
+1. 오직 제공된 [오늘의 데이터] 및 경제지표, 뉴스 그리고 당신(AI)이 가지고 있는 최신 정보 기반으로 사실 관계를 확인하여 작성할 것.
+2. 지수의 '차트 추세(상승추세, 하락추세, 횡보)' 데이터를 반드시 참고하여 현재 시장이 기술적으로 어떤 위치에 있는지 진단에 포함시킬 것.
+3. 마크다운 특수기호(*, #, -, _ 등) 단 하나도 사용하지 말고 오직 줄바꿈과 번호 매기기(1., 2. 등)만 활용할 것.
+4. 데이터를 기반으로 한국 증시에 어떤 영향이 있을지 근거를 제시하고 앞으로의 주가 향방을 작성할 것.
         
         [오늘의 데이터]
         <주요 지수 및 차트 추세>
@@ -386,6 +386,7 @@ HTML_TEMPLATE = """
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 모바일 확대/축소 허용으로 변경됨 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>실시간 미국 증시 대시보드</title>
     <meta name="theme-color" content="#f3f4f6">
@@ -433,7 +434,6 @@ HTML_TEMPLATE = """
         
         .chatbot-window { position: fixed; bottom: 110px; right: 30px; width: 400px; max-width: 90vw; background: #ffffff; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 999; border: 1px solid #e5e7eb; overflow: hidden; }
         .chatbot-header { background: #111827; color: white; padding: 18px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .chatbot-close { cursor: pointer; font-size: 1.2rem; }
         
         .chat-history { position: relative; height: 450px; max-height: 50vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #f9fafb; scroll-behavior: smooth; }
         .chat-msg { padding: 12px 16px; border-radius: 14px; max-width: 85%; font-size: 1.05rem; line-height: 1.6; word-break: keep-all; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -444,6 +444,10 @@ HTML_TEMPLATE = """
         .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; outline: none; }
         .chat-input-area button { padding: 12px 18px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.1s; }
         .chat-input-area button:hover { background: #2563eb; }
+
+        /* 챗봇 창 확대 상태 스타일 */
+        .chatbot-window.expanded { width: 90vw !important; max-width: 1200px !important; height: 85vh !important; bottom: 7.5vh !important; right: 5vw !important; transition: all 0.3s ease; }
+        .chatbot-window.expanded .chat-history { height: calc(85vh - 130px) !important; max-height: none !important; }
 
         @media (max-width: 768px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -471,7 +475,14 @@ HTML_TEMPLATE = """
 <div class="chatbot-window" id="chatbot-window">
     <div class="chatbot-header">
         <span>🤖 AI 차트 추세 & 증시 분석</span>
-        <span class="chatbot-close" onclick="toggleChatbot()">✖</span>
+        <div>
+            <!-- 초기화 버튼 추가 -->
+            <span onclick="clearChat()" style="cursor: pointer; margin-right: 15px; font-size: 1.2rem;" title="대화 초기화">🗑️</span>
+            <!-- 확대/축소 버튼 추가 -->
+            <span id="chat-resize-btn" onclick="toggleChatSize()" style="cursor: pointer; margin-right: 15px; font-size: 1.2rem;" title="크게/작게">🗖</span>
+            <!-- 닫기 버튼 -->
+            <span class="chatbot-close" onclick="toggleChatbot()" style="cursor: pointer;" title="닫기">✖</span>
+        </div>
     </div>
     <div id="chat-history" class="chat-history">
         <div class="chat-msg ai">
@@ -518,6 +529,34 @@ HTML_TEMPLATE = """
             win.style.display = 'none';
         }
     }
+
+    function toggleChatSize() {
+        const win = document.getElementById('chatbot-window');
+        const btn = document.getElementById('chat-resize-btn');
+        win.classList.toggle('expanded');
+        
+        if (win.classList.contains('expanded')) {
+            btn.innerText = '🗗'; 
+            btn.title = '원래 크기로';
+        } else {
+            btn.innerText = '🗖'; 
+            btn.title = '크게 보기';
+        }
+    }
+
+    function clearChat() {
+        if (confirm("대화 내용을 모두 지우고 초기화하시겠습니까?")) {
+            chatHistory = [];
+            const historyEl = document.getElementById('chat-history');
+            historyEl.innerHTML = `
+                <div class="chat-msg ai">
+                    안녕하세요! 경제 시황과 차트 추세(기술적 흐름)를 객관적으로 분석하는 AI 챗봇입니다.<br><br>
+                    오늘의 증시 방향성, 각 지수의 상승/하락 차트 추세 판단, 스크랩된 15개 최신 기사 본문 요약에 대해 자유롭게 질문해주세요.<br>
+                    <span style="font-size: 0.9em; color: #6b7280;">(최초 1회 브라우저에 API 키 설정이 필요합니다.)</span>
+                </div>
+            `;
+        }
+    }
     
     function toggleAiSection() {
         const content = document.getElementById('ai-section-content');
@@ -552,7 +591,7 @@ HTML_TEMPLATE = """
             <div><span class="trend-badge" style="color: {{ trend_color }};">{{ data_obj.trend }}</span></div>
             {% endif %}
             
-            <!-- 1년 그라데이션 스파크라인 SVG 및 최고/최저 마커 렌더링 부분 (수치 포함) -->
+            <!-- 1년 그라데이션 스파크라인 SVG 및 최고/최저 마커 렌더링 부분 -->
             {% if data_obj.get('sparkline') %}
             <div style="margin-top: 25px; margin-bottom: 10px; width: 100%; height: 45px; position: relative;">
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
@@ -573,7 +612,7 @@ HTML_TEMPLATE = """
                     <polyline fill="none" stroke="url(#grad_{{ data_obj.safe_id }})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{{ data_obj.sparkline }}"></polyline>
                 </svg>
                 
-                <!-- 최저점 마커 (수치 포함, 가독성 향상 배경 적용) -->
+                <!-- 최저점 마커 -->
                 <div style="position: absolute; left: {{ data_obj.min_x }}%; top: {{ data_obj.min_y }}%; transform: translate(-50%, -50%); pointer-events: none; z-index: 5;">
                     <div style="width: 6px; height: 6px; background: #2563eb; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff; margin: 0 auto;"></div>
                     <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #2563eb; font-weight: 800; white-space: nowrap; background: rgba(255, 255, 255, 0.85); padding: 2px 5px; border-radius: 4px; line-height: 1;">
@@ -581,7 +620,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- 최고점 마커 (수치 포함, 가독성 향상 배경 적용) -->
+                <!-- 최고점 마커 -->
                 <div style="position: absolute; left: {{ data_obj.max_x }}%; top: {{ data_obj.max_y }}%; transform: translate(-50%, -50%); pointer-events: none; z-index: 5;">
                     <div style="width: 6px; height: 6px; background: #dc2626; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff; margin: 0 auto;"></div>
                     <div style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #dc2626; font-weight: 800; white-space: nowrap; background: rgba(255, 255, 255, 0.85); padding: 2px 5px; border-radius: 4px; line-height: 1;">
@@ -753,13 +792,13 @@ HTML_TEMPLATE = """
             const todayDateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
-현재 기준 날짜는 [${todayDateStr}]입니다. 대화 시 반드시 이 날짜를 '오늘'로 인지하고 답변하세요. 
+현재 기준 날짜는 [${todayDateStr}]입니다. 대화 시 반드시 이 날짜를 '오늘'로 인지하고 답변하세요.
 
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
 1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터와 당신(AI)이 가지고 있는 최신정보들을 기반으로 사실 관계를 확인하고 근거하세요.
-​2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
+2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
 3. 뉴스를 물어보면 제목만 보지 말고 '핵심내용(기사 원문)'을 정독한 후 구체적인 수치와 이유를 들어 답변하세요.
 4. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
