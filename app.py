@@ -749,7 +749,12 @@ HTML_TEMPLATE = """
                 }
             });
 
+            const today = new Date();
+            const todayDateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+            
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
+현재 기준 날짜는 [${todayDateStr}]입니다. 대화 시 반드시 이 날짜를 '오늘'로 인지하고 답변하세요. 
+
 아래 제공된 데이터를 바탕으로 사용자의 질문에 심도 있게 답하세요.
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
