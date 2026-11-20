@@ -458,6 +458,15 @@ HTML_TEMPLATE = """
             .header-wrapper { flex-direction: column; align-items: stretch; margin-bottom: 20px; }
         }
     </style>
+    
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
+    
 </head>
 <body>
 <!-- 잠금화면 -->
