@@ -788,18 +788,24 @@ HTML_TEMPLATE = """
             const calNodes = document.querySelectorAll('.cal-item');
             const calList = Array.from(calNodes).map(node => node.innerText).join('\\n- ');
             
-            let trendInfos = "";
+            // 1. 모든 카드의 데이터를 수집하도록 로직 변경
+            let marketDataInfos = "";
             document.querySelectorAll('.card').forEach(card => {
                 const label = card.querySelector('.card-label')?.innerText.replace('🔥', '').trim();
-                const trend = card.querySelector('.trend-badge')?.innerText;
-                if(label && trend) {
-                    trendInfos += `- ${label}: ${trend}\\n`;
+                const value = card.querySelector('.card-value')?.innerText.replace(/\n/g, ' ').trim();
+                const delta = card.querySelector('.card-delta')?.innerText.replace(/\n/g, ' ').trim() || "-";
+                const trend = card.querySelector('.trend-badge')?.innerText.trim() || "추세 데이터 없음";
+                
+                // 데이터가 존재하는 카드만 취합 (조회 불가는 제외)
+                if(label && value && !value.includes("조회 불가")) {
+                    marketDataInfos += `- ${label}: 현재가 ${value} | 등락: ${delta} | 기술적 추세: ${trend}\\n`;
                 }
             });
 
             const today = new Date();
             const todayDateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             
+            // 2. 프롬프트 지시어 강화 및 취합한 전체 데이터 주입
             const initialPrompt = `당신은 최고 수준의 객관성을 갖춘 거시경제 및 리스크 분석 AI입니다.
 현재 기준 날짜는 [${todayDateStr}]입니다. 대화 시 반드시 이 날짜를 '오늘'로 인지하고 답변하세요.
 
@@ -807,13 +813,13 @@ HTML_TEMPLATE = """
 
 [★할루시네이션(정보 왜곡) 절대 차단 규칙★]
 1. 답변 시 스스로 정보를 지어내지 말고, 반드시 아래 제공된 팩트 데이터와 당신(AI)이 가지고 있는 최신정보들을 기반으로 사실 관계를 확인하고 근거하세요.
-2. 사용자가 지수 방향성이나 특정 종목군을 물어볼 때, 제공된 '각 지수 및 종목의 차트 추세(상승/하락/횡보)' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
+2. 사용자가 지수 방향성, 원자재(구리, 금, 유가 등), 환율, 특정 종목군을 물어볼 때, 제공된 '현재가 및 추세' 데이터를 적극 활용하여 기술적 흐름을 반영한 분석을 제공하세요.
 3. 뉴스를 물어보면 제목만 보지 말고 '핵심내용(기사 원문)'을 정독한 후 구체적인 수치와 이유를 들어 답변하세요.
 4. 마크다운 기호를 쓰지 말고 번호(1., 2. 등)를 매겨서 깔끔하게 답변하세요.
 
 [현재 시장 기준 데이터]
 - 오늘의 증시 요약: \\n${summaryText}\\n
-- 각 지수별 실시간 차트 추세 (5일선/20일선 기준): \\n${trendInfos}\\n
+- 각 지수/종목/원자재 실시간 가격 및 차트 추세: \\n${marketDataInfos}\\n
 - 최신 경제 뉴스 (기사 본문 요약 15개): \\n${newsList}\\n
 - 주요 경제 지표: \\n- ${calList}\\n
 
