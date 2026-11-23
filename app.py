@@ -152,11 +152,12 @@ def get_silver_don_price():
         si = yf.Ticker("SI=F").history(period="5d")['Close'].dropna()
         krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
         if len(si) >= 2 and len(krw) >= 2:
-            current = (float(si.iloc[-1]) / 31.1034768) * 3.75 * float(krw.iloc[-1])
+            usd_current = float(si.iloc[-1])
+            current = (usd_current / 31.1034768) * 3.75 * float(krw.iloc[-1])
             prev = (float(si.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'XAGUSD'}
+            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'XAGUSD', 'usd_value': usd_current, 'unit': 'oz'}
         return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAGUSD'}
     except:
         return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAGUSD'}
@@ -166,11 +167,12 @@ def get_gold_don_price():
         gc = yf.Ticker("GC=F").history(period="5d")['Close'].dropna()
         krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
         if len(gc) >= 2 and len(krw) >= 2:
-            current = (float(gc.iloc[-1]) / 31.1034768) * 3.75 * float(krw.iloc[-1])
+            usd_current = float(gc.iloc[-1])
+            current = (usd_current / 31.1034768) * 3.75 * float(krw.iloc[-1])
             prev = (float(gc.iloc[-2]) / 31.1034768) * 3.75 * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'XAUUSD'}
+            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'XAUUSD', 'usd_value': usd_current, 'unit': 'oz'}
         return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAUUSD'}
     except:
         return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'XAUUSD'}
@@ -180,11 +182,12 @@ def get_copper_krw_price():
         hg = yf.Ticker("HG=F").history(period="5d")['Close'].dropna()
         krw = yf.Ticker("KRW=X").history(period="5d")['Close'].dropna()
         if len(hg) >= 2 and len(krw) >= 2:
-            current = float(hg.iloc[-1]) * float(krw.iloc[-1])
+            usd_current = float(hg.iloc[-1])
+            current = usd_current * float(krw.iloc[-1])
             prev = float(hg.iloc[-2]) * float(krw.iloc[-2])
             diff = current - prev
             pct = (diff / prev) * 100 if prev != 0 else 0
-            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'HG1!'}
+            return {'value': int(current), 'diff': int(diff), 'pct': pct, 'ticker': 'HG1!', 'usd_value': usd_current, 'unit': 'lb'}
         return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'HG1!'}
     except:
         return {'value': "N/A", 'diff': 0, 'pct': 0, 'ticker': 'HG1!'}
@@ -386,7 +389,6 @@ HTML_TEMPLATE = """
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <!-- 모바일 확대/축소 허용으로 변경됨 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>실시간 미국 증시 대시보드</title>
     <meta name="theme-color" content="#f3f4f6">
@@ -589,6 +591,14 @@ HTML_TEMPLATE = """
             <div class="card-value">{% if is_int %}{{ "{:,}".format(data_obj.value|int) }}{% else %}{{ "{:,.2f}".format(data_obj.value) }}{% endif %}{{ suffix }}
             {% if data_obj.get('rating') %} <span style="font-size:1rem; color:#6b7280;">({{ data_obj.rating }})</span>{% endif %}
             </div>
+            
+            <!-- 추가된 부분: 달러($) 가격 및 단위 (oz, lb) 노출 -->
+            {% if data_obj.get('usd_value') %}
+            <div style="font-size: 1rem; color: #4b5563; font-weight: 700; margin-bottom: 5px;">
+                ${{ "{:,.2f}".format(data_obj.usd_value) }} / {{ data_obj.get('unit', 'oz') }}
+            </div>
+            {% endif %}
+            
             {% set diff_val = data_obj.diff|abs %}
             {% set diff_fmt = "{:,}".format(diff_val|int) if is_int else "{:,.2f}".format(diff_val) %}
             {% if data_obj.diff > 0 %} <div class="card-delta up">▲ {{ diff_fmt }} ({{ "{:,.2f}".format(data_obj.pct|abs) }}%)</div>
